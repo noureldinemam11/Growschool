@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQuery } from '@tanstack/react-query';
 import { User, BehaviorPoint } from '@shared/schema';
 import { useAuth } from '@/hooks/use-auth';
-import { Filter, Settings, ChevronDown, Grid, Rows, Calendar, Users, Home } from 'lucide-react';
+import { Settings, ChevronDown, Grid, Home, ChevronLeft } from 'lucide-react';
 import PointsModal from '@/components/points/PointsModal';
 import BehaviorCategoriesView from '@/components/points/BehaviorCategoriesView';
 
@@ -13,8 +13,6 @@ export default function PointsPage() {
   const { user } = useAuth();
   const [selectedStudents, setSelectedStudents] = useState<number[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [filterTeacher, setFilterTeacher] = useState<string>('all');
-  const [filterDate, setFilterDate] = useState<string>('today');
   const [filterHouse, setFilterHouse] = useState<string>('all');
   const [selectedStudentForPoints, setSelectedStudentForPoints] = useState<number | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<User | null>(null);
@@ -159,35 +157,11 @@ export default function PointsPage() {
       <div className="bg-white border-b py-2 px-4 sticky top-14 z-10">
         <div className="container mx-auto flex flex-wrap justify-between items-center gap-2">
           <div className="flex items-center gap-2">
-            <Select value={filterDate} onValueChange={setFilterDate}>
-              <SelectTrigger className="w-[120px]">
-                <Calendar className="mr-2 h-4 w-4" />
-                <SelectValue placeholder="Date" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="today">Today</SelectItem>
-                <SelectItem value="week">This Week</SelectItem>
-                <SelectItem value="month">This Month</SelectItem>
-                <SelectItem value="year">This Year</SelectItem>
-                <SelectItem value="all">All Time</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={filterTeacher} onValueChange={setFilterTeacher}>
-              <SelectTrigger className="w-[140px]">
-                <Users className="mr-2 h-4 w-4" />
-                <SelectValue placeholder="All Teachers" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Teachers</SelectItem>
-                {teachers?.map(teacher => (
-                  <SelectItem key={teacher.id} value={teacher.id.toString()}>
-                    {teacher.firstName} {teacher.lastName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
+            <Button variant="ghost" className="mr-2" onClick={() => window.history.back()}>
+              <ChevronLeft className="mr-1 h-4 w-4" />
+              Back
+            </Button>
+            
             <Select value={filterHouse} onValueChange={setFilterHouse}>
               <SelectTrigger className="w-[140px]">
                 <Home className="mr-2 h-4 w-4" />
@@ -218,7 +192,7 @@ export default function PointsPage() {
         <div className="container mx-auto">
           <div className="mb-2">
             <h2 className="text-sm text-slate-500">
-              Showing points earned <span className="font-semibold">Today</span> given by <span className="font-semibold">All Teachers</span>
+              Select students to award points
             </h2>
           </div>
 
