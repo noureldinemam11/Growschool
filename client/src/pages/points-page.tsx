@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -8,15 +8,19 @@ import { useAuth } from '@/hooks/use-auth';
 import { Settings, ChevronDown, Grid, Home, ChevronLeft } from 'lucide-react';
 import PointsModal from '@/components/points/PointsModal';
 import BehaviorCategoriesView from '@/components/points/BehaviorCategoriesView';
+import { useLocation } from 'wouter';
 
 export default function PointsPage() {
   const { user } = useAuth();
+  const [location, setLocation] = useLocation();
   const [selectedStudents, setSelectedStudents] = useState<number[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterHouse, setFilterHouse] = useState<string>('all');
   const [selectedStudentForPoints, setSelectedStudentForPoints] = useState<number | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<User | null>(null);
-  const [view, setView] = useState<'students' | 'categories'>('students');
+  
+  // Determine view from URL
+  const view = location.includes('/categories') ? 'categories' : 'students';
 
   // Fetch students
   const { data: students, isLoading: loadingStudents } = useQuery<User[]>({
@@ -75,32 +79,51 @@ export default function PointsPage() {
       const studentId = selectedStudents[0];
       const student = students?.find(s => s.id === studentId) || null;
       setSelectedStudent(student);
-      setView('categories');
+      setLocation('/points/categories');
     }
   };
 
   const handleBackToStudents = () => {
-    setView('students');
+    setLocation('/points');
     setSelectedStudent(null);
   };
 
   const handleCompleteBehaviorAssignment = () => {
-    setView('students');
+    setLocation('/points');
     setSelectedStudent(null);
     setSelectedStudents([]);
     // Show success message or something else as needed
   };
-
-  // Use a React effect to manage URL updates instead of in render
-  React.useEffect(() => {
-    if (view === 'categories' && selectedStudent) {
-      window.history.replaceState(null, '', '/points/categories');
-    } else {
-      window.history.replaceState(null, '', '/points');
+  
+  // Load selected student from localStorage when on categories page
+  useEffect(() => {
+    // If we're on the categories page but don't have a selected student,
+    // try to load it from localStorage
+    if (location.includes('/categories') && !selectedStudent && students?.length) {
+      const savedStudentId = localStorage.getItem('selectedStudentId');
+      if (savedStudentId) {
+        const student = students.find(s => s.id === parseInt(savedStudentId));
+        if (student) {
+          setSelectedStudent(student);
+        } else {
+          // If student not found, go back to student selection
+          setLocation('/points');
+        }
+      } else {
+        // If no saved student ID, go back to student selection
+        setLocation('/points');
+      }
     }
-  }, [view, selectedStudent]);
+  }, [location, selectedStudent, students]);
+  
+  // Save selected student to localStorage when changing
+  useEffect(() => {
+    if (selectedStudent) {
+      localStorage.setItem('selectedStudentId', selectedStudent.id.toString());
+    }
+  }, [selectedStudent]);
 
-  if (view === 'categories' && selectedStudent) {
+  if (location.includes('/categories') && selectedStudent) {
     return (
       <div className="flex flex-col">
         {/* Behavior Categories View */}

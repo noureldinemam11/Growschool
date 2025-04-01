@@ -72,6 +72,11 @@ function Router() {
         component={PointsPage}
         allowedRoles={["admin", "teacher"]}
       />
+      <ProtectedRoute 
+        path="/points/categories" 
+        component={PointsPage}
+        allowedRoles={["admin", "teacher"]}
+      />
       <Route component={NotFound} />
     </Switch>
   );
