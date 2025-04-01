@@ -5,8 +5,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQuery } from '@tanstack/react-query';
 import { User, BehaviorPoint } from '@shared/schema';
 import { useAuth } from '@/hooks/use-auth';
-import { Filter, Settings, ChevronDown, Grid, Rows, Calendar, Users } from 'lucide-react';
+import { Filter, Settings, ChevronDown, Grid, Rows, Calendar, Users, Home } from 'lucide-react';
 import PointsModal from '@/components/points/PointsModal';
+import BehaviorCategoriesView from '@/components/points/BehaviorCategoriesView';
 
 export default function PointsPage() {
   const { user } = useAuth();
@@ -14,7 +15,10 @@ export default function PointsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterTeacher, setFilterTeacher] = useState<string>('all');
   const [filterDate, setFilterDate] = useState<string>('today');
+  const [filterHouse, setFilterHouse] = useState<string>('all');
   const [selectedStudentForPoints, setSelectedStudentForPoints] = useState<number | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<User | null>(null);
+  const [view, setView] = useState<'students' | 'categories'>('students');
 
   // Fetch students
   const { data: students, isLoading: loadingStudents } = useQuery<User[]>({
@@ -26,6 +30,19 @@ export default function PointsPage() {
     queryKey: ['/api/users/role/teacher'],
   });
 
+  // Fetch houses
+  const { data: houses, isLoading: loadingHouses } = useQuery<any[]>({
+    queryKey: ['/api/houses'],
+  });
+
+  const filteredStudents = students?.filter(student => {
+    // Apply house filter
+    if (filterHouse !== 'all' && student.houseId !== Number(filterHouse)) {
+      return false;
+    }
+    return true;
+  });
+
   const handleSelectStudent = (studentId: number) => {
     if (selectedStudents.includes(studentId)) {
       setSelectedStudents(selectedStudents.filter(id => id !== studentId));
@@ -35,11 +52,11 @@ export default function PointsPage() {
   };
 
   const handleSelectAll = () => {
-    if (students) {
-      if (selectedStudents.length === students.length) {
+    if (filteredStudents) {
+      if (selectedStudents.length === filteredStudents.length) {
         setSelectedStudents([]);
       } else {
-        setSelectedStudents(students.map(student => student.id));
+        setSelectedStudents(filteredStudents.map(student => student.id));
       }
     }
   };
@@ -49,21 +66,70 @@ export default function PointsPage() {
   };
 
   const handleRandomSelect = () => {
-    if (students && students.length > 0) {
-      const randomIndex = Math.floor(Math.random() * students.length);
-      setSelectedStudents([students[randomIndex].id]);
+    if (filteredStudents && filteredStudents.length > 0) {
+      const randomIndex = Math.floor(Math.random() * filteredStudents.length);
+      setSelectedStudents([filteredStudents[randomIndex].id]);
     }
   };
 
-  const handleAwardPoints = (studentId?: number) => {
-    if (studentId) {
-      setSelectedStudentForPoints(studentId);
-    } else if (selectedStudents.length > 0) {
-      // If no specific student is provided, use the first selected student
-      setSelectedStudentForPoints(selectedStudents[0]);
+  const handleContinue = () => {
+    if (selectedStudents.length > 0) {
+      const studentId = selectedStudents[0];
+      const student = students?.find(s => s.id === studentId) || null;
+      setSelectedStudent(student);
+      setView('categories');
     }
-    setIsModalOpen(true);
   };
+
+  const handleBackToStudents = () => {
+    setView('students');
+    setSelectedStudent(null);
+  };
+
+  const handleCompleteBehaviorAssignment = () => {
+    setView('students');
+    setSelectedStudent(null);
+    setSelectedStudents([]);
+    // Show success message or something else as needed
+  };
+
+  if (view === 'categories' && selectedStudent) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        {/* Top Navigation Bar */}
+        <header className="bg-primary text-white py-3 px-4 sticky top-0 z-10">
+          <div className="container mx-auto flex justify-between items-center">
+            <div className="flex items-center space-x-2">
+              <div className="bg-white text-primary rounded-full p-1">
+                <Grid size={20} />
+              </div>
+              <h1 className="text-xl font-bold flex items-center">
+                Points <ChevronDown className="ml-1 h-5 w-5" />
+              </h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" className="text-white">
+                Help <ChevronDown className="ml-1 h-4 w-4" />
+              </Button>
+              <div className="w-8 h-8 rounded-full bg-white text-primary flex items-center justify-center font-semibold">
+                {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Behavior Categories View */}
+        <div className="container mx-auto">
+          <BehaviorCategoriesView 
+            studentId={selectedStudent.id}
+            studentName={`${selectedStudent.firstName} ${selectedStudent.lastName}`}
+            onBack={handleBackToStudents}
+            onComplete={handleCompleteBehaviorAssignment}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -108,7 +174,7 @@ export default function PointsPage() {
             </Select>
 
             <Select value={filterTeacher} onValueChange={setFilterTeacher}>
-              <SelectTrigger className="w-[170px]">
+              <SelectTrigger className="w-[140px]">
                 <Users className="mr-2 h-4 w-4" />
                 <SelectValue placeholder="All Teachers" />
               </SelectTrigger>
@@ -117,6 +183,21 @@ export default function PointsPage() {
                 {teachers?.map(teacher => (
                   <SelectItem key={teacher.id} value={teacher.id.toString()}>
                     {teacher.firstName} {teacher.lastName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={filterHouse} onValueChange={setFilterHouse}>
+              <SelectTrigger className="w-[140px]">
+                <Home className="mr-2 h-4 w-4" />
+                <SelectValue placeholder="All Houses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Houses</SelectItem>
+                {houses?.map(house => (
+                  <SelectItem key={house.id} value={house.id.toString()}>
+                    {house.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -143,7 +224,7 @@ export default function PointsPage() {
 
           {/* Student Grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {students?.map(student => (
+            {filteredStudents?.map(student => (
               <Card 
                 key={student.id} 
                 className={`cursor-pointer border-t-4 ${
@@ -207,7 +288,7 @@ export default function PointsPage() {
             <Button 
               variant="ghost" 
               className="rounded-r-full"
-              onClick={() => handleAwardPoints()}
+              onClick={handleContinue}
               disabled={selectedStudents.length === 0}
             >
               Continue
@@ -215,15 +296,6 @@ export default function PointsPage() {
           </div>
         </div>
       </footer>
-
-      {/* Points Modal */}
-      <PointsModal 
-        isOpen={isModalOpen} 
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedStudentForPoints(null);
-        }} 
-      />
     </div>
   );
 }
