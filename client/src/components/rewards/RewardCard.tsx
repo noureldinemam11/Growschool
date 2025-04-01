@@ -27,40 +27,56 @@ const RewardCard: FC<RewardCardProps> = ({ reward, canAfford, onRedeem, availabl
       <CardContent>
         <p className="text-sm text-neutral-dark mb-3">{reward.description}</p>
         <div className="flex justify-between items-center">
-          <div className={`${canAfford ? 'bg-primary bg-opacity-10 text-primary font-semibold' : 'bg-destructive bg-opacity-10 text-destructive font-semibold'} text-sm px-3 py-1 rounded-full font-mono flex items-center`}>
+          {/* Higher contrast for point cost */}
+          <div className={`
+            ${canAfford 
+              ? 'bg-primary text-white' 
+              : 'bg-destructive text-white'
+            } 
+            text-sm px-4 py-1.5 rounded-md font-mono font-bold flex items-center shadow-sm
+          `}>
             {reward.pointCost} points
             {!canAfford && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="ml-1">
-                      <AlertCircle className="h-3.5 w-3.5" />
+                      <AlertCircle className="h-4 w-4" />
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>You need {pointsNeeded} more points</p>
+                    <p className="font-medium">You need {pointsNeeded} more points</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             )}
           </div>
-          <div className="text-xs text-neutral-dark">
+          <div className="text-xs bg-gray-100 px-2 py-1 rounded font-medium text-gray-700">
             {reward.quantity} remaining
           </div>
         </div>
       </CardContent>
       <CardFooter className="pt-0">
         <Button 
-          className="w-full font-semibold text-white" 
+          className={`
+            w-full font-semibold 
+            ${canAfford && !isOutOfStock ? "text-white" : ""}
+            ${!canAfford && !isOutOfStock ? "text-red-600 border-red-300 bg-red-50 hover:bg-red-100 hover:text-red-700" : ""}
+          `}
           variant={canAfford && !isOutOfStock ? "default" : "outline"}
-          disabled={!canAfford || isOutOfStock}
-          onClick={onRedeem}
+          disabled={isOutOfStock}
+          onClick={canAfford ? onRedeem : undefined}
         >
           {isOutOfStock 
             ? "Out of Stock" 
             : canAfford 
               ? "Redeem Reward" 
-              : `Need ${pointsNeeded} More Points`}
+              : (
+                <span className="flex items-center justify-center">
+                  <AlertCircle className="h-4 w-4 mr-1" />
+                  <span>Need <strong>{pointsNeeded}</strong> More Points</span>
+                </span>
+              )}
         </Button>
       </CardFooter>
     </Card>

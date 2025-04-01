@@ -57,29 +57,29 @@ export default function RewardsPage() {
                 </div>
                 
                 {user?.role === 'student' && (
-                  <div className="mt-4 md:mt-0 bg-white p-4 rounded-lg shadow-sm min-w-[200px]">
-                    <div className="text-sm text-neutral-dark mb-1">Your Points</div>
-                    <div className="text-2xl font-mono font-bold text-primary mb-2">
+                  <div className="mt-4 md:mt-0 bg-white p-5 rounded-lg shadow-md min-w-[220px] border border-gray-100">
+                    <div className="text-sm text-gray-600 font-medium mb-2">Your Points Balance</div>
+                    <div className="text-3xl font-mono font-bold text-primary mb-3">
                       {isLoadingPoints ? (
-                        <Loader2 className="h-4 w-4 animate-spin inline-block mr-1" />
+                        <Loader2 className="h-5 w-5 animate-spin inline-block mr-1" />
                       ) : (
                         totalPoints
                       )}
                     </div>
                     
                     {!isLoadingPoints && pointsBalance && (
-                      <div className="flex flex-col text-xs text-neutral-dark space-y-1">
+                      <div className="flex flex-col text-sm space-y-2">
                         <div className="flex justify-between">
-                          <span>Total Earned:</span>
-                          <span className="font-mono text-success">{pointsBalance.earned}</span>
+                          <span className="text-gray-600">Total Earned:</span>
+                          <span className="font-mono font-semibold text-emerald-600">+{pointsBalance.earned}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span>Total Spent:</span>
-                          <span className="font-mono text-destructive">-{pointsBalance.spent}</span>
+                          <span className="text-gray-600">Total Spent:</span>
+                          <span className="font-mono font-semibold text-red-600">-{pointsBalance.spent}</span>
                         </div>
-                        <div className="flex justify-between pt-1 border-t border-neutral">
-                          <span className="font-semibold">Available:</span>
-                          <span className="font-mono font-semibold text-primary">{pointsBalance.balance}</span>
+                        <div className="flex justify-between pt-2 mt-1 border-t border-gray-200">
+                          <span className="font-semibold text-gray-700">Available:</span>
+                          <span className="font-mono font-bold text-primary">{pointsBalance.balance}</span>
                         </div>
                       </div>
                     )}
@@ -192,10 +192,10 @@ export default function RewardsPage() {
                             <h3 className="font-semibold text-neutral-darker">{reward.name}</h3>
                             <p className="text-sm text-neutral-dark mb-2">{reward.description}</p>
                             <div className="flex justify-between items-center">
-                              <span className="text-xs font-mono bg-primary bg-opacity-10 text-primary px-2 py-1 rounded-full">
+                              <span className="text-xs font-mono font-bold bg-primary text-white px-3 py-1 rounded-md shadow-sm">
                                 {reward.pointCost} points
                               </span>
-                              <span className="text-xs text-neutral-dark">
+                              <span className="text-xs font-medium bg-gray-100 px-2 py-1 rounded text-gray-700">
                                 {reward.quantity} remaining
                               </span>
                             </div>

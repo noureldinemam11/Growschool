@@ -62,53 +62,53 @@ const RedeemRewardModal: FC<RedeemRewardModalProps> = ({ reward, availablePoints
         <div className="bg-neutral p-4 rounded-lg mb-4">
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-heading font-semibold text-lg">{reward.name}</h3>
-            <div className="bg-primary bg-opacity-10 text-primary px-2 py-1 rounded-full text-sm font-mono">
+            <div className="bg-primary text-white font-bold px-3 py-1.5 rounded-md text-sm font-mono shadow-sm">
               {reward.pointCost} points
             </div>
           </div>
           <p className="text-neutral-dark">{reward.description}</p>
         </div>
         
-        <div className="flex items-center justify-between py-2 border-b">
-          <span className="text-neutral-darker">Your available points:</span>
-          <span className="font-mono font-semibold text-primary">{availablePoints}</span>
+        <div className="flex items-center justify-between py-3 border-b">
+          <span className="text-gray-700 font-medium">Your available points:</span>
+          <span className="font-mono font-bold text-primary text-lg">{availablePoints}</span>
         </div>
         
-        <div className="flex items-center justify-between py-2 border-b">
-          <span className="text-neutral-darker">Cost:</span>
-          <span className="font-mono font-semibold">{reward.pointCost}</span>
+        <div className="flex items-center justify-between py-3 border-b">
+          <span className="text-gray-700 font-medium">Cost:</span>
+          <span className="font-mono font-bold text-red-600 text-lg">-{reward.pointCost}</span>
         </div>
         
-        <div className="flex items-center justify-between py-2 border-b">
-          <span className="text-neutral-darker">Remaining after purchase:</span>
-          <span className="font-mono font-semibold text-neutral-darker">{availablePoints - reward.pointCost}</span>
+        <div className="flex items-center justify-between py-3 border-b bg-blue-50 px-3 rounded">
+          <span className="text-gray-700 font-medium">Remaining after purchase:</span>
+          <span className="font-mono font-bold text-primary text-lg">{availablePoints - reward.pointCost}</span>
         </div>
         
-        <div className="flex items-center justify-between py-2">
-          <span className="text-neutral-darker">Quantity available:</span>
-          <span className={`font-mono font-semibold ${isOutOfStock ? 'text-error' : ''}`}>
+        <div className="flex items-center justify-between py-3 mt-1">
+          <span className="text-gray-700 font-medium">Quantity available:</span>
+          <span className={`font-mono font-bold px-2 py-0.5 rounded ${isOutOfStock ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
             {reward.quantity}
           </span>
         </div>
         
         {!canAfford && (
-          <div className="mt-4 bg-error bg-opacity-10 text-error p-3 rounded-md flex items-start">
-            <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
+          <div className="mt-4 bg-red-100 border border-red-200 p-4 rounded-md flex items-start">
+            <AlertCircle className="h-6 w-6 mr-3 flex-shrink-0 mt-0.5 text-red-600" />
             <div>
-              <p className="font-semibold">Not enough points</p>
-              <p className="text-sm">
-                You need {reward.pointCost - availablePoints} more points to redeem this reward.
+              <p className="font-bold text-red-700">Not enough points</p>
+              <p className="text-sm text-red-600 mt-1">
+                You need <span className="font-bold">{reward.pointCost - availablePoints}</span> more points to redeem this reward.
               </p>
             </div>
           </div>
         )}
         
         {isOutOfStock && (
-          <div className="mt-4 bg-error bg-opacity-10 text-error p-3 rounded-md flex items-start">
-            <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
+          <div className="mt-4 bg-red-100 border border-red-200 p-4 rounded-md flex items-start">
+            <AlertCircle className="h-6 w-6 mr-3 flex-shrink-0 mt-0.5 text-red-600" />
             <div>
-              <p className="font-semibold">Out of stock</p>
-              <p className="text-sm">
+              <p className="font-bold text-red-700">Out of stock</p>
+              <p className="text-sm text-red-600 mt-1">
                 This reward is currently unavailable. Please check back later.
               </p>
             </div>
