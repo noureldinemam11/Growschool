@@ -24,9 +24,13 @@ export default function HousePage() {
   const [isSetup] = useRoute('/house/setup');
   const [isOptions] = useRoute('/house/options');
   
-  // Get houses data
-  const { data: houses, isLoading: isLoadingHouses } = useQuery<House[]>({
-    queryKey: ['/api/houses'],
+  // State to force refetch
+  const [refreshCounter, setRefreshCounter] = useState(0);
+  
+  // Get houses data with refresh counter to force refetch
+  const { data: houses, isLoading: isLoadingHouses, refetch } = useQuery<House[]>({
+    queryKey: ['/api/houses', refreshCounter],
+    refetchInterval: 5000, // Refresh every 5 seconds to keep data in sync
   });
 
   // If we're on the /houses path, show the Houses list page

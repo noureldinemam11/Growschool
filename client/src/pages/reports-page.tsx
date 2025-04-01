@@ -36,6 +36,7 @@ function StudentPoints({ studentId }: { studentId: number | undefined }) {
 function StudentHouse({ houseId }: { houseId: number }) {
   const { data: houses } = useQuery<House[]>({
     queryKey: ['/api/houses'],
+    refetchInterval: 5000, // Refresh every 5 seconds
   });
   
   if (!houses) return <span>House #{houseId}</span>;
@@ -64,8 +65,12 @@ export default function ReportsPage() {
     enabled: !!user && ['admin', 'teacher'].includes(user.role)
   });
 
+  // State to force refetch
+  const [refreshCounter, setRefreshCounter] = useState(0);
+  
   const { data: houses, isLoading: isLoadingHouses } = useQuery<House[]>({
-    queryKey: ['/api/houses'],
+    queryKey: ['/api/houses', refreshCounter],
+    refetchInterval: 5000, // Refresh every 5 seconds
   });
 
   const { data: teacherPoints, isLoading: isLoadingTeacherPoints } = useQuery<BehaviorPoint[]>({
