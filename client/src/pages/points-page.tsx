@@ -9,6 +9,7 @@ import { Settings, ChevronDown, Grid, Home, ChevronLeft } from 'lucide-react';
 import PointsModal from '@/components/points/PointsModal';
 import BehaviorCategoriesView from '@/components/points/BehaviorCategoriesView';
 import { useLocation } from 'wouter';
+import AppHeader from '@/components/ui/AppHeader';
 
 export default function PointsPage() {
   const { user } = useAuth();
@@ -95,6 +96,10 @@ export default function PointsPage() {
     // Show success message or something else as needed
   };
   
+  const handleNavigateHome = () => {
+    setLocation('/');
+  };
+  
   // Load selected student from localStorage when on categories page
   useEffect(() => {
     // If we're on the categories page but don't have a selected student,
@@ -125,9 +130,16 @@ export default function PointsPage() {
 
   if (location.includes('/categories') && selectedStudent) {
     return (
-      <div className="flex flex-col">
+      <div className="flex flex-col h-screen">
+        <AppHeader 
+          showBackButton={true}
+          showHomeButton={true}
+          customBackAction={handleBackToStudents}
+          title={`Points for ${selectedStudent.firstName}`}
+        />
+        
         {/* Behavior Categories View */}
-        <div className="container mx-auto">
+        <div className="container mx-auto flex-1 overflow-auto">
           <BehaviorCategoriesView 
             studentId={selectedStudent.id}
             studentName={`${selectedStudent.firstName} ${selectedStudent.lastName}`}
@@ -140,7 +152,13 @@ export default function PointsPage() {
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col h-screen">
+      <AppHeader 
+        showBackButton={false}
+        showHomeButton={true}
+        title="Award Points"
+      />
+      
       {/* Filter Bar */}
       <div className="bg-white border-b py-2 px-4 sticky top-0 z-10">
         <div className="container mx-auto flex flex-wrap justify-between items-center gap-2">
@@ -171,7 +189,7 @@ export default function PointsPage() {
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 bg-slate-50 p-4">
+      <main className="flex-1 bg-slate-50 p-4 overflow-auto">
         <div className="container mx-auto">
           <div className="mb-2">
             <h2 className="text-sm text-slate-500">

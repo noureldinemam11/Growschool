@@ -273,14 +273,8 @@ export default function BehaviorCategoriesView({
       {/* Fixed bottom toolbar - styled to match the design */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-2 flex justify-center">
         <div className="max-w-md w-full bg-white rounded-full shadow-md flex items-center justify-between">
-          <Button 
-            variant="ghost"
-            className="rounded-l-full flex items-center justify-center"
-            onClick={onBack}
-          >
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            <span className="text-sm">Back</span>
-          </Button>
+          {/* We don't need the back button here anymore since we have it in the header */}
+          <div className="w-24"></div> {/* Spacer to balance the layout */}
           
           <Button 
             variant={totalPoints > 0 ? "default" : "ghost"}
