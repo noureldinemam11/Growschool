@@ -404,17 +404,17 @@ export class DatabaseStorage implements IStorage {
   // User Management
   async getUser(id: number): Promise<User | undefined> {
     const result = await db.select().from(users).where(eq(users.id, id));
-    return result[0];
+    return result[0] as User | undefined;
   }
   
   async getUserByUsername(username: string): Promise<User | undefined> {
     const result = await db.select().from(users).where(eq(users.username, username));
-    return result[0];
+    return result[0] as User | undefined;
   }
   
   async createUser(user: InsertUser): Promise<User> {
     const result = await db.insert(users).values(user).returning();
-    return result[0];
+    return result[0] as User;
   }
   
   async updateUser(id: number, userUpdate: Partial<User>): Promise<User | undefined> {
@@ -422,42 +422,46 @@ export class DatabaseStorage implements IStorage {
       .set(userUpdate)
       .where(eq(users.id, id))
       .returning();
-    return result[0];
+    return result[0] as User | undefined;
   }
   
   async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users);
+    const result = await db.select().from(users);
+    return result as User[];
   }
   
   async getUsersByRole(role: string): Promise<User[]> {
-    return await db.select().from(users).where(eq(users.role, role));
+    const result = await db.select().from(users).where(eq(users.role, role));
+    return result as User[];
   }
   
   async getStudentsByParentId(parentId: number): Promise<User[]> {
-    return await db.select().from(users)
+    const result = await db.select().from(users)
       .where(and(
         eq(users.role, 'student'),
         eq(users.parentId, parentId)
       ));
+    return result as User[];
   }
   
   async getStudentsByHouseId(houseId: number): Promise<User[]> {
-    return await db.select().from(users)
+    const result = await db.select().from(users)
       .where(and(
         eq(users.role, 'student'),
         eq(users.houseId, houseId)
       ));
+    return result as User[];
   }
   
   // House Management
   async getHouse(id: number): Promise<House | undefined> {
     const result = await db.select().from(houses).where(eq(houses.id, id));
-    return result[0];
+    return result[0] as House | undefined;
   }
   
   async getHouseByName(name: string): Promise<House | undefined> {
     const result = await db.select().from(houses).where(eq(houses.name, name));
-    return result[0];
+    return result[0] as House | undefined;
   }
   
   async createHouse(house: InsertHouse): Promise<House> {
@@ -465,7 +469,7 @@ export class DatabaseStorage implements IStorage {
       ...house,
       points: 0
     }).returning();
-    return result[0];
+    return result[0] as House;
   }
   
   async updateHouse(id: number, houseUpdate: Partial<House>): Promise<House | undefined> {
@@ -473,11 +477,12 @@ export class DatabaseStorage implements IStorage {
       .set(houseUpdate)
       .where(eq(houses.id, id))
       .returning();
-    return result[0];
+    return result[0] as House | undefined;
   }
   
   async getAllHouses(): Promise<House[]> {
-    return await db.select().from(houses);
+    const result = await db.select().from(houses);
+    return result as House[];
   }
   
   async updateHousePoints(id: number, points: number): Promise<House | undefined> {
@@ -491,16 +496,17 @@ export class DatabaseStorage implements IStorage {
   // Behavior Categories
   async getBehaviorCategory(id: number): Promise<BehaviorCategory | undefined> {
     const result = await db.select().from(behaviorCategories).where(eq(behaviorCategories.id, id));
-    return result[0];
+    return result[0] as BehaviorCategory | undefined;
   }
   
   async createBehaviorCategory(category: InsertBehaviorCategory): Promise<BehaviorCategory> {
     const result = await db.insert(behaviorCategories).values(category).returning();
-    return result[0];
+    return result[0] as BehaviorCategory;
   }
   
   async getAllBehaviorCategories(): Promise<BehaviorCategory[]> {
-    return await db.select().from(behaviorCategories);
+    const result = await db.select().from(behaviorCategories);
+    return result as BehaviorCategory[];
   }
   
   // Behavior Points
@@ -516,36 +522,39 @@ export class DatabaseStorage implements IStorage {
       await this.updateHousePoints(student.houseId, point.points);
     }
     
-    return result[0];
+    return result[0] as BehaviorPoint;
   }
   
   async getBehaviorPointsByStudentId(studentId: number): Promise<BehaviorPoint[]> {
-    return await db.select().from(behaviorPoints)
+    const result = await db.select().from(behaviorPoints)
       .where(eq(behaviorPoints.studentId, studentId))
       .orderBy(desc(behaviorPoints.timestamp));
+    return result as BehaviorPoint[];
   }
   
   async getBehaviorPointsByTeacherId(teacherId: number): Promise<BehaviorPoint[]> {
-    return await db.select().from(behaviorPoints)
+    const result = await db.select().from(behaviorPoints)
       .where(eq(behaviorPoints.teacherId, teacherId))
       .orderBy(desc(behaviorPoints.timestamp));
+    return result as BehaviorPoint[];
   }
   
   async getRecentBehaviorPoints(limit: number): Promise<BehaviorPoint[]> {
-    return await db.select().from(behaviorPoints)
+    const result = await db.select().from(behaviorPoints)
       .orderBy(desc(behaviorPoints.timestamp))
       .limit(limit);
+    return result as BehaviorPoint[];
   }
   
   // Rewards
   async getReward(id: number): Promise<Reward | undefined> {
     const result = await db.select().from(rewards).where(eq(rewards.id, id));
-    return result[0];
+    return result[0] as Reward | undefined;
   }
   
   async createReward(reward: InsertReward): Promise<Reward> {
     const result = await db.insert(rewards).values(reward).returning();
-    return result[0];
+    return result[0] as Reward;
   }
   
   async updateReward(id: number, rewardUpdate: Partial<Reward>): Promise<Reward | undefined> {
@@ -553,11 +562,12 @@ export class DatabaseStorage implements IStorage {
       .set(rewardUpdate)
       .where(eq(rewards.id, id))
       .returning();
-    return result[0];
+    return result[0] as Reward | undefined;
   }
   
   async getAllRewards(): Promise<Reward[]> {
-    return await db.select().from(rewards);
+    const result = await db.select().from(rewards);
+    return result as Reward[];
   }
   
   // Reward Redemptions
@@ -574,13 +584,14 @@ export class DatabaseStorage implements IStorage {
       await this.updateReward(reward.id, { quantity: reward.quantity - 1 });
     }
     
-    return result[0];
+    return result[0] as RewardRedemption;
   }
   
   async getRewardRedemptionsByStudentId(studentId: number): Promise<RewardRedemption[]> {
-    return await db.select().from(rewardRedemptions)
+    const result = await db.select().from(rewardRedemptions)
       .where(eq(rewardRedemptions.studentId, studentId))
       .orderBy(desc(rewardRedemptions.timestamp));
+    return result as RewardRedemption[];
   }
   
   async updateRewardRedemptionStatus(id: number, status: "pending" | "approved" | "delivered"): Promise<RewardRedemption | undefined> {
@@ -588,7 +599,7 @@ export class DatabaseStorage implements IStorage {
       .set({ status: status as any }) // Cast to any to work around type issues with Drizzle
       .where(eq(rewardRedemptions.id, id))
       .returning();
-    return result[0];
+    return result[0] as RewardRedemption | undefined;
   }
 }
 

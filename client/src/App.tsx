@@ -17,11 +17,29 @@ function Router() {
       <Switch>
         <Route path="/auth" component={AuthPage} />
         <ProtectedRoute path="/" component={DashboardPage} />
-        <ProtectedRoute path="/students" component={StudentPage} />
-        <ProtectedRoute path="/houses" component={HousePage} />
-        <ProtectedRoute path="/rewards" component={RewardsPage} />
-        <ProtectedRoute path="/reports" component={ReportsPage} />
-        <ProtectedRoute path="/admin" component={AdminPage} />
+        <ProtectedRoute 
+          path="/students" 
+          component={StudentPage} 
+          allowedRoles={["admin", "teacher"]}
+        />
+        <ProtectedRoute 
+          path="/houses" 
+          component={HousePage} 
+        />
+        <ProtectedRoute 
+          path="/rewards" 
+          component={RewardsPage}
+        />
+        <ProtectedRoute 
+          path="/reports" 
+          component={ReportsPage}
+          allowedRoles={["admin", "teacher"]}
+        />
+        <ProtectedRoute 
+          path="/admin" 
+          component={AdminPage}
+          allowedRoles={["admin"]}
+        />
         <Route component={NotFound} />
       </Switch>
     </AuthProvider>
