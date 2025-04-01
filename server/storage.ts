@@ -432,6 +432,30 @@ export class DatabaseStorage implements IStorage {
           await this.createReward(reward);
         }
       }
+      
+      // Check if we have any admin users
+      const adminUsers = await this.getUsersByRole('admin');
+      if (adminUsers.length === 0) {
+        // Create a default admin user for testing
+        // In a real system, you would never hardcode passwords like this
+        const adminUser = {
+          username: 'admin',
+          // This is "password123" hashed with scrypt (matches our auth.ts implementation)
+          password: '7a37b85c8918eac19a9089232d3c3d891a6645de2f7d67edac7d8e943c9e92074a880fcbda27ce21c855a622ad31b9a28e1458faa937cdbcbdbb57f2f61f0519.0fa5e739613816f97423ca9eb311fc8a',
+          firstName: 'Admin',
+          lastName: 'User',
+          email: 'admin@school.edu',
+          role: 'admin' as const,
+          confirmPassword: 'password123' // This is needed for the schema but not stored in DB
+        };
+        
+        try {
+          await this.createUser(adminUser);
+          console.log('Created default admin user. Username: admin, Password: password123');
+        } catch (err) {
+          console.error('Failed to create admin user:', err);
+        }
+      }
     } catch (error) {
       console.error("Error initializing demo data:", error);
     }
