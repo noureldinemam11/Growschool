@@ -94,8 +94,20 @@ export default function HouseManagement() {
   // Create house mutation
   const createHouseMutation = useMutation({
     mutationFn: async (newHouse: InsertHouse) => {
-      const res = await apiRequest('POST', '/api/houses', newHouse);
-      return res.json();
+      try {
+        const res = await apiRequest('POST', '/api/houses', newHouse);
+        
+        // Check if response is OK
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(errorText || 'Failed to create house');
+        }
+        
+        return await res.json();
+      } catch (err) {
+        console.error('House creation error:', err);
+        throw err;
+      }
     },
     onSuccess: () => {
       toast({
@@ -119,8 +131,20 @@ export default function HouseManagement() {
   const updateHouseMutation = useMutation({
     mutationFn: async (updatedHouse: Partial<House> & { id: number }) => {
       const { id, ...data } = updatedHouse;
-      const res = await apiRequest('PATCH', `/api/houses/${id}`, data);
-      return res.json();
+      try {
+        const res = await apiRequest('PATCH', `/api/houses/${id}`, data);
+        
+        // Check if response is OK
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(errorText || 'Failed to update house');
+        }
+        
+        return await res.json();
+      } catch (err) {
+        console.error('House update error:', err);
+        throw err;
+      }
     },
     onSuccess: () => {
       toast({
@@ -143,8 +167,20 @@ export default function HouseManagement() {
   // Delete house mutation
   const deleteHouseMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await apiRequest('DELETE', `/api/houses/${id}`);
-      return res.json();
+      try {
+        const res = await apiRequest('DELETE', `/api/houses/${id}`);
+        
+        // Check if response is OK
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(errorText || 'Failed to delete house');
+        }
+        
+        return await res.json();
+      } catch (err) {
+        console.error('House deletion error:', err);
+        throw err;
+      }
     },
     onSuccess: () => {
       toast({
