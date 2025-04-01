@@ -31,8 +31,6 @@ const AdminRedeemRewardModal: FC<AdminRedeemRewardModalProps> = ({ reward, onClo
   const { user } = useAuth();
   const { toast } = useToast();
   const [selectedStudentId, setSelectedStudentId] = useState<string>('');
-  const [studentPointsBalance, setStudentPointsBalance] = useState<number | null>(null);
-  const [isLoadingBalance, setIsLoadingBalance] = useState<boolean>(false);
   
   const isOutOfStock = reward.quantity <= 0;
 
@@ -42,29 +40,29 @@ const AdminRedeemRewardModal: FC<AdminRedeemRewardModalProps> = ({ reward, onClo
     enabled: user?.role === 'admin' || user?.role === 'teacher'
   });
 
-  // Fetch student's points balance when a student is selected
-  useEffect(() => {
-    const fetchStudentBalance = async () => {
-      if (!selectedStudentId) {
-        setStudentPointsBalance(null);
-        return;
-      }
-      
-      setIsLoadingBalance(true);
-      try {
-        const res = await apiRequest('GET', `/api/students/${selectedStudentId}/points-balance`);
-        const data = await res.json();
-        setStudentPointsBalance(data.balance);
-      } catch (error) {
-        console.error('Error fetching student balance:', error);
-        setStudentPointsBalance(null);
-      } finally {
-        setIsLoadingBalance(false);
-      }
-    };
-    
-    fetchStudentBalance();
-  }, [selectedStudentId]);
+  // Fetch student's points balance using React Query
+  const { 
+    data: pointsBalanceData,
+    isLoading: isLoadingBalance 
+  } = useQuery<{
+    studentId: number;
+    earned: number;
+    spent: number;
+    balance: number;
+  }>({
+    queryKey: ['/api/students', selectedStudentId, 'points-balance'],
+    queryFn: async () => {
+      if (!selectedStudentId) throw new Error('No student selected');
+      const res = await apiRequest('GET', `/api/students/${selectedStudentId}/points-balance`);
+      return await res.json();
+    },
+    enabled: !!selectedStudentId,
+    refetchOnWindowFocus: false,
+    retry: 1
+  });
+  
+  // Get the balance from the query result
+  const studentPointsBalance = pointsBalanceData?.balance ?? null;
 
   const canAfford = studentPointsBalance !== null && studentPointsBalance >= reward.pointCost;
 
@@ -101,7 +99,7 @@ const AdminRedeemRewardModal: FC<AdminRedeemRewardModalProps> = ({ reward, onClo
         // Invalidate queries to refresh the rewards and redemptions
         queryClient.invalidateQueries({ queryKey: ['/api/rewards'] });
         queryClient.invalidateQueries({ queryKey: ['/api/rewards/redemptions/student/' + selectedStudentId] });
-        queryClient.invalidateQueries({ queryKey: ['/api/students/' + selectedStudentId + '/points-balance'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/students', selectedStudentId, 'points-balance'] });
         onClose();
       } else {
         // If we got a response but something went wrong
