@@ -9,6 +9,7 @@ import RewardsPage from "@/pages/rewards-page";
 import ReportsPage from "@/pages/reports-page";
 import AdminPage from "@/pages/admin-page";
 import RosterPage from "@/pages/roster-page";
+import PointsPage from "@/pages/points-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
 
@@ -64,6 +65,11 @@ function Router() {
         <ProtectedRoute 
           path="/roster" 
           component={RosterPage}
+          allowedRoles={["admin", "teacher"]}
+        />
+        <ProtectedRoute 
+          path="/points" 
+          component={PointsPage}
           allowedRoles={["admin", "teacher"]}
         />
         <Route component={NotFound} />

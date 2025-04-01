@@ -547,6 +547,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch users" });
     }
   });
+  
+  // Get a specific user by ID
+  app.get("/api/users/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const userId = Number(req.params.id);
+      
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Only admins and teachers can view any user, others can only view themselves
+      const currentUser = req.user;
+      if (currentUser.role !== "admin" && currentUser.role !== "teacher" && currentUser.id !== userId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+      
+      // Return safe user data
+      const safeUser = {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        email: user.email,
+        gradeLevel: user.gradeLevel,
+        section: user.section,
+        houseId: user.houseId
+      };
+      
+      res.json(safeUser);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ error: "Failed to fetch user" });
+    }
+  });
 
   app.get("/api/users/students/house/:houseId", async (req, res) => {
     try {
