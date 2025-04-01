@@ -41,17 +41,52 @@ export const getQueryFn: <T>(options: {
     return await res.json();
   };
 
+// Create a global event bus for real-time updates
+export const globalEventBus = {
+  listeners: new Map<string, Set<() => void>>(),
+  
+  subscribe(event: string, callback: () => void) {
+    if (!this.listeners.has(event)) {
+      this.listeners.set(event, new Set());
+    }
+    this.listeners.get(event)?.add(callback);
+    
+    return () => {
+      this.listeners.get(event)?.delete(callback);
+    };
+  },
+  
+  publish(event: string) {
+    if (this.listeners.has(event)) {
+      this.listeners.get(event)?.forEach(callback => callback());
+    }
+    
+    // Invalidate any related queries to ensure data refresh
+    if (event === 'house-updated') {
+      queryClient.invalidateQueries({ queryKey: ['/api/houses'] });
+    } else if (event === 'points-updated') {
+      queryClient.invalidateQueries({ queryKey: ['/api/behavior-points'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/houses'] }); // Houses may need refresh due to point changes
+    }
+  }
+};
+
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: getQueryFn({ on401: "throw" }),
-      refetchInterval: false,
-      refetchOnWindowFocus: false,
-      staleTime: Infinity,
-      retry: false,
+      refetchInterval: 3000, // Set default refetch interval to 3 seconds
+      refetchOnWindowFocus: true,
+      staleTime: 0, // Set stale time to 0 to make data always refetch
+      retry: 1,
     },
     mutations: {
-      retry: false,
+      retry: 1,
+      onSuccess: () => {
+        // Force refresh all essential data whenever any mutation succeeds
+        queryClient.invalidateQueries({ queryKey: ['/api/houses'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/behavior-points'] });
+      },
     },
   },
 });

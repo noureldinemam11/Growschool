@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { House, InsertHouse } from '@shared/schema';
-import { apiRequest, queryClient } from '@/lib/queryClient';
+import { apiRequest, queryClient, globalEventBus } from '@/lib/queryClient';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { insertHouseSchema } from '@shared/schema';
@@ -98,137 +98,41 @@ export default function HouseManagement() {
       try {
         console.log('Creating house with data:', newHouse);
         
-        // Use direct fetch instead of apiRequest
-        const res = await fetch('/api/houses', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newHouse),
-          credentials: 'include'
-        });
+        // Use apiRequest for more consistent handling
+        const res = await apiRequest('POST', '/api/houses', newHouse);
         
-        console.log('Create house response status:', res.status);
-        
-        // For this approach, we'll use a different technique
-        // First check if the response is OK
-        if (!res.ok) {
-          const errorText = await res.text().catch(() => 'Unknown error');
-          throw new Error(errorText || `Failed to create house: ${res.status}`);
-        }
-        
-        // Clone the response to use it twice
-        const resClone = res.clone();
-        
-        // Get text for inspection
-        const responseText = await resClone.text().catch(() => '');
-        console.log('Create house response text (first 100 chars):', 
-          responseText.substring(0, 100) + (responseText.length > 100 ? '...' : ''));
-          
-        // Check if it's HTML (error case)
-        if (responseText.includes('<!DOCTYPE html>') || responseText.includes('<html')) {
-          console.error('Received HTML instead of JSON - using database verification strategy');
-          // Since we can't get the house ID (it's a creation), we'll refetch all houses
-          console.log('Falling back to fetching all houses');
-          
-          // Wait 500ms to ensure the server has processed the creation
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          // Loop up to 3 times with increasing delays to ensure we find the house
-          let attempts = 0;
-          const maxAttempts = 3;
-          const delays = [300, 500, 1000]; // Increasing delays in ms
-          
-          while (attempts < maxAttempts) {
-            try {
-              console.log(`Attempt ${attempts + 1} to find newly created house`);
-              
-              const fallbackResponse = await fetch('/api/houses', { 
-                credentials: 'include' 
-              });
-              
-              if (!fallbackResponse.ok) {
-                console.warn(`Attempt ${attempts + 1} failed with status: ${fallbackResponse.status}`);
-                attempts++;
-                if (attempts < maxAttempts) {
-                  await new Promise(resolve => setTimeout(resolve, delays[attempts - 1]));
-                  continue;
-                }
-                throw new Error('Failed to create house and fallback fetch also failed');
-              }
-              
-              // Get the newly created house from the list (should be the last one)
-              const houses = await fallbackResponse.json();
-              
-              // First try to find an exact match by name
-              const newlyCreatedHouse = houses.find((h: House) => h.name === newHouse.name);
-              
-              if (newlyCreatedHouse) {
-                console.log('Found newly created house by exact name match:', newlyCreatedHouse);
-                return newlyCreatedHouse;
-              }
-              
-              // If no exact match, try the last house in the list (most likely the newly created one)
-              if (houses.length > 0) {
-                const lastHouse = houses[houses.length - 1];
-                console.log('Using last house in list as fallback:', lastHouse);
-                return lastHouse;
-              }
-              
-              // If we still don't have a match, increment attempts and try again
-              attempts++;
-              if (attempts < maxAttempts) {
-                await new Promise(resolve => setTimeout(resolve, delays[attempts - 1]));
-              }
-            } catch (error) {
-              console.error(`Error during attempt ${attempts + 1}:`, error);
-              attempts++;
-              if (attempts < maxAttempts) {
-                await new Promise(resolve => setTimeout(resolve, delays[attempts - 1]));
-              }
-            }
-          }
-          
-          // If we exhaust all attempts, create a temporary house object
-          console.warn('Could not find newly created house after multiple attempts, using fallback');
-          return {
-            id: Date.now(), // Temporary ID 
-            ...newHouse,
-            points: 0,
-          };
-        }
-        
-        // Attempt to parse JSON
-        try {
-          const data = await res.json();
-          console.log('Parsed create house response:', data);
-          return data;
-        } catch (e) {
-          console.error('Error parsing JSON:', e);
-          
-          // If we can't parse JSON but got 201 status, create a fallback house object
-          return {
-            id: Date.now(), // Temporary ID
-            ...newHouse,
-            points: 0,
-          };
-        }
+        // Get parsed JSON response
+        const data = await res.json();
+        console.log('Parsed create house response:', data);
+        return data;
       } catch (err) {
         console.error('House creation error:', err);
         throw err;
       }
     },
-    onSuccess: () => {
+    onSuccess: (newHouse) => {
       toast({
         title: 'House created successfully',
         description: 'The new house has been added to the system.',
       });
       setIsAddDialogOpen(false);
       form.reset();
+      
+      // Force immediate UI updates
+      globalEventBus.publish('house-updated');
+      
       // Increment refresh counter to force a refetch
       setRefreshCounter(prev => prev + 1);
-      // Also invalidate the cache
+      
+      // Also invalidate the cache and wait for UI to update
       queryClient.invalidateQueries({ queryKey: ['/api/houses'] });
-      // Manually refetch to ensure UI is updated
-      setTimeout(() => refetch(), 100);
+      
+      // Force refetch with a small delay to ensure server consistency
+      setTimeout(() => {
+        refetch();
+        // Publish another update event after refetch completes
+        globalEventBus.publish('house-updated');
+      }, 100);
     },
     onError: (error: Error) => {
       toast({
@@ -242,99 +146,45 @@ export default function HouseManagement() {
   // Edit house mutation
   const updateHouseMutation = useMutation({
     mutationFn: async (updatedHouse: Partial<House> & { id: number }) => {
-      const { id, ...data } = updatedHouse;
+      const { id, ...houseData } = updatedHouse;
       try {
-        console.log('Updating house with data:', data);
+        console.log('Updating house with data:', houseData);
         
-        // Use direct fetch instead of apiRequest
-        const res = await fetch(`/api/houses/${id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-          credentials: 'include'
-        });
+        // Use apiRequest for more consistent handling
+        const res = await apiRequest('PATCH', `/api/houses/${id}`, houseData);
         
-        console.log('Update house response status:', res.status);
-        
-              // For this approach, we'll use a different technique
-        // First check if the response is OK
-        if (!res.ok) {
-          const errorText = await res.text().catch(() => 'Unknown error');
-          throw new Error(errorText || `Failed to update house: ${res.status}`);
-        }
-        
-        // Clone the response to use it twice (once for text inspection, once for JSON parsing)
-        const resClone = res.clone();
-        
-        // Get response text for debug
-        const responseText = await resClone.text().catch(() => '');
-        console.log('Update house response text (first 100 chars):', 
-          responseText.substring(0, 100) + (responseText.length > 100 ? '...' : ''));
-          
-        // If we detect it's HTML (common error case), activate our robust fallback strategy
-        if (responseText.includes('<!DOCTYPE html>') || responseText.includes('<html')) {
-          // This is an HTML response, not JSON - this happens because Vite middleware is intercepting our response
-          console.error('Received HTML instead of JSON - using database update & fetch strategy');
-          
-          // Because we got HTML, we know the update actually happened behind the scenes
-          // but we need to fetch the current state of the house to get the updated data
-          console.log(`Updating house in the database directly with: ${JSON.stringify(data)}`);
-          
-          // Give some time for database operation to complete
-          await new Promise(resolve => setTimeout(resolve, 300));
-          
-          // Now fetch house by ID to get the updated state
-          console.log('Fetching updated house');
-          const fallbackResponse = await fetch(`/api/houses/${id}`, {
-            credentials: 'include'
-          });
-          
-          if (!fallbackResponse.ok) {
-            throw new Error('Failed to update house and fallback fetch also failed');
-          }
-          
-          const house = await fallbackResponse.json();
-          console.log('Fetched updated house:', house);
-          return house;
-        }
-        
-        // Attempt to parse JSON
-        try {
-          // Work directly with the original response and get json
-          const data = await res.json();
-          console.log('Parsed update house response:', data);
-          
-          return data.house || data;
-        } catch (e) {
-          console.error('Error parsing JSON:', e);
-          
-          // If the update was successful (status 200) but we can't parse the response,
-          // we'll manually create an updated house object as fallback
-          const updatedHouse = {
-            id,
-            ...data,
-          };
-          console.log('Using fallback house object:', updatedHouse);
-          return updatedHouse;
-        }
+        // Get parsed JSON response
+        const responseData = await res.json();
+        console.log('Parsed update house response:', responseData);
+        return responseData.house || responseData;
       } catch (err) {
         console.error('House update error:', err);
         throw err;
       }
     },
-    onSuccess: () => {
+    onSuccess: (updatedHouse) => {
       toast({
         title: 'House updated successfully',
         description: 'The house information has been updated.',
       });
       setIsEditDialogOpen(false);
       editForm.reset();
+      
+      // Force immediate UI updates - fire event for other components
+      globalEventBus.publish('house-updated');
+      
       // Increment refresh counter to force a refetch
       setRefreshCounter(prev => prev + 1);
-      // Also invalidate the cache
+      
+      // Also invalidate the cache and wait for UI to update
       queryClient.invalidateQueries({ queryKey: ['/api/houses'] });
-      // Manually refetch to ensure UI is updated
-      refetch();
+      
+      // Force refetch with a small delay to ensure server consistency
+      setTimeout(() => {
+        refetch();
+        // Publish another update event after refetch completes
+        globalEventBus.publish('house-updated');
+      }, 100);
     },
     onError: (error: Error) => {
       toast({
@@ -351,74 +201,13 @@ export default function HouseManagement() {
       try {
         console.log('Deleting house with id:', id);
         
-        // Use direct fetch instead of apiRequest
-        const res = await fetch(`/api/houses/${id}`, {
-          method: 'DELETE',
-          credentials: 'include'
-        });
+        // Use apiRequest for more consistent handling
+        const res = await apiRequest('DELETE', `/api/houses/${id}`);
         
-        console.log('Delete house response status:', res.status);
-        
-        // For this approach, we'll use a different technique
-        // First check if the response is OK
-        if (!res.ok) {
-          const errorText = await res.text().catch(() => 'Unknown error');
-          throw new Error(errorText || `Failed to delete house: ${res.status}`);
-        }
-        
-        // Clone the response to use it twice
-        const resClone = res.clone();
-        
-        // Get text for inspection
-        const responseText = await resClone.text().catch(() => '');
-        console.log('Delete house response text (first 100 chars):', 
-          responseText.substring(0, 100) + (responseText.length > 100 ? '...' : ''));
-          
-        // Check if it's HTML (error case)
-        if (responseText.includes('<!DOCTYPE html>') || responseText.includes('<html')) {
-          console.error('Received HTML instead of JSON - using database check & verification strategy');
-          
-          // Because we got HTML, the deletion might have been processed but we're not sure
-          // Give some time for database operation to complete
-          await new Promise(resolve => setTimeout(resolve, 300));
-          
-          // Try to fetch the house to check if it was deleted/marked as deleted
-          try {
-            const fallbackResponse = await fetch(`/api/houses/${id}`, {
-              credentials: 'include'
-            });
-            
-            // If we get a 404, it's confirmed deleted
-            if (fallbackResponse.status === 404) {
-              return { success: true, message: 'House deleted successfully (confirmed)' };
-            }
-            
-            // If we can get the house, check if it was flagged as deleted
-            const house = await fallbackResponse.json();
-            if (house && house.name.includes('(Deleted)')) {
-              return { success: true, message: 'House marked as deleted' };
-            }
-            
-            // If we get here, the delete operation probably didn't complete properly
-            console.warn('House may not have been properly deleted:', house);
-            return { success: true, message: 'House deletion status unknown, please refresh the page' };
-          } catch (error) {
-            // If there's an error checking, we'll assume it was deleted anyway
-            console.warn('Error checking house deletion status:', error);
-            return { success: true, message: 'House deleted (unconfirmed)' };
-          }
-        }
-        
-        // Attempt to parse JSON
-        try {
-          const data = await res.json();
-          console.log('Parsed delete house response:', data);
-          return data;
-        } catch (e) {
-          console.error('Error parsing JSON:', e);
-          // For deletion, we'll assume success if we got a 200 status but can't parse JSON
-          return { success: true, message: 'House deleted' };
-        }
+        // Get parsed JSON response
+        const data = await res.json();
+        console.log('Parsed delete house response:', data);
+        return data;
       } catch (err) {
         console.error('House deletion error:', err);
         throw err;
@@ -429,12 +218,22 @@ export default function HouseManagement() {
         title: 'House deleted successfully',
         description: 'The house has been removed from the system.',
       });
+      
+      // Force immediate UI updates across all components
+      globalEventBus.publish('house-updated');
+      
       // Increment refresh counter to force a refetch
       setRefreshCounter(prev => prev + 1);
-      // Also invalidate the cache
+      
+      // Also invalidate the cache and wait for UI to update
       queryClient.invalidateQueries({ queryKey: ['/api/houses'] });
-      // Manually refetch to ensure UI is updated
-      setTimeout(() => refetch(), 100);
+      
+      // Force refetch with a small delay to ensure server consistency
+      setTimeout(() => {
+        refetch();
+        // Publish another update event after refetch completes
+        globalEventBus.publish('house-updated');
+      }, 100);
     },
     onError: (error: Error) => {
       toast({

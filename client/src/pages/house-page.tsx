@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useQuery } from '@tanstack/react-query';
 import { House, User } from '@shared/schema';
+import { globalEventBus } from '@/lib/queryClient';
 import { Loader2, ArrowLeft, Settings, Building, UserPlus, LineChart, Award } from 'lucide-react';
 import { useLocation, useRoute } from 'wouter';
 import Navbar from '@/components/layout/Navbar';
@@ -28,10 +29,26 @@ export default function HousePage() {
   const [refreshCounter, setRefreshCounter] = useState(0);
   
   // Get houses data with refresh counter to force refetch
-  const { data: houses, isLoading: isLoadingHouses, refetch } = useQuery<House[]>({
+  const { data: houses, isLoading: isLoadingHouses, refetch: houseRefetch } = useQuery<House[]>({
     queryKey: ['/api/houses', refreshCounter],
-    refetchInterval: 5000, // Refresh every 5 seconds to keep data in sync
+    refetchInterval: 2000, // Refresh every 2 seconds to keep data in sync
   });
+  
+  // Subscribe to house-updated events to refresh data immediately
+  useEffect(() => {
+    // Subscribe to house-updated events
+    const unsubscribe = globalEventBus.subscribe('house-updated', () => {
+      // Increment refresh counter to trigger a refetch
+      setRefreshCounter(prev => prev + 1);
+      // Also do an explicit refetch for immediate update
+      houseRefetch();
+    });
+    
+    // Clean up subscription on unmount
+    return () => {
+      unsubscribe();
+    };
+  }, [houseRefetch]);
 
   // If we're on the /houses path, show the Houses list page
   if (isHousesPath) {
@@ -322,17 +339,13 @@ export default function HousePage() {
                         
                         <div className="flex justify-between items-center">
                           <div className="text-sm text-gray-500">Students: <span className="font-semibold">24</span></div>
-                          <button className="px-3 py-1 rounded text-sm bg-gray-100 hover:bg-gray-200 text-gray-700">
-                            View Students
+                          <button className="px-3 py-1 rounded text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center gap-1">
+                            <UserPlus size={14} />
+                            <span>Assign Students</span>
                           </button>
                         </div>
                       </div>
                     ))}
-                    
-                    <button className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-primary hover:text-primary flex items-center justify-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                      Add New House
-                    </button>
                   </div>
                 </div>
               )}
@@ -343,45 +356,44 @@ export default function HousePage() {
                   <h2 className="text-2xl font-bold mb-6 text-gray-800">House Options</h2>
                   
                   <div className="space-y-4">
-                    <div className="p-4 border rounded-lg">
-                      <h3 className="font-semibold mb-2">Point Settings</h3>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Allow negative points</span>
-                        <div className="w-10 h-6 bg-gray-200 rounded-full relative cursor-pointer">
-                          <div className="w-4 h-4 bg-white rounded-full absolute top-1 left-1 shadow"></div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="p-4 border rounded-lg">
+                    <div className="border p-4 rounded-lg">
                       <h3 className="font-semibold mb-2">Display Settings</h3>
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-gray-600">Show house rankings</span>
-                        <div className="w-10 h-6 bg-primary rounded-full relative cursor-pointer">
-                          <div className="w-4 h-4 bg-white rounded-full absolute top-1 right-1 shadow"></div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="flex items-center">
+                          <input type="checkbox" id="showPoints" className="mr-2" />
+                          <label htmlFor="showPoints">Show points on public displays</label>
                         </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Show point totals</span>
-                        <div className="w-10 h-6 bg-primary rounded-full relative cursor-pointer">
-                          <div className="w-4 h-4 bg-white rounded-full absolute top-1 right-1 shadow"></div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="p-4 border rounded-lg">
-                      <h3 className="font-semibold mb-2">Notifications</h3>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Send weekly house points summary</span>
-                        <div className="w-10 h-6 bg-primary rounded-full relative cursor-pointer">
-                          <div className="w-4 h-4 bg-white rounded-full absolute top-1 right-1 shadow"></div>
+                        <div className="flex items-center">
+                          <input type="checkbox" id="showRankings" className="mr-2" />
+                          <label htmlFor="showRankings">Show house rankings</label>
                         </div>
                       </div>
                     </div>
                     
-                    <button className="w-full py-2 bg-primary text-white rounded-lg hover:bg-primary-dark">
-                      Save Changes
-                    </button>
+                    <div className="border p-4 rounded-lg">
+                      <h3 className="font-semibold mb-2">Point Settings</h3>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label>Points reset period:</label>
+                          <select className="border rounded p-1 w-48">
+                            <option>Never (Continuous)</option>
+                            <option>Weekly</option>
+                            <option>Monthly</option>
+                            <option>Termly</option>
+                            <option>Yearly</option>
+                          </select>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <label>Next reset date:</label>
+                          <input type="date" className="border rounded p-1 w-48" />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-end gap-2 mt-4">
+                      <Button variant="outline">Cancel</Button>
+                      <Button>Save Changes</Button>
+                    </div>
                   </div>
                 </div>
               )}
