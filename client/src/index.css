@@ -11,3 +11,24 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 }
+
+/* Custom button overrides for better contrast */
+.bg-primary {
+  @apply text-white;
+}
+
+.btn-primary, 
+button[class*="bg-primary"],
+[role="button"][class*="bg-primary"] {
+  @apply text-white !important;
+}
+
+/* Make text on buttons more visible */
+.button, button, [role="button"] {
+  @apply font-medium;
+}
+
+/* Reward card button */
+.bg-primary.bg-opacity-10 {
+  @apply text-primary font-semibold;
+}

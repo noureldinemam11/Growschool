@@ -27,7 +27,7 @@ const RewardCard: FC<RewardCardProps> = ({ reward, canAfford, onRedeem, availabl
       <CardContent>
         <p className="text-sm text-neutral-dark mb-3">{reward.description}</p>
         <div className="flex justify-between items-center">
-          <div className={`${canAfford ? 'bg-primary bg-opacity-10 text-primary' : 'bg-destructive bg-opacity-10 text-destructive'} text-sm px-2 py-1 rounded-full font-mono flex items-center`}>
+          <div className={`${canAfford ? 'bg-primary bg-opacity-10 text-primary font-semibold' : 'bg-destructive bg-opacity-10 text-destructive font-semibold'} text-sm px-3 py-1 rounded-full font-mono flex items-center`}>
             {reward.pointCost} points
             {!canAfford && (
               <TooltipProvider>
@@ -51,7 +51,7 @@ const RewardCard: FC<RewardCardProps> = ({ reward, canAfford, onRedeem, availabl
       </CardContent>
       <CardFooter className="pt-0">
         <Button 
-          className="w-full" 
+          className="w-full font-semibold text-white" 
           variant={canAfford && !isOutOfStock ? "default" : "outline"}
           disabled={!canAfford || isOutOfStock}
           onClick={onRedeem}
