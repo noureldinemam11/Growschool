@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { BehaviorCategory, InsertBehaviorPoint } from '@shared/schema';
-import { ChevronLeft, Plus, Calendar, Clock } from 'lucide-react';
+import { ChevronLeft, Plus, Check, Calendar, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { apiRequest } from '@/lib/queryClient';
@@ -44,16 +44,26 @@ interface PointOptionProps {
   points: number;
   description?: string;
   onClick: () => void;
+  isSelected: boolean;
+  categoryId: number;
 }
 
-function PointOption({ icon, title, points, description, onClick }: PointOptionProps) {
+function PointOption({ icon, title, points, description, onClick, isSelected, categoryId }: PointOptionProps) {
   return (
     <div className="flex flex-col items-center">
       <button 
-        className="w-16 h-16 rounded-full bg-white border-2 border-green-500 text-green-500 flex items-center justify-center hover:bg-green-50 transition-colors focus:outline-none focus:ring-2 focus:ring-green-300"
+        className={`w-16 h-16 rounded-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-green-300 ${
+          isSelected 
+            ? "bg-green-500 text-white" 
+            : "bg-white border-2 border-green-500 text-green-500 hover:bg-green-50"
+        }`}
         onClick={onClick}
       >
-        <Plus size={24} />
+        {isSelected ? (
+          <Check size={24} />
+        ) : (
+          <Plus size={24} />
+        )}
       </button>
       <div className="text-center mt-2">
         <div className="text-sm font-medium">{title}</div>
@@ -80,6 +90,7 @@ export default function BehaviorCategoriesView({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedCategoryGroups, setSelectedCategoryGroups] = useState<{[key: string]: boolean}>({});
+  const [selectedCategories, setSelectedCategories] = useState<{[key: number]: any}>({});
   
   // Fetch behavior categories
   const { data: categories, isLoading } = useQuery<BehaviorCategory[]>({
@@ -138,20 +149,39 @@ export default function BehaviorCategoriesView({
     });
   };
 
-  // Mutation for adding behavior points
+  // Calculate total points from selected categories
+  const totalPoints = Object.values(selectedCategories).reduce((sum, category) => {
+    const pointsValue = category.points || category.pointValue || 0;
+    return sum + pointsValue;
+  }, 0);
+
+  // Toggle a category in the selection
+  const toggleCategorySelection = (category: any) => {
+    const categoryId = category.id;
+    
+    if (selectedCategories[categoryId]) {
+      // If already selected, remove it
+      const newSelectedCategories = { ...selectedCategories };
+      delete newSelectedCategories[categoryId];
+      setSelectedCategories(newSelectedCategories);
+    } else {
+      // If not selected, add it
+      setSelectedCategories({
+        ...selectedCategories,
+        [categoryId]: category
+      });
+    }
+  };
+
+  // Mutations for adding behavior points (one by one)
   const addPointsMutation = useMutation({
     mutationFn: async (data: InsertBehaviorPoint) => {
       const res = await apiRequest('POST', '/api/behavior-points', data);
       return res.json();
     },
     onSuccess: () => {
-      toast({
-        title: "Points Added",
-        description: "The behavior points have been added successfully.",
-      });
       queryClient.invalidateQueries({ queryKey: ['/api/behavior-points'] });
       queryClient.invalidateQueries({ queryKey: ['/api/houses'] }); // Invalidate house points data
-      onComplete(); // Move back to student selection view
     },
     onError: (error) => {
       toast({
@@ -162,28 +192,61 @@ export default function BehaviorCategoriesView({
     }
   });
 
-  const handlePointOptionClick = (category: any) => {
-    // For the actual points value, use either the points from demo data or pointValue from real data
-    const pointsValue = category.points || category.pointValue || 1;
+  // Handle submitting all selected categories
+  const handleSubmitAll = () => {
+    if (Object.keys(selectedCategories).length === 0) {
+      toast({
+        title: "No Categories Selected",
+        description: "Please select at least one category to award points.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    // Add points for the selected student and category
-    addPointsMutation.mutate({
-      studentId,
-      categoryId: category.id,
-      points: pointsValue,
-      // If the user is not authenticated as teacher or admin, this will be handled server-side
-      teacherId: user?.id || 1, // Default to first teacher if none specified
-      notes: `${category.name} - ${pointsValue} points`,
+    // Submit all selected categories
+    const promises = Object.values(selectedCategories).map(category => {
+      const pointsValue = category.points || category.pointValue || 1;
+      
+      return addPointsMutation.mutateAsync({
+        studentId,
+        categoryId: category.id,
+        points: pointsValue,
+        teacherId: user?.id || 1,
+        notes: `${category.name} - ${pointsValue} points`,
+      });
     });
+
+    // Wait for all mutations to complete
+    Promise.all(promises)
+      .then(() => {
+        toast({
+          title: "Points Added",
+          description: `Successfully added ${totalPoints} points across ${Object.keys(selectedCategories).length} categories.`,
+        });
+        onComplete(); // Move back to student selection view
+      })
+      .catch(error => {
+        toast({
+          title: "Error",
+          description: "Some points could not be added. Please try again.",
+          variant: "destructive",
+        });
+      });
   };
 
   return (
-    <div className="py-4">
+    <div className="py-4 pb-20">
       {/* Student name header */}
-      <div className="mb-6 flex items-center">
+      <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-medium text-neutral-darker">
           {studentName}
         </h2>
+        
+        {totalPoints > 0 && (
+          <div className="text-green-600 font-medium">
+            Selected: {totalPoints} points
+          </div>
+        )}
       </div>
 
       {/* Category groups */}
@@ -197,9 +260,11 @@ export default function BehaviorCategoriesView({
           {categories.map((category: any) => (
             <PointOption 
               key={category.id}
+              categoryId={category.id}
               title={category.name}
               points={category.points}
-              onClick={() => handlePointOptionClick(category)}
+              isSelected={!!selectedCategories[category.id]}
+              onClick={() => toggleCategorySelection(category)}
             />
           ))}
         </BehaviorCategoryGroup>
@@ -218,11 +283,16 @@ export default function BehaviorCategoriesView({
           </Button>
           
           <Button 
-            variant="ghost" 
+            variant={totalPoints > 0 ? "default" : "ghost"}
             className="rounded-r-full flex items-center justify-center"
-            onClick={onComplete}
+            onClick={handleSubmitAll}
+            disabled={totalPoints === 0}
           >
-            <span className="text-sm">Submit</span>
+            <span className="text-sm">
+              {totalPoints > 0 
+                ? `Submit (${totalPoints} points)` 
+                : "Submit"}
+            </span>
           </Button>
         </div>
       </div>
