@@ -245,8 +245,15 @@ export default function RosterManagement() {
   // Mutation for deleting a student
   const deleteStudentMutation = useMutation({
     mutationFn: async (studentId: number) => {
-      const response = await apiRequest('DELETE', `/api/users/${studentId}`);
-      return await response.json();
+      try {
+        console.log(`Deleting student with ID: ${studentId}`);
+        // The apiRequest already throws if there's an error
+        const response = await apiRequest('DELETE', `/api/users/${studentId}`);
+        return await response.json();
+      } catch (error) {
+        console.error("Error in delete mutation:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({
