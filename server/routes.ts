@@ -79,19 +79,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Directly execute SQL update for debugging
       try {
-        // Create direct query to the database
-        const queryResult = await pool.query(
-          `UPDATE houses SET name = $1, color = $2, description = $3, logo_url = $4 WHERE id = $5 RETURNING *`,
-          [
-            req.body.name || house.name,
-            req.body.color || house.color,
-            req.body.description || house.description,
-            req.body.logoUrl || house.logoUrl,
-            houseId
-          ]
-        );
+        // Create direct query to the database with a fresh connection
+        const connection = await pool.connect();
+        let queryResult;
+        try {
+          await connection.query('BEGIN');
+          queryResult = await connection.query(
+            `UPDATE houses SET name = $1, color = $2, description = $3, logo_url = $4 WHERE id = $5 RETURNING *`,
+            [
+              req.body.name || house.name,
+              req.body.color || house.color,
+              req.body.description || house.description,
+              req.body.logoUrl || house.logoUrl,
+              houseId
+            ]
+          );
+          await connection.query('COMMIT');
+          console.log(`[DEBUG] Manual transaction committed successfully`);
+        } catch (txError) {
+          await connection.query('ROLLBACK');
+          console.error(`[DEBUG] Manual transaction rolled back due to error:`, txError);
+          throw txError;
+        } finally {
+          connection.release();
+        }
         
-        console.log(`[DEBUG] Direct SQL update result:`, queryResult.rows[0]);
+        console.log(`[DEBUG] Direct SQL update result:`, queryResult?.rows?.[0]);
         
         // Still try the ORM method for comparison
         const updatedHouse = await storage.updateHouse(houseId, req.body);
@@ -147,12 +160,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Now we have a proper deleteHouse method, so let's use it
-      const deleted = await storage.deleteHouse(houseId);
+      // Use a direct transaction for more control
+      const connection = await pool.connect();
+      let deleteResult;
       
-      if (!deleted) {
+      try {
+        await connection.query('BEGIN');
+        deleteResult = await connection.query(
+          'DELETE FROM houses WHERE id = $1 RETURNING *',
+          [houseId]
+        );
+        await connection.query('COMMIT');
+        console.log(`[DEBUG] House delete transaction committed successfully`);
+      } catch (txError) {
+        await connection.query('ROLLBACK');
+        console.error(`[DEBUG] House delete transaction rolled back due to error:`, txError);
+        throw txError;
+      } finally {
+        connection.release();
+      }
+      
+      if (!deleteResult?.rows?.length) {
         return res.status(500).json({ error: "Failed to delete house" });
       }
+      
+      console.log(`[DEBUG] House deleted successfully:`, deleteResult.rows[0]);
       
       res.status(200)
         .header('Content-Type', 'application/json')
