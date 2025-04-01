@@ -8,6 +8,7 @@ import UserManagement from '@/components/admin/UserManagement';
 import BehaviorCategoryManagement from '@/components/admin/BehaviorCategoryManagement';
 import RewardManagement from '@/components/admin/RewardManagement';
 import HouseManagement from '@/components/admin/HouseManagement';
+import RosterManagement from '@/components/admin/RosterManagement';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -40,6 +41,7 @@ export default function AdminPage() {
               <TabsList>
                 <TabsTrigger value="overview" className="mr-4">Overview</TabsTrigger>
                 <TabsTrigger value="users" className="mr-4">User Management</TabsTrigger>
+                <TabsTrigger value="students" className="mr-4">Student Roster</TabsTrigger>
                 <TabsTrigger value="behavior" className="mr-4">Behavior Categories</TabsTrigger>
                 <TabsTrigger value="rewards" className="mr-4">Rewards</TabsTrigger>
                 <TabsTrigger value="houses" className="mr-4">Houses</TabsTrigger>
@@ -117,6 +119,10 @@ export default function AdminPage() {
               
               <TabsContent value="users">
                 <UserManagement />
+              </TabsContent>
+
+              <TabsContent value="students">
+                <RosterManagement />
               </TabsContent>
               
               <TabsContent value="behavior">

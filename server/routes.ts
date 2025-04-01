@@ -670,6 +670,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bulk import students
+  app.post("/api/users/bulk-import", async (req, res) => {
+    if (!req.isAuthenticated() || !["admin", "teacher"].includes(req.user.role)) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const { students } = req.body;
+      if (!Array.isArray(students) || students.length === 0) {
+        return res.status(400).json({ error: "No students provided for import" });
+      }
+
+      const results = [];
+      const errors = [];
+
+      for (const studentData of students) {
+        try {
+          // Generate a username but student accounts won't use it for login
+          // This is just to satisfy database requirements
+          const username = `${studentData.firstName.toLowerCase().replace(/\s+/g, '')}${studentData.lastName.toLowerCase().replace(/\s+/g, '')}`;
+          
+          // Create user with role explicitly set to student
+          const userData = {
+            ...studentData,
+            username,
+            password: 'no-login-required', // Students won't log in
+            role: 'student'
+          };
+
+          const student = await storage.createUser(userData);
+          results.push(student);
+        } catch (err) {
+          console.error(`Error importing student: ${JSON.stringify(studentData)}`, err);
+          errors.push({
+            student: `${studentData.firstName} ${studentData.lastName}`,
+            error: err instanceof Error ? err.message : 'Unknown error'
+          });
+        }
+      }
+
+      // If some students were successfully imported but others failed
+      if (results.length > 0 && errors.length > 0) {
+        return res.status(207).json({ 
+          success: true, 
+          message: `Imported ${results.length} students with ${errors.length} errors`,
+          students: results,
+          errors
+        });
+      }
+      
+      // If all students were successfully imported
+      if (results.length > 0) {
+        return res.status(201).json({ 
+          success: true, 
+          message: `Successfully imported ${results.length} students`,
+          students: results
+        });
+      }
+      
+      // If all imports failed
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Failed to import any students',
+        errors
+      });
+    } catch (error) {
+      console.error("Error bulk importing students:", error);
+      res.status(500).json({ 
+        error: "Failed to import students",
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
