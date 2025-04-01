@@ -7,6 +7,7 @@ import MobileNavbar from '@/components/layout/MobileNavbar';
 import RewardCard from '@/components/rewards/RewardCard';
 import { Dialog } from '@/components/ui/dialog';
 import RedeemRewardModal from '@/components/modals/RedeemRewardModal';
+import AdminRedeemRewardModal from '@/components/modals/AdminRedeemRewardModal';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -218,6 +219,44 @@ export default function RewardsPage() {
                     </CardContent>
                   </Card>
                 )}
+                
+                {(user?.role === 'admin' || user?.role === 'teacher') && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Redeem Rewards for Students</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-neutral-dark mb-4">
+                        Select a reward below to redeem it on behalf of a student. This will automatically approve the reward.
+                      </p>
+                      
+                      {isLoadingRewards ? (
+                        <div className="flex items-center justify-center h-32">
+                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                        </div>
+                      ) : rewards && rewards.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                          {rewards.map(reward => (
+                            <div key={reward.id} className="border rounded-md p-4 hover:border-primary hover:shadow-sm transition-all cursor-pointer" onClick={() => setRedeemReward(reward)}>
+                              <h3 className="font-semibold text-neutral-darker">{reward.name}</h3>
+                              <p className="text-sm text-neutral-dark mb-2 line-clamp-2">{reward.description}</p>
+                              <div className="flex justify-between items-center mt-3">
+                                <span className="text-xs font-mono font-bold bg-primary text-white px-3 py-1 rounded-md shadow-sm">
+                                  {reward.pointCost} points
+                                </span>
+                                <span className="text-xs font-medium bg-gray-100 px-2 py-1 rounded text-gray-700">
+                                  {reward.quantity} remaining
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-neutral-dark">No rewards available at this time.</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             )}
           </div>
@@ -229,11 +268,18 @@ export default function RewardsPage() {
       {/* Redemption Modal */}
       <Dialog open={redeemReward !== null} onOpenChange={(open) => !open && setRedeemReward(null)}>
         {redeemReward && (
-          <RedeemRewardModal 
-            reward={redeemReward} 
-            availablePoints={totalPoints}
-            onClose={() => setRedeemReward(null)} 
-          />
+          user?.role === "student" ? (
+            <RedeemRewardModal 
+              reward={redeemReward} 
+              availablePoints={totalPoints}
+              onClose={() => setRedeemReward(null)} 
+            />
+          ) : (
+            <AdminRedeemRewardModal 
+              reward={redeemReward}
+              onClose={() => setRedeemReward(null)} 
+            />
+          )
         )}
       </Dialog>
     </div>

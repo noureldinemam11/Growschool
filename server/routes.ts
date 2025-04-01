@@ -242,6 +242,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to redeem reward" });
     }
   });
+  
+  // Endpoint for teachers/admins to redeem rewards on behalf of students
+  app.post("/api/rewards/redeem-for-student", async (req, res) => {
+    if (!req.isAuthenticated() || !["admin", "teacher"].includes(req.user.role)) {
+      return res.status(403).json({ error: "Only admins and teachers can redeem rewards for students" });
+    }
+
+    try {
+      // Validate the request data
+      const redeemSchema = z.object({
+        rewardId: z.number(),
+        studentId: z.number(),
+        awardedById: z.number()
+      });
+      
+      const validatedData = redeemSchema.parse(req.body);
+      
+      // Check if student exists
+      const student = await storage.getUser(validatedData.studentId);
+      if (!student || student.role !== "student") {
+        return res.status(404).json({ error: "Student not found" });
+      }
+      
+      // Check if student has enough points
+      const studentPoints = await storage.getBehaviorPointsByStudentId(validatedData.studentId);
+      const totalPoints = studentPoints.reduce((sum, point) => sum + point.points, 0);
+      
+      // Get all redemptions
+      const redemptions = await storage.getRewardRedemptionsByStudentId(validatedData.studentId);
+      const spentPoints = redemptions.reduce((sum, redemption) => sum + redemption.pointsSpent, 0);
+      
+      // Calculate balance
+      const balance = totalPoints - spentPoints;
+      
+      const reward = await storage.getReward(validatedData.rewardId);
+      if (!reward) {
+        return res.status(404).json({ error: "Reward not found" });
+      }
+      
+      if (balance < reward.pointCost) {
+        return res.status(400).json({ error: "Student does not have enough points to redeem this reward" });
+      }
+      
+      if (reward.quantity <= 0) {
+        return res.status(400).json({ error: "This reward is out of stock" });
+      }
+      
+      // Create redemption record with approved status
+      // We need to typecast here since the insertRewardRedemptionSchema doesn't include status
+      const redemptionData = {
+        rewardId: validatedData.rewardId,
+        studentId: validatedData.studentId, 
+        pointsSpent: reward.pointCost
+      };
+      
+      // First create the redemption
+      const redemption = await storage.createRewardRedemption(redemptionData);
+      
+      // Then update its status to approved (this would be typically handled by admin approval)
+      await storage.updateRewardRedemptionStatus(redemption.id, "approved");
+      
+      res.status(201).json(redemption);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Failed to redeem reward for student" });
+    }
+  });
 
   app.get("/api/rewards/redemptions/student/:studentId", async (req, res) => {
     try {
