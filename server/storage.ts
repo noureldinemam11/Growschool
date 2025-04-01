@@ -26,6 +26,7 @@ export interface IStorage {
   getHouseByName(name: string): Promise<House | undefined>;
   createHouse(house: InsertHouse): Promise<House>;
   updateHouse(id: number, house: Partial<House>): Promise<House | undefined>;
+  deleteHouse(id: number): Promise<boolean>;
   getAllHouses(): Promise<House[]>;
   updateHousePoints(id: number, points: number): Promise<House | undefined>;
   
@@ -224,6 +225,11 @@ export class MemStorage implements IStorage {
     const updatedHouse = { ...house, ...houseUpdate };
     this.houses.set(id, updatedHouse);
     return updatedHouse;
+  }
+  
+  async deleteHouse(id: number): Promise<boolean> {
+    if (!this.houses.has(id)) return false;
+    return this.houses.delete(id);
   }
 
   async getAllHouses(): Promise<House[]> {
@@ -557,6 +563,18 @@ export class DatabaseStorage implements IStorage {
   async getAllHouses(): Promise<House[]> {
     const result = await db.select().from(houses);
     return result as House[];
+  }
+  
+  async deleteHouse(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(houses)
+        .where(eq(houses.id, id))
+        .returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error in deleteHouse:", error);
+      return false;
+    }
   }
   
   async updateHousePoints(id: number, points: number): Promise<House | undefined> {

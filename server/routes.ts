@@ -5,6 +5,7 @@ import path from "path";
 import { setupAuth } from "./auth";
 import { setupExcelImport } from "./excel-import";
 import { storage } from "./storage";
+import { pool } from "./db";
 import { insertBehaviorPointSchema, insertRewardRedemptionSchema, userRoles } from "@shared/schema";
 import { z } from "zod";
 import { fileURLToPath } from "url";
@@ -67,25 +68,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const houseId = Number(req.params.id);
+      console.log(`[DEBUG] PATCH /api/houses/${houseId} received with body:`, req.body);
+      
       const house = await storage.getHouse(houseId);
+      console.log(`[DEBUG] Current house state:`, house);
       
       if (!house) {
         return res.status(404).json({ error: "House not found" });
       }
       
-      const updatedHouse = await storage.updateHouse(houseId, req.body);
-      if (!updatedHouse) {
-        return res.status(500).json({ error: "Failed to update house" });
+      // Directly execute SQL update for debugging
+      try {
+        // Create direct query to the database
+        const queryResult = await pool.query(
+          `UPDATE houses SET name = $1, color = $2, description = $3, logo_url = $4 WHERE id = $5 RETURNING *`,
+          [
+            req.body.name || house.name,
+            req.body.color || house.color,
+            req.body.description || house.description,
+            req.body.logoUrl || house.logoUrl,
+            houseId
+          ]
+        );
+        
+        console.log(`[DEBUG] Direct SQL update result:`, queryResult.rows[0]);
+        
+        // Still try the ORM method for comparison
+        const updatedHouse = await storage.updateHouse(houseId, req.body);
+        console.log(`[DEBUG] ORM update result:`, updatedHouse);
+        
+        if (!updatedHouse) {
+          return res.status(500).json({ error: "Failed to update house" });
+        }
+        
+        // Fetch the house again to verify update
+        const verifiedHouse = await storage.getHouse(houseId);
+        console.log(`[DEBUG] Verified house state after update:`, verifiedHouse);
+        
+        // Ensure we're returning a valid JSON response with explicit content type
+        return res
+          .status(200)
+          .header('Content-Type', 'application/json')
+          .json({ 
+            success: true,
+            house: verifiedHouse || updatedHouse 
+          });
+      } catch (sqlError) {
+        console.error("SQL update error:", sqlError);
+        throw sqlError; // Re-throw to be caught by the outer catch block
       }
-      
-      // Ensure we're returning a valid JSON response with explicit content type
-      return res
-        .status(200)
-        .header('Content-Type', 'application/json')
-        .json({ 
-          success: true,
-          house: updatedHouse 
-        });
     } catch (error) {
       console.error("Error updating house:", error);
       return res.status(500).json({ 
@@ -116,9 +147,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Since we're missing a deleteHouse method, we'll just update the house name to indicate deletion
-      // In a real app, you'd have a proper delete method
-      await storage.updateHouse(houseId, { name: `${house.name} (Deleted)`, description: "This house has been deleted." });
+      // Now we have a proper deleteHouse method, so let's use it
+      const deleted = await storage.deleteHouse(houseId);
+      
+      if (!deleted) {
+        return res.status(500).json({ error: "Failed to delete house" });
+      }
       
       res.status(200)
         .header('Content-Type', 'application/json')

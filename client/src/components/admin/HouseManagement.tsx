@@ -158,7 +158,7 @@ export default function HouseManagement() {
               const houses = await fallbackResponse.json();
               
               // First try to find an exact match by name
-              const newlyCreatedHouse = houses.find(h => h.name === newHouse.name);
+              const newlyCreatedHouse = houses.find((h: House) => h.name === newHouse.name);
               
               if (newlyCreatedHouse) {
                 console.log('Found newly created house by exact name match:', newlyCreatedHouse);
