@@ -528,47 +528,94 @@ export class DatabaseStorage implements IStorage {
   
   async deleteUser(id: number, forceDelete: boolean = false): Promise<boolean> {
     try {
-      // Always remove related records first (forceDelete is always true per requirements)
+      console.log(`Starting user deletion process for user ID: ${id}`);
+      
+      // Check if user exists before attempting deletion
+      const userExists = await this.getUser(id);
+      if (!userExists) {
+        console.error(`User ID ${id} not found. Cannot delete non-existent user.`);
+        return false;
+      }
+      
+      console.log(`User exists: ${JSON.stringify(userExists)}`);
+      
       // Start a transaction to ensure data consistency
       const client = await pool.connect();
+      console.log(`Database client acquired for user ${id} deletion`);
       
       try {
         await client.query('BEGIN');
+        console.log(`Transaction started for user ${id} deletion`);
+        
+        // First check if user has any associated behavior points
+        const bpCheck = await client.query(
+          'SELECT COUNT(*) FROM behavior_points WHERE student_id = $1',
+          [id]
+        );
+        const bpCount = parseInt(bpCheck.rows[0].count);
+        console.log(`Found ${bpCount} behavior points for student ${id}`);
         
         // Delete behavior points for this student
-        console.log(`Deleting behavior points for student ${id}`);
-        await client.query(
-          'DELETE FROM behavior_points WHERE student_id = $1',
+        if (bpCount > 0) {
+          console.log(`Deleting ${bpCount} behavior points for student ${id}`);
+          const bpResult = await client.query(
+            'DELETE FROM behavior_points WHERE student_id = $1',
+            [id]
+          );
+          console.log(`Deleted ${bpResult.rowCount} behavior points for student ${id}`);
+        }
+        
+        // Check if user has any associated reward redemptions
+        const rrCheck = await client.query(
+          'SELECT COUNT(*) FROM reward_redemptions WHERE student_id = $1',
           [id]
         );
+        const rrCount = parseInt(rrCheck.rows[0].count);
+        console.log(`Found ${rrCount} reward redemptions for student ${id}`);
         
         // Delete reward redemptions for this student
-        console.log(`Deleting reward redemptions for student ${id}`);
-        await client.query(
-          'DELETE FROM reward_redemptions WHERE student_id = $1',
-          [id]
-        );
+        if (rrCount > 0) {
+          console.log(`Deleting ${rrCount} reward redemptions for student ${id}`);
+          const rrResult = await client.query(
+            'DELETE FROM reward_redemptions WHERE student_id = $1',
+            [id]
+          );
+          console.log(`Deleted ${rrResult.rowCount} reward redemptions for student ${id}`);
+        }
         
-        // Delete the user
-        console.log(`Deleting user ${id}`);
+        // Finally delete the user
+        console.log(`Now deleting user ${id}`);
         const deleteResult = await client.query(
-          'DELETE FROM users WHERE id = $1 RETURNING *',
+          'DELETE FROM users WHERE id = $1 RETURNING id',
           [id]
         );
+        console.log(`User delete result: ${JSON.stringify(deleteResult.rows)}`);
         
+        // Check if we actually deleted anything
+        if (deleteResult.rowCount === 0 || deleteResult.rowCount === null) {
+          console.error(`Failed to delete user ${id} - no rows affected`);
+          throw new Error(`Failed to delete user ${id}`);
+        }
+        
+        // Commit the transaction
         await client.query('COMMIT');
-        console.log(`Successfully deleted user ${id} with all associated records`);
+        console.log(`Transaction committed - successfully deleted user ${id} with all associated records`);
         
-        return deleteResult.rows.length > 0;
-      } catch (txError) {
+        return true;
+      } catch (txError: any) {
+        // Roll back in case of any errors
+        console.error(`Error during transaction, rolling back: ${txError.message || 'Unknown error'}`);
+        if (txError.stack) console.error(txError.stack);
         await client.query('ROLLBACK');
-        console.error("Transaction error in deleting user:", txError);
         throw txError;
       } finally {
+        // Always release the client back to the pool
         client.release();
+        console.log(`Database client released for user ${id} deletion`);
       }
-    } catch (error) {
-      console.error("Error in deleteUser:", error);
+    } catch (error: any) {
+      console.error(`Error in deleteUser for user ID ${id}:`, error);
+      if (error?.stack) console.error(error.stack);
       return false;
     }
   }
