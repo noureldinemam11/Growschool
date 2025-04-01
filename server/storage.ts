@@ -151,7 +151,7 @@ export class MemStorage implements IStorage {
       password: String(insertUser.password),
       firstName: String(insertUser.firstName),
       lastName: String(insertUser.lastName),
-      role: insertUser.role as UserRole,
+      role: String(insertUser.role) as UserRole,
       email: String(insertUser.email),
       gradeLevel: insertUser.gradeLevel ? String(insertUser.gradeLevel) : null,
       section: insertUser.section ? String(insertUser.section) : null,

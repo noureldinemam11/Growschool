@@ -282,8 +282,7 @@ export default function ReportsPage() {
                                     {student.gradeLevel}{student.section}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-darker">
-                                    {student.houseId !== null && <StudentHouse houseId={student.houseId} />}
-                                    {student.houseId === null && <span>-</span>}
+                                    {student.houseId ? <StudentHouse houseId={student.houseId} /> : <span>-</span>}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm font-mono font-semibold text-primary">
                                     {student.id && <StudentPoints studentId={student.id} />}

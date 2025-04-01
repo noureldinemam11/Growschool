@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { BehaviorPoint, BehaviorCategory } from '@shared/schema';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
@@ -7,37 +7,32 @@ interface PointsDistributionChartProps {
   points: BehaviorPoint[];
 }
 
-// We'd normally fetch these from the API
-const CATEGORY_COLORS: Record<number, string> = {
-  1: '#3949AB', // Academic Excellence
-  2: '#4CAF50', // Helping Others
-  3: '#FFA726', // Teamwork
-  4: '#9C27B0', // Leadership
-  5: '#F44336', // Classroom Disruption
-  6: '#FF9800', // Late Assignment
-  7: '#FFEB3B'  // Tardiness
-};
-
+// Static colors for different categories
 const DEFAULT_COLORS = [
   '#3949AB', '#4CAF50', '#FFA726', '#9C27B0', 
   '#F44336', '#FF9800', '#FFEB3B', '#607D8B'
 ];
 
-const PointsDistributionChart: FC<PointsDistributionChartProps> = ({ points }) => {
-  const [chartData, setChartData] = useState<any[]>([]);
-  
+// Component with useMemo instead of useState + useEffect to prevent infinite renders
+const PointsDistributionChart = ({ points }: PointsDistributionChartProps) => {
   // Fetch behavior categories
   const { data: categories } = useQuery<BehaviorCategory[]>({
     queryKey: ['/api/behavior-categories'],
   });
   
-  // Create a lookup map for category names
-  const categoryNames = categories?.reduce<Record<number, string>>((acc, category) => {
-    acc[category.id] = category.name;
-    return acc;
-  }, {}) || {};
-  
-  useEffect(() => {
+  // Compute chart data with useMemo to avoid unnecessary re-renders
+  const chartData = useMemo(() => {
+    if (!points?.length || !categories?.length) return [];
+    
+    // Create a lookup map for category names
+    const categoryNames: Record<number, string> = {};
+    const categoryColors: Record<number, string> = {};
+    
+    categories.forEach((category, index) => {
+      categoryNames[category.id] = category.name;
+      categoryColors[category.id] = DEFAULT_COLORS[index % DEFAULT_COLORS.length];
+    });
+    
     // Group points by category
     const categoryData: Record<number, { categoryId: number; total: number }> = {};
     
@@ -54,16 +49,22 @@ const PointsDistributionChart: FC<PointsDistributionChartProps> = ({ points }) =
     });
     
     // Convert to chart format and sort by total
-    const data = Object.values(categoryData)
+    return Object.values(categoryData)
       .sort((a, b) => b.total - a.total)
       .map((item, index) => ({
         ...item,
         name: categoryNames[item.categoryId] || `Category ${item.categoryId}`,
-        color: CATEGORY_COLORS[item.categoryId] || DEFAULT_COLORS[index % DEFAULT_COLORS.length]
+        color: categoryColors[item.categoryId] || DEFAULT_COLORS[index % DEFAULT_COLORS.length]
       }));
-    
-    setChartData(data);
-  }, [points, categoryNames]);
+  }, [points, categories]);
+  
+  if (!chartData.length) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-gray-500">No data available for chart</p>
+      </div>
+    );
+  }
   
   return (
     <ResponsiveContainer width="100%" height="100%">
