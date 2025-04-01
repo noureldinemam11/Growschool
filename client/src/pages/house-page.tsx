@@ -175,25 +175,16 @@ export default function HousePage() {
   // For other house-related routes, show the original layout
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Top Navigation Bar */}
-      <header className="bg-primary text-white py-3 px-4">
-        <div className="container mx-auto flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <button 
-              onClick={() => setLocation('/houses')}
-              className="p-2 hover:bg-primary-dark rounded-md"
-            >
-              <ArrowLeft size={20} />
-            </button>
-            <div className="font-bold text-lg">House Points</div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <button className="p-2 rounded-md hover:bg-primary-dark text-white/90 hover:text-white">
-              <Settings size={20} />
-            </button>
-          </div>
-        </div>
-      </header>
+      {/* Header is now provided globally in App.tsx */}
+      <div className="pt-2 px-4">
+        <button 
+          onClick={() => setLocation('/houses')}
+          className="p-2 hover:bg-gray-100 rounded-md flex items-center text-gray-700"
+        >
+          <ArrowLeft size={20} className="mr-1" />
+          <span>Back to Houses</span>
+        </button>
+      </div>
 
       {/* Main Content */}
       <main className="flex-1 bg-slate-50 p-6">

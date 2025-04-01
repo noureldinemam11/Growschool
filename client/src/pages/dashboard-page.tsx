@@ -32,26 +32,7 @@ export default function DashboardPage() {
   
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Top Navigation Bar */}
-      <header className="bg-primary text-white py-3 px-4">
-        <div className="container mx-auto flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <Phone className="h-8 w-8" />
-            <div>
-              <div className="text-xs text-white/70">Welcome</div>
-              <div className="font-bold">{schoolName}</div>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <button className="p-2 rounded-md hover:bg-primary-dark text-white/90 hover:text-white">
-              <HelpCircle size={20} />
-            </button>
-            <button className="p-2 rounded-md hover:bg-primary-dark text-white/90 hover:text-white">
-              <UserIcon size={20} />
-            </button>
-          </div>
-        </div>
-      </header>
+      {/* Header is now provided globally in App.tsx */}
       
       {/* Main Content */}
       <main className="flex-1 bg-slate-50 p-6">
