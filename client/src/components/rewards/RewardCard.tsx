@@ -58,11 +58,7 @@ const RewardCard: FC<RewardCardProps> = ({ reward, canAfford, onRedeem, availabl
       </CardContent>
       <CardFooter className="pt-0">
         <Button 
-          className={`
-            w-full font-semibold 
-            ${canAfford && !isOutOfStock ? "text-white" : ""}
-            ${!canAfford && !isOutOfStock ? "text-red-600 border-red-300 bg-red-50 hover:bg-red-100 hover:text-red-700" : ""}
-          `}
+          className="w-full font-semibold text-white"
           variant={canAfford && !isOutOfStock ? "default" : "outline"}
           disabled={isOutOfStock}
           onClick={canAfford ? onRedeem : undefined}
