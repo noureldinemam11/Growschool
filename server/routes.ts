@@ -301,14 +301,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const redemption = await storage.createRewardRedemption(redemptionData);
       
       // Then update its status to approved (this would be typically handled by admin approval)
-      await storage.updateRewardRedemptionStatus(redemption.id, "approved");
+      const updatedRedemption = await storage.updateRewardRedemptionStatus(redemption.id, "approved");
       
-      res.status(201).json(redemption);
+      // Update the reward quantity
+      await storage.updateReward(reward.id, { 
+        quantity: reward.quantity - 1 
+      });
+      
+      // Ensure we're returning a valid JSON response with proper format
+      return res.status(201).json({ 
+        success: true,
+        redemption: updatedRedemption || redemption
+      });
     } catch (error) {
+      console.error("Redemption error:", error);
+      
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: error.errors });
+        return res.status(400).json({ 
+          success: false, 
+          error: "Validation failed", 
+          details: error.errors 
+        });
       }
-      res.status(500).json({ error: "Failed to redeem reward for student" });
+      
+      return res.status(500).json({ 
+        success: false, 
+        error: "Failed to redeem reward for student" 
+      });
     }
   });
 

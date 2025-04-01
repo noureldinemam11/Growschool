@@ -70,28 +70,52 @@ const AdminRedeemRewardModal: FC<AdminRedeemRewardModalProps> = ({ reward, onClo
 
   const redeemRewardMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest('POST', '/api/rewards/redeem-for-student', {
-        rewardId: reward.id,
-        studentId: Number(selectedStudentId),
-        awardedById: user?.id
-      });
-      return await res.json();
+      try {
+        const res = await apiRequest('POST', '/api/rewards/redeem-for-student', {
+          rewardId: reward.id,
+          studentId: Number(selectedStudentId),
+          awardedById: user?.id
+        });
+        
+        // Check if the response is valid JSON
+        const contentType = res.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          return await res.json();
+        } else {
+          // If not JSON, get the text and use it as an error message
+          const text = await res.text();
+          throw new Error(text || 'Failed to redeem reward');
+        }
+      } catch (err) {
+        console.error('Redemption error:', err);
+        throw err;
+      }
     },
-    onSuccess: () => {
-      toast({
-        title: "Reward Redeemed!",
-        description: `You've successfully redeemed ${reward.name} for the student.`
-      });
-      // Invalidate queries to refresh the rewards and redemptions
-      queryClient.invalidateQueries({ queryKey: ['/api/rewards'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/rewards/redemptions/student/' + selectedStudentId] });
-      queryClient.invalidateQueries({ queryKey: ['/api/students/' + selectedStudentId + '/points-balance'] });
-      onClose();
+    onSuccess: (data) => {
+      // If we got data back with successful redemption
+      if (data && data.success) {
+        toast({
+          title: "Reward Redeemed!",
+          description: `You've successfully redeemed ${reward.name} for the student.`
+        });
+        // Invalidate queries to refresh the rewards and redemptions
+        queryClient.invalidateQueries({ queryKey: ['/api/rewards'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/rewards/redemptions/student/' + selectedStudentId] });
+        queryClient.invalidateQueries({ queryKey: ['/api/students/' + selectedStudentId + '/points-balance'] });
+        onClose();
+      } else {
+        // If we got a response but something went wrong
+        toast({
+          title: "Redemption Issue",
+          description: data?.error || "There was an issue with the redemption process.",
+          variant: "destructive"
+        });
+      }
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
       toast({
         title: "Redemption Failed",
-        description: error.message,
+        description: error.message || "An unknown error occurred",
         variant: "destructive"
       });
     }
