@@ -85,7 +85,7 @@ export default function Sidebar() {
                 href={item.href}
                 className={cn(
                   location === item.href 
-                    ? "bg-neutral text-primary" 
+                    ? "bg-primary text-white" 
                     : "text-neutral-dark hover:bg-neutral hover:text-primary",
                   "group flex items-center px-2 py-2 text-base font-medium rounded-md"
                 )}

@@ -45,7 +45,7 @@ export default function Navbar() {
                     href={item.href}
                     className={cn(
                       location === item.href 
-                        ? "bg-primary bg-opacity-10 text-primary" 
+                        ? "bg-primary text-white" 
                         : "text-neutral-dark hover:bg-neutral hover:text-primary",
                       "px-3 py-2 rounded-md text-sm font-medium"
                     )}
@@ -58,7 +58,7 @@ export default function Navbar() {
                     href="/admin"
                     className={cn(
                       location === '/admin' 
-                        ? "bg-primary bg-opacity-10 text-primary" 
+                        ? "bg-primary text-white" 
                         : "text-neutral-dark hover:bg-neutral hover:text-primary",
                       "px-3 py-2 rounded-md text-sm font-medium"
                     )}

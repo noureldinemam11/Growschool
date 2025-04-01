@@ -24,7 +24,7 @@ export default function MobileNavbar() {
             href="/" 
             className={cn(
               "flex flex-col items-center justify-center py-2",
-              location === '/' ? "text-primary" : "text-neutral-dark"
+              location === '/' ? "text-primary font-semibold" : "text-neutral-dark"
             )}
           >
             <Home className="h-6 w-6" />
@@ -35,7 +35,7 @@ export default function MobileNavbar() {
             href="/students" 
             className={cn(
               "flex flex-col items-center justify-center py-2",
-              location === '/students' ? "text-primary" : "text-neutral-dark"
+              location === '/students' ? "text-primary font-semibold" : "text-neutral-dark"
             )}
           >
             <Users className="h-6 w-6" />
@@ -46,7 +46,7 @@ export default function MobileNavbar() {
             href="/roster" 
             className={cn(
               "flex flex-col items-center justify-center py-2",
-              location === '/roster' ? "text-primary" : "text-neutral-dark"
+              location === '/roster' ? "text-primary font-semibold" : "text-neutral-dark"
             )}
           >
             <ClipboardList className="h-6 w-6" />
@@ -67,7 +67,7 @@ export default function MobileNavbar() {
             href="/reports" 
             className={cn(
               "flex flex-col items-center justify-center py-2",
-              location === '/reports' ? "text-primary" : "text-neutral-dark"
+              location === '/reports' ? "text-primary font-semibold" : "text-neutral-dark"
             )}
           >
             <FileText className="h-6 w-6" />
@@ -78,7 +78,7 @@ export default function MobileNavbar() {
             href="/houses" 
             className={cn(
               "flex flex-col items-center justify-center py-2",
-              location === '/houses' ? "text-primary" : "text-neutral-dark"
+              location === '/houses' ? "text-primary font-semibold" : "text-neutral-dark"
             )}
           >
             <BarChart className="h-6 w-6" />
