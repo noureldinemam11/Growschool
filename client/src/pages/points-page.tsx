@@ -91,11 +91,16 @@ export default function PointsPage() {
     // Show success message or something else as needed
   };
 
+  // Use a React effect to manage URL updates instead of in render
+  React.useEffect(() => {
+    if (view === 'categories' && selectedStudent) {
+      window.history.replaceState(null, '', '/points/categories');
+    } else {
+      window.history.replaceState(null, '', '/points');
+    }
+  }, [view, selectedStudent]);
+
   if (view === 'categories' && selectedStudent) {
-    // Set a custom URL parameter to help the header component detect we're in categories view
-    // This doesn't actually navigate, just helps with UI state detection
-    window.history.replaceState(null, '', '/points/categories');
-    
     return (
       <div className="flex flex-col">
         {/* Behavior Categories View */}
@@ -109,9 +114,6 @@ export default function PointsPage() {
         </div>
       </div>
     );
-  } else {
-    // Reset URL when not in categories view
-    window.history.replaceState(null, '', '/points');
   }
 
   return (

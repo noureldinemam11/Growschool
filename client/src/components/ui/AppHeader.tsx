@@ -2,6 +2,7 @@ import React from 'react';
 import { ChevronDown, ChevronLeft } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { Link, useLocation } from 'wouter';
+import { Button } from '@/components/ui/button';
 
 export default function AppHeader() {
   const { user } = useAuth();
@@ -10,33 +11,37 @@ export default function AppHeader() {
   // Check if we're in the categories view of the points page
   const isPointsCategories = location.includes('/points') && location.includes('categories');
   
-  const handleLogoClick = (e: React.MouseEvent) => {
+  const handleBackClick = () => {
     if (isPointsCategories) {
-      e.preventDefault(); // Prevent default link behavior
       window.history.back(); // Go back to previous page
+    } else {
+      navigate('/'); // Otherwise go home
     }
-    // Otherwise let the Link component handle navigation to home
   };
 
   return (
     <header className="bg-primary text-white py-3 px-4">
       <div className="flex justify-between items-center">
-        {/* Left side with Points logo that acts as back button in points category view */}
-        <Link href="/">
-          <div 
-            className="flex items-center cursor-pointer" 
-            onClick={handleLogoClick}
+        {/* Left side with back button in points category view or logo otherwise */}
+        {isPointsCategories ? (
+          <Button 
+            variant="ghost" 
+            className="p-0 text-white hover:bg-transparent hover:text-white focus:bg-transparent"
+            onClick={handleBackClick}
           >
-            {isPointsCategories ? (
-              <ChevronLeft className="h-5 w-5 mr-1" />
-            ) : (
+            <ChevronLeft className="h-5 w-5 mr-1" />
+            <span className="text-base font-medium">Back</span>
+          </Button>
+        ) : (
+          <Link href="/">
+            <div className="flex items-center cursor-pointer">
               <div className="flex items-center justify-center w-5 h-5 bg-white rounded-full mr-2">
                 <span className="text-primary text-xs">⌘</span>
               </div>
-            )}
-            <span className="text-base font-medium">Points</span>
-          </div>
-        </Link>
+              <span className="text-base font-medium">Points</span>
+            </div>
+          </Link>
+        )}
         
         {/* Right side with Help and Profile */}
         <div className="flex items-center gap-4">
