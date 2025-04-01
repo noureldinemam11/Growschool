@@ -143,18 +143,25 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userCurrentId++;
+    // Extract only the needed properties and ensure correct typing
+    const { username, password, firstName, lastName, role, email } = insertUser;
+    const gradeLevel = insertUser.gradeLevel || null;
+    const section = insertUser.section || null;
+    const houseId = typeof insertUser.houseId === 'number' ? insertUser.houseId : null;
+    const parentId = typeof insertUser.parentId === 'number' ? insertUser.parentId : null;
+    
     const user: User = {
       id,
-      username: insertUser.username,
-      password: insertUser.password,
-      firstName: insertUser.firstName,
-      lastName: insertUser.lastName,
-      role: insertUser.role,
-      email: insertUser.email,
-      gradeLevel: insertUser.gradeLevel || null,
-      section: insertUser.section || null,
-      houseId: insertUser.houseId || null,
-      parentId: insertUser.parentId || null
+      username,
+      password,
+      firstName,
+      lastName,
+      role,
+      email,
+      gradeLevel,
+      section,
+      houseId,
+      parentId
     };
     this.users.set(id, user);
     return user;
@@ -437,24 +444,11 @@ export class DatabaseStorage implements IStorage {
       // Check if we have any admin users
       const adminUsers = await this.getUsersByRole('admin');
       if (adminUsers.length === 0) {
-        // Create a default admin user for testing
-        // In a real system, you would never hardcode passwords like this
-        const adminUser = {
-          username: 'admin',
-          // This is "password123" hashed with scrypt (matches our auth.ts implementation)
-          password: '7a37b85c8918eac19a9089232d3c3d891a6645de2f7d67edac7d8e943c9e92074a880fcbda27ce21c855a622ad31b9a28e1458faa937cdbcbdbb57f2f61f0519.0fa5e739613816f97423ca9eb311fc8a',
-          firstName: 'Admin',
-          lastName: 'User',
-          email: 'admin@school.edu',
-          role: 'admin' as const,
-          confirmPassword: 'password123' // This is needed for the schema but not stored in DB
-        };
-        
         try {
-          await this.createUser(adminUser);
-          console.log('Created default admin user. Username: admin, Password: password123');
+          // Skip this since we've already created an admin user through our script
+          console.log('Admin account creation skipped - create using scripts/create_admin.js instead');
         } catch (err) {
-          console.error('Failed to create admin user:', err);
+          console.error('Failed to handle admin user creation:', err);
         }
       }
     } catch (error) {

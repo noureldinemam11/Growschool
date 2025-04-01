@@ -142,34 +142,64 @@ export function ImportStudentsButton() {
   
   return (
     <>
-      <Button variant="secondary" onClick={() => setIsOpen(true)}>
-        <Upload className="mr-2 h-4 w-4" />
-        Import Students
-      </Button>
+      <div className="flex gap-2">
+        <Button variant="outline" size="sm" asChild>
+          <a href="/student_import_template.xlsx" download>
+            <Download className="mr-2 h-4 w-4" />
+            Download Template
+          </a>
+        </Button>
+        <Button variant="secondary" onClick={() => setIsOpen(true)}>
+          <Upload className="mr-2 h-4 w-4" />
+          Import Students
+        </Button>
+      </div>
       
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Import Students from Excel</DialogTitle>
             <DialogDescription>
-              <p className="mb-1">
-                Upload an Excel file (.xlsx, .xls) or CSV file with student information.
-              </p>
+              <div className="bg-amber-50 p-3 rounded mb-4 border border-amber-200">
+                <h3 className="font-medium text-amber-800 flex items-center mb-1">
+                  <AlertTriangle className="h-4 w-4 mr-1" /> Important
+                </h3>
+                <p className="text-sm text-amber-700 mb-1">
+                  Your import file must follow the exact template format. The previous import failed because
+                  required fields were missing.
+                </p>
+                <div className="flex items-center justify-between mt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    asChild
+                    className="bg-white border-amber-300 text-amber-800 hover:bg-amber-100"
+                  >
+                    <a href="/student_import_template.xlsx" download>
+                      <Download className="h-3 w-3 mr-1" /> Download Template
+                    </a>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    asChild
+                    className="bg-white border-amber-300 text-amber-800 hover:bg-amber-100"
+                  >
+                    <a href="/student_import_readme.txt" download>
+                      <Download className="h-3 w-3 mr-1" /> Download Instructions
+                    </a>
+                  </Button>
+                </div>
+              </div>
+              
+              <h3 className="font-medium mb-2">Import Requirements</h3>
               <ul className="list-disc pl-5 text-sm space-y-1 mb-2">
                 <li><strong>Required columns:</strong> firstName, lastName, username, email, password</li>
                 <li><strong>Optional columns:</strong> gradeLevel, section, houseId</li>
-                <li>Header row must be included in your file</li>
-                <li>Column names are case-sensitive</li>
+                <li>Column names must be spelled exactly as shown (case-sensitive)</li>
+                <li>Do not rename the Excel headers from the template</li>
+                <li>Every row must have values for all required fields</li>
               </ul>
-              <div className="mt-3 text-sm">
-                <a 
-                  href="/student_import_template.xlsx" 
-                  download
-                  className="text-primary hover:underline font-medium flex items-center gap-1"
-                >
-                  <Download className="h-3 w-3" /> Download sample template
-                </a>
-              </div>
             </DialogDescription>
           </DialogHeader>
           
