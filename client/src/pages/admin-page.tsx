@@ -36,12 +36,12 @@ export default function AdminPage() {
             </header>
 
             <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="mb-6">
-                <TabsTrigger value="overview" className="mr-6">Overview</TabsTrigger>
-                <TabsTrigger value="users" className="mr-6">User Management</TabsTrigger>
-                <TabsTrigger value="behavior" className="mr-6">Behavior Categories</TabsTrigger>
-                <TabsTrigger value="rewards" className="mr-6">Rewards</TabsTrigger>
-                <TabsTrigger value="houses" className="mr-6">Houses</TabsTrigger>
+              <TabsList>
+                <TabsTrigger value="overview" className="mr-4">Overview</TabsTrigger>
+                <TabsTrigger value="users" className="mr-4">User Management</TabsTrigger>
+                <TabsTrigger value="behavior" className="mr-4">Behavior Categories</TabsTrigger>
+                <TabsTrigger value="rewards" className="mr-4">Rewards</TabsTrigger>
+                <TabsTrigger value="houses" className="mr-4">Houses</TabsTrigger>
                 <TabsTrigger value="system">System Settings</TabsTrigger>
               </TabsList>
               
@@ -127,15 +127,7 @@ export default function AdminPage() {
               </TabsContent>
               
               <TabsContent value="houses" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>House Management</CardTitle>
-                    <CardDescription>Create, edit, and manage school houses</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-neutral-dark">House management functionality will be implemented soon.</p>
-                  </CardContent>
-                </Card>
+                <HouseManagement />
               </TabsContent>
               
               <TabsContent value="system" className="space-y-6">

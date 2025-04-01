@@ -180,16 +180,16 @@ export default function RosterPage() {
       </div>
 
       <Tabs defaultValue="all" value={filter} onValueChange={setFilter} className="w-full">
-        <TabsList className="mb-6">
-          <TabsTrigger value="all" className="flex items-center gap-2 mr-6">
+        <TabsList>
+          <TabsTrigger value="all" className="flex items-center gap-2 mr-4">
             <UsersRound className="h-4 w-4" />
             <span>All Students</span>
           </TabsTrigger>
-          <TabsTrigger value="grades" className="flex items-center gap-2 mr-6">
+          <TabsTrigger value="grades" className="flex items-center gap-2 mr-4">
             <School className="h-4 w-4" />
             <span>By Grade</span>
           </TabsTrigger>
-          <TabsTrigger value="sections" className="flex items-center gap-2 mr-6">
+          <TabsTrigger value="sections" className="flex items-center gap-2 mr-4">
             <UserPlus className="h-4 w-4" />
             <span>By Section</span>
           </TabsTrigger>

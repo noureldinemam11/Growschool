@@ -88,12 +88,12 @@ export default function StudentPage() {
                 <div className="md:col-span-3">
                   {selectedStudent ? (
                     <Tabs defaultValue="overview" className="w-full">
-                      <TabsList className="mb-6">
-                        <TabsTrigger value="overview" className="font-medium text-sm flex items-center gap-1.5 mr-6">
+                      <TabsList>
+                        <TabsTrigger value="overview" className="font-medium text-sm flex items-center gap-1.5 mr-4">
                           <UserCircle className="h-4 w-4" />
                           <span>Overview</span>
                         </TabsTrigger>
-                        <TabsTrigger value="behavior" className="font-medium text-sm flex items-center gap-1.5 mr-6">
+                        <TabsTrigger value="behavior" className="font-medium text-sm flex items-center gap-1.5 mr-4">
                           <FileText className="h-4 w-4" />
                           <span>Behavior Records</span>
                         </TabsTrigger>
