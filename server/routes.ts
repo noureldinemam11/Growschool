@@ -95,6 +95,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch behavior points" });
     }
   });
+  
+  // New endpoint to get student's points balance
+  app.get("/api/students/:studentId/points-balance", async (req, res) => {
+    try {
+      const studentId = Number(req.params.studentId);
+      
+      // Check authorization: must be admin, teacher, the student, or the student's parent
+      if (req.isAuthenticated()) {
+        const user = req.user;
+        if (
+          user.role === "admin" || 
+          user.role === "teacher" || 
+          (user.role === "student" && user.id === studentId) ||
+          (user.role === "parent" && (await storage.getStudentsByParentId(user.id)).some(s => s.id === studentId))
+        ) {
+          // Get all behavior points
+          const points = await storage.getBehaviorPointsByStudentId(studentId);
+          const earnedPoints = points.reduce((sum, point) => sum + point.points, 0);
+          
+          // Get all redemptions
+          const redemptions = await storage.getRewardRedemptionsByStudentId(studentId);
+          const spentPoints = redemptions.reduce((sum, redemption) => sum + redemption.pointsSpent, 0);
+          
+          // Calculate balance
+          const balance = earnedPoints - spentPoints;
+          
+          return res.json({
+            studentId,
+            earned: earnedPoints,
+            spent: spentPoints,
+            balance: balance
+          });
+        }
+      }
+      
+      return res.status(403).json({ error: "Unauthorized" });
+    } catch (error) {
+      console.error("Error getting points balance:", error);
+      res.status(500).json({ error: "Failed to fetch points balance" });
+    }
+  });
 
   app.get("/api/behavior-points/teacher/:teacherId", async (req, res) => {
     try {

@@ -34,8 +34,10 @@ const RedeemRewardModal: FC<RedeemRewardModalProps> = ({ reward, availablePoints
         title: "Reward Redeemed!",
         description: `You've successfully redeemed ${reward.name}. A teacher will deliver it to you soon.`
       });
+      // Invalidate queries to refresh the rewards, redemptions, and points balance
       queryClient.invalidateQueries({ queryKey: ['/api/rewards'] });
       queryClient.invalidateQueries({ queryKey: ['/api/rewards/redemptions/student/' + user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/students/' + user?.id + '/points-balance'] });
       onClose();
     },
     onError: (error: Error) => {

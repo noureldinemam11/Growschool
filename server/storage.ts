@@ -143,31 +143,22 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userCurrentId++;
-    // Extract only the needed properties and ensure correct typing
-    const username: string = insertUser.username;
-    const password: string = insertUser.password;
-    const firstName: string = insertUser.firstName;
-    const lastName: string = insertUser.lastName;
-    const role: UserRole = insertUser.role as UserRole;
-    const email: string = insertUser.email;
-    const gradeLevel: string | null = insertUser.gradeLevel || null;
-    const section: string | null = insertUser.section || null;
-    const houseId: number | null = typeof insertUser.houseId === 'number' ? insertUser.houseId : null;
-    const parentId: number | null = typeof insertUser.parentId === 'number' ? insertUser.parentId : null;
     
+    // Create a properly typed user object with default values for optional fields
     const user: User = {
       id,
-      username,
-      password,
-      firstName,
-      lastName,
-      role,
-      email,
-      gradeLevel,
-      section,
-      houseId,
-      parentId
+      username: String(insertUser.username),
+      password: String(insertUser.password),
+      firstName: String(insertUser.firstName),
+      lastName: String(insertUser.lastName),
+      role: insertUser.role as UserRole,
+      email: String(insertUser.email),
+      gradeLevel: insertUser.gradeLevel ? String(insertUser.gradeLevel) : null,
+      section: insertUser.section ? String(insertUser.section) : null,
+      houseId: typeof insertUser.houseId === 'number' ? insertUser.houseId : null,
+      parentId: typeof insertUser.parentId === 'number' ? insertUser.parentId : null
     };
+    
     this.users.set(id, user);
     return user;
   }
@@ -473,11 +464,31 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createUser(user: InsertUser): Promise<User> {
-    const result = await db.insert(users).values(user).returning();
-    if (!result || result.length === 0) {
-      throw new Error('Failed to create user');
+    try {
+      // Explicitly returning PostgreSQL table data with proper typing
+      const result = await db.insert(users).values(user).returning({
+        id: users.id,
+        username: users.username,
+        password: users.password,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        role: users.role,
+        email: users.email,
+        gradeLevel: users.gradeLevel,
+        section: users.section,
+        houseId: users.houseId,
+        parentId: users.parentId
+      });
+      
+      if (!result || result.length === 0) {
+        throw new Error('Failed to insert user - no results returned');
+      }
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error;
     }
-    return result[0] as User;
   }
   
   async updateUser(id: number, userUpdate: Partial<User>): Promise<User | undefined> {

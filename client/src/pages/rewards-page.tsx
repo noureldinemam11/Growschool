@@ -21,8 +21,14 @@ export default function RewardsPage() {
     queryKey: ['/api/rewards'],
   });
 
-  const { data: studentPoints, isLoading: isLoadingPoints } = useQuery<BehaviorPoint[]>({
-    queryKey: ['/api/behavior-points/student/' + user?.id],
+  // Get the student's points balance instead of calculating it manually
+  const { data: pointsBalance, isLoading: isLoadingPoints } = useQuery<{
+    studentId: number;
+    earned: number;
+    spent: number;
+    balance: number;
+  }>({
+    queryKey: ['/api/students/' + user?.id + '/points-balance'],
     enabled: !!user && user.role === 'student'
   });
 
@@ -31,8 +37,8 @@ export default function RewardsPage() {
     enabled: !!user && user.role === 'student'
   });
 
-  // Calculate total points for the student
-  const totalPoints = studentPoints?.reduce((sum, p) => sum + p.points, 0) || 0;
+  // Access the balance directly from the API response
+  const totalPoints = pointsBalance?.balance || 0;
 
   return (
     <div className="h-screen flex flex-col">
@@ -51,15 +57,32 @@ export default function RewardsPage() {
                 </div>
                 
                 {user?.role === 'student' && (
-                  <div className="mt-4 md:mt-0 bg-white p-4 rounded-lg shadow-sm">
-                    <div className="text-sm text-neutral-dark">Your Available Points</div>
-                    <div className="text-2xl font-mono font-bold text-primary">
+                  <div className="mt-4 md:mt-0 bg-white p-4 rounded-lg shadow-sm min-w-[200px]">
+                    <div className="text-sm text-neutral-dark mb-1">Your Points</div>
+                    <div className="text-2xl font-mono font-bold text-primary mb-2">
                       {isLoadingPoints ? (
                         <Loader2 className="h-4 w-4 animate-spin inline-block mr-1" />
                       ) : (
                         totalPoints
                       )}
                     </div>
+                    
+                    {!isLoadingPoints && pointsBalance && (
+                      <div className="flex flex-col text-xs text-neutral-dark space-y-1">
+                        <div className="flex justify-between">
+                          <span>Total Earned:</span>
+                          <span className="font-mono text-success">{pointsBalance.earned}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Total Spent:</span>
+                          <span className="font-mono text-destructive">-{pointsBalance.spent}</span>
+                        </div>
+                        <div className="flex justify-between pt-1 border-t border-neutral">
+                          <span className="font-semibold">Available:</span>
+                          <span className="font-mono font-semibold text-primary">{pointsBalance.balance}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -84,6 +107,7 @@ export default function RewardsPage() {
                           key={reward.id} 
                           reward={reward}
                           canAfford={totalPoints >= reward.pointCost}
+                          availablePoints={totalPoints}
                           onRedeem={() => setRedeemReward(reward)}
                         />
                       ))}
