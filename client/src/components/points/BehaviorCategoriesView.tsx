@@ -218,27 +218,6 @@ export default function BehaviorCategoriesView({
           </Button>
           
           <Button 
-            variant="ghost"
-            className="flex items-center justify-center"
-          >
-            <span className="text-sm">Comment</span>
-          </Button>
-          
-          <Button 
-            variant="ghost"
-            className="flex items-center justify-center"
-          >
-            <span className="text-sm">Today</span>
-          </Button>
-          
-          <Button 
-            variant="ghost"
-            className="flex items-center justify-center"
-          >
-            <span className="text-sm">1:11 a.m.</span>
-          </Button>
-          
-          <Button 
             variant="ghost" 
             className="rounded-r-full flex items-center justify-center"
             onClick={onComplete}
