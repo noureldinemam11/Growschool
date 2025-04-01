@@ -26,11 +26,10 @@ export default function AppHeader() {
         {isPointsCategories ? (
           <Button 
             variant="ghost" 
-            className="p-0 text-white hover:bg-transparent hover:text-white focus:bg-transparent"
+            className="p-0 h-8 w-8 rounded-full text-white hover:bg-primary/20 hover:text-white focus:bg-primary/20"
             onClick={handleBackClick}
           >
-            <ChevronLeft className="h-5 w-5 mr-1" />
-            <span className="text-base font-medium">Back</span>
+            <ChevronLeft className="h-5 w-5" />
           </Button>
         ) : (
           <Link href="/">
