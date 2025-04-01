@@ -81,19 +81,26 @@ export default function DashboardPage() {
             <FeatureCard 
               title="Recaps" 
               icon={<FileText size={36} className="text-blue-500" />} 
-              onClick={() => setLocation('/reports')}
+              onClick={() => {
+                // For now, both Recaps and Insights go to the reports page
+                // This can be differentiated later with query parameters or tabs
+                setLocation('/reports');
+              }}
             />
             
             <FeatureCard 
               title="Insights" 
               icon={<Lightbulb size={36} className="text-amber-500" />} 
-              onClick={() => setLocation('/insights')}
+              onClick={() => setLocation('/reports')}
             />
             
             <FeatureCard 
               title="Printables" 
               icon={<Printer size={36} className="text-cyan-500" />} 
-              onClick={() => setLocation('/printables')}
+              onClick={() => {
+                // Implement printables feature in the future
+                alert("Printables feature will be available soon.");
+              }}
             />
             
             <FeatureCard 
@@ -105,7 +112,10 @@ export default function DashboardPage() {
             <FeatureCard 
               title="QR Badges" 
               icon={<QrCode size={36} className="text-blue-500" />} 
-              onClick={() => setLocation('/qr')}
+              onClick={() => {
+                // Implement QR badges feature in the future
+                alert("QR Badges feature will be available soon.");
+              }}
             />
             
             <FeatureCard 

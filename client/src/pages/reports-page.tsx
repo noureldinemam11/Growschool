@@ -33,9 +33,7 @@ function StudentPoints({ studentId }: { studentId: number | undefined }) {
 }
 
 // Simple component to display house information
-function StudentHouse({ houseId }: { houseId: number | undefined }) {
-  if (!houseId) return <span>-</span>;
-  
+function StudentHouse({ houseId }: { houseId: number }) {
   const { data: houses } = useQuery<House[]>({
     queryKey: ['/api/houses'],
   });
@@ -284,7 +282,8 @@ export default function ReportsPage() {
                                     {student.gradeLevel}{student.section}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-darker">
-                                    <StudentHouse houseId={student.houseId} />
+                                    {student.houseId !== null && <StudentHouse houseId={student.houseId} />}
+                                    {student.houseId === null && <span>-</span>}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm font-mono font-semibold text-primary">
                                     {student.id && <StudentPoints studentId={student.id} />}
