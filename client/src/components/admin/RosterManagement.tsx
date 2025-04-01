@@ -261,10 +261,19 @@ export default function RosterManagement() {
       // Publish event to notify other components
       globalEventBus.publish('students-updated');
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
+      console.error("Delete error:", error);
+      let errorMessage = "An unknown error occurred";
+      
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.error) {
+        errorMessage = error.error;
+      }
+      
       toast({
         title: 'Failed to remove student',
-        description: error.message,
+        description: errorMessage,
         variant: 'destructive',
       });
     },

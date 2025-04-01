@@ -528,48 +528,44 @@ export class DatabaseStorage implements IStorage {
   
   async deleteUser(id: number, forceDelete: boolean = false): Promise<boolean> {
     try {
-      // If force delete is enabled, we need to remove related records first
-      if (forceDelete) {
-        // Start a transaction to ensure data consistency
-        const client = await pool.connect();
+      // Always remove related records first (forceDelete is always true per requirements)
+      // Start a transaction to ensure data consistency
+      const client = await pool.connect();
+      
+      try {
+        await client.query('BEGIN');
         
-        try {
-          await client.query('BEGIN');
-          
-          // Delete behavior points for this student
-          await client.query(
-            'DELETE FROM behavior_points WHERE student_id = $1',
-            [id]
-          );
-          
-          // Delete reward redemptions for this student
-          await client.query(
-            'DELETE FROM reward_redemptions WHERE student_id = $1',
-            [id]
-          );
-          
-          // Delete the user
-          const deleteResult = await client.query(
-            'DELETE FROM users WHERE id = $1 RETURNING *',
-            [id]
-          );
-          
-          await client.query('COMMIT');
-          
-          return deleteResult.rows.length > 0;
-        } catch (txError) {
-          await client.query('ROLLBACK');
-          console.error("Transaction error in force delete user:", txError);
-          throw txError;
-        } finally {
-          client.release();
-        }
-      } else {
-        // Regular delete without touching related records
-        const result = await db.delete(users)
-          .where(eq(users.id, id))
-          .returning();
-        return result.length > 0;
+        // Delete behavior points for this student
+        console.log(`Deleting behavior points for student ${id}`);
+        await client.query(
+          'DELETE FROM behavior_points WHERE student_id = $1',
+          [id]
+        );
+        
+        // Delete reward redemptions for this student
+        console.log(`Deleting reward redemptions for student ${id}`);
+        await client.query(
+          'DELETE FROM reward_redemptions WHERE student_id = $1',
+          [id]
+        );
+        
+        // Delete the user
+        console.log(`Deleting user ${id}`);
+        const deleteResult = await client.query(
+          'DELETE FROM users WHERE id = $1 RETURNING *',
+          [id]
+        );
+        
+        await client.query('COMMIT');
+        console.log(`Successfully deleted user ${id} with all associated records`);
+        
+        return deleteResult.rows.length > 0;
+      } catch (txError) {
+        await client.query('ROLLBACK');
+        console.error("Transaction error in deleting user:", txError);
+        throw txError;
+      } finally {
+        client.release();
       }
     } catch (error) {
       console.error("Error in deleteUser:", error);
