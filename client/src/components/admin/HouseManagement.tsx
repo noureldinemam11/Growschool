@@ -140,7 +140,13 @@ export default function HouseManagement() {
           throw new Error(errorText || 'Failed to update house');
         }
         
-        return await res.json();
+        const responseData = await res.json();
+        
+        if (!responseData?.success) {
+          throw new Error(responseData?.error || 'Failed to update house');
+        }
+        
+        return responseData.house; // Return the updated house from the response
       } catch (err) {
         console.error('House update error:', err);
         throw err;

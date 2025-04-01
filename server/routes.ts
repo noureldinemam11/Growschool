@@ -72,10 +72,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const updatedHouse = await storage.updateHouse(houseId, req.body);
-      res.json(updatedHouse);
+      if (!updatedHouse) {
+        return res.status(500).json({ error: "Failed to update house" });
+      }
+      
+      // Ensure we're returning a valid JSON response
+      return res.json({ 
+        success: true,
+        house: updatedHouse 
+      });
     } catch (error) {
       console.error("Error updating house:", error);
-      res.status(500).json({ error: "Failed to update house" });
+      return res.status(500).json({ 
+        error: "Failed to update house",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 
