@@ -35,8 +35,24 @@ export function ImportStudentsButton() {
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to import students");
+        const errorData = await response.json().catch(() => ({ 
+          error: "Failed to parse error response" 
+        }));
+        
+        // Create more user-friendly error message based on status code
+        const defaultErrorMsg = "Failed to import students";
+        const errorMessage = errorData.error || defaultErrorMsg;
+        
+        // Add more context based on status code
+        if (response.status === 400) {
+          throw new Error(`Invalid file: ${errorMessage}`);
+        } else if (response.status === 413) {
+          throw new Error("File is too large. Please upload a smaller file.");
+        } else if (response.status >= 500) {
+          throw new Error(`Server error: ${errorMessage}`);
+        } else {
+          throw new Error(errorMessage);
+        }
       }
       
       return response.json() as Promise<ImportResult>;
@@ -46,6 +62,13 @@ export function ImportStudentsButton() {
         // Invalidate any queries that use student data
         queryClient.invalidateQueries({ queryKey: ["/api/users/students"] });
         queryClient.invalidateQueries({ queryKey: ["/api/users/role/student"] });
+        
+        // Show success toast
+        toast({
+          title: "Import Successful",
+          description: `Imported ${data.results.imported} of ${data.results.total} students`,
+          variant: "default",
+        });
       }
       
       setImportResult(data);
@@ -90,6 +113,17 @@ export function ImportStudentsButton() {
       return;
     }
     
+    // Check file size (5MB max)
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+    if (file.size > MAX_FILE_SIZE) {
+      toast({
+        title: "File too large",
+        description: "Please select a file smaller than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     const formData = new FormData();
     formData.append('file', file);
     
@@ -118,10 +152,16 @@ export function ImportStudentsButton() {
           <DialogHeader>
             <DialogTitle>Import Students from Excel</DialogTitle>
             <DialogDescription>
-              Upload an Excel file (.xlsx, .xls) or CSV file with student information.
-              The file should have columns for firstName, lastName, username, email, and password.
-              Optional columns include gradeLevel, section, and houseId.
-              <div className="mt-2 text-sm">
+              <p className="mb-1">
+                Upload an Excel file (.xlsx, .xls) or CSV file with student information.
+              </p>
+              <ul className="list-disc pl-5 text-sm space-y-1 mb-2">
+                <li><strong>Required columns:</strong> firstName, lastName, username, email, password</li>
+                <li><strong>Optional columns:</strong> gradeLevel, section, houseId</li>
+                <li>Header row must be included in your file</li>
+                <li>Column names are case-sensitive</li>
+              </ul>
+              <div className="mt-3 text-sm">
                 <a 
                   href="/student_import_template.xlsx" 
                   download
