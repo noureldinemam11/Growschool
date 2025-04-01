@@ -306,6 +306,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // New endpoints for student roster management
+  app.get("/api/users/students", async (req, res) => {
+    if (!req.isAuthenticated() || !["admin", "teacher"].includes(req.user.role)) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const students = await storage.getUsersByRole("student");
+      
+      // Only return necessary fields for security
+      const safeStudents = students.map(student => ({
+        id: student.id,
+        firstName: student.firstName,
+        lastName: student.lastName,
+        username: student.username,
+        email: student.email,
+        gradeLevel: student.gradeLevel,
+        section: student.section,
+        houseId: student.houseId
+      }));
+      
+      res.json(safeStudents);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch students roster" });
+    }
+  });
+
+  app.patch("/api/users/students/:studentId/roster", async (req, res) => {
+    if (!req.isAuthenticated() || !["admin", "teacher"].includes(req.user.role)) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const studentId = Number(req.params.studentId);
+      const { gradeLevel, section, houseId } = req.body;
+      
+      // Validate the data
+      const updateSchema = z.object({
+        gradeLevel: z.string().optional(),
+        section: z.string().optional(),
+        houseId: z.number().nullable().optional(),
+      });
+      
+      const validatedData = updateSchema.parse(req.body);
+      
+      // Update the student
+      const updatedStudent = await storage.updateUser(studentId, validatedData);
+      
+      if (!updatedStudent) {
+        return res.status(404).json({ error: "Student not found" });
+      }
+      
+      // Return only necessary fields
+      const safeStudent = {
+        id: updatedStudent.id,
+        firstName: updatedStudent.firstName,
+        lastName: updatedStudent.lastName,
+        gradeLevel: updatedStudent.gradeLevel,
+        section: updatedStudent.section,
+        houseId: updatedStudent.houseId
+      };
+      
+      res.json(safeStudent);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Failed to update student roster assignment" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

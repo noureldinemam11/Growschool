@@ -8,6 +8,7 @@ import HousePage from "@/pages/house-page";
 import RewardsPage from "@/pages/rewards-page";
 import ReportsPage from "@/pages/reports-page";
 import AdminPage from "@/pages/admin-page";
+import RosterPage from "@/pages/roster-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
 
@@ -39,6 +40,11 @@ function Router() {
           path="/admin" 
           component={AdminPage}
           allowedRoles={["admin"]}
+        />
+        <ProtectedRoute 
+          path="/roster" 
+          component={RosterPage}
+          allowedRoles={["admin", "teacher"]}
         />
         <Route component={NotFound} />
       </Switch>

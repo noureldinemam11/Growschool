@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'wouter';
 import { useAuth } from '@/hooks/use-auth';
-import { Home, Users, Building, FileText, Gift, Settings } from 'lucide-react';
+import { Home, Users, Building, FileText, Gift, Settings, ClipboardList } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function Sidebar() {
@@ -21,6 +21,12 @@ export default function Sidebar() {
       href: '/students',
       icon: Users,
       allowedRoles: ['admin', 'teacher', 'parent']
+    },
+    {
+      name: 'Roster',
+      href: '/roster',
+      icon: ClipboardList,
+      allowedRoles: ['admin', 'teacher']
     },
     {
       name: 'Houses',

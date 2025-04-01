@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'wouter';
-import { Home, Users, BarChart, FileText, Plus } from 'lucide-react';
+import { Home, Users, BarChart, FileText, Plus, ClipboardList } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
@@ -19,7 +19,7 @@ export default function MobileNavbar() {
   return (
     <>
       <div className="md:hidden bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-50">
-        <div className="grid grid-cols-5">
+        <div className="grid grid-cols-6">
           <Link 
             href="/" 
             className={cn(
@@ -40,6 +40,17 @@ export default function MobileNavbar() {
           >
             <Users className="h-6 w-6" />
             <span className="text-xs">Students</span>
+          </Link>
+          
+          <Link 
+            href="/roster" 
+            className={cn(
+              "flex flex-col items-center justify-center py-2",
+              location === '/roster' ? "text-primary" : "text-neutral-dark"
+            )}
+          >
+            <ClipboardList className="h-6 w-6" />
+            <span className="text-xs">Roster</span>
           </Link>
           
           <button
