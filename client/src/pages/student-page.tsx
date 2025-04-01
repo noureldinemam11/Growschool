@@ -8,19 +8,19 @@ import StudentList from '@/components/student/StudentList';
 import StudentDetail from '@/components/student/StudentDetail';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { User, BehaviorPoint, RewardRedemption } from '@shared/schema';
-import { Loader2, Gift } from 'lucide-react';
+import { User as UserType, BehaviorPoint, RewardRedemption } from '@shared/schema';
+import { Loader2, Gift, UserCircle, FileText, Award } from 'lucide-react';
 
 export default function StudentPage() {
   const { user } = useAuth();
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
 
-  const { data: students, isLoading: isLoadingStudents } = useQuery<Partial<User>[]>({
+  const { data: students, isLoading: isLoadingStudents } = useQuery<Partial<UserType>[]>({
     queryKey: ['/api/users/role/student'],
     enabled: !!user && ['admin', 'teacher'].includes(user.role)
   });
 
-  const { data: childStudents, isLoading: isLoadingChildren } = useQuery<Partial<User>[]>({
+  const { data: childStudents, isLoading: isLoadingChildren } = useQuery<Partial<UserType>[]>({
     queryKey: ['/api/users/students/parent/' + user?.id],
     enabled: !!user && user.role === 'parent'
   });
@@ -88,10 +88,19 @@ export default function StudentPage() {
                 <div className="md:col-span-3">
                   {selectedStudent ? (
                     <Tabs defaultValue="overview" className="w-full">
-                      <TabsList className="mb-4">
-                        <TabsTrigger value="overview">Overview</TabsTrigger>
-                        <TabsTrigger value="behavior">Behavior Records</TabsTrigger>
-                        <TabsTrigger value="rewards">Rewards</TabsTrigger>
+                      <TabsList className="mb-4 w-full grid grid-cols-3 p-1 bg-neutral-lighter rounded-md">
+                        <TabsTrigger value="overview" className="font-medium text-sm flex items-center gap-1.5">
+                          <UserCircle className="h-4 w-4" />
+                          <span>Overview</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="behavior" className="font-medium text-sm flex items-center gap-1.5">
+                          <FileText className="h-4 w-4" />
+                          <span>Behavior Records</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="rewards" className="font-medium text-sm flex items-center gap-1.5">
+                          <Award className="h-4 w-4" />
+                          <span>Rewards</span>
+                        </TabsTrigger>
                       </TabsList>
                       
                       <TabsContent value="overview" className="space-y-4">
