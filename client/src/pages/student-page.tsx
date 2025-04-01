@@ -7,8 +7,9 @@ import MobileNavbar from '@/components/layout/MobileNavbar';
 import StudentList from '@/components/student/StudentList';
 import StudentDetail from '@/components/student/StudentDetail';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, BehaviorPoint } from '@shared/schema';
-import { Loader2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { User, BehaviorPoint, RewardRedemption } from '@shared/schema';
+import { Loader2, Gift } from 'lucide-react';
 
 export default function StudentPage() {
   const { user } = useAuth();
@@ -26,6 +27,12 @@ export default function StudentPage() {
 
   const { data: selectedStudentPoints, isLoading: isLoadingPoints } = useQuery<BehaviorPoint[]>({
     queryKey: ['/api/behavior-points/student/' + selectedStudentId],
+    enabled: !!selectedStudentId
+  });
+
+  // Fetch student's reward redemptions
+  const { data: redemptions, isLoading: isLoadingRedemptions } = useQuery<any[]>({
+    queryKey: ['/api/rewards/redemptions/student/' + selectedStudentId],
     enabled: !!selectedStudentId
   });
 
@@ -152,7 +159,58 @@ export default function StudentPage() {
                       <TabsContent value="rewards" className="space-y-4">
                         <div className="bg-white rounded-lg shadow-sm p-6">
                           <h3 className="font-heading font-semibold text-lg mb-4">Reward Redemptions</h3>
-                          <p className="text-neutral-dark">This functionality is coming soon.</p>
+                          {isLoadingRedemptions ? (
+                            <div className="flex items-center justify-center h-32">
+                              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                            </div>
+                          ) : redemptions && redemptions.length > 0 ? (
+                            <div className="overflow-x-auto">
+                              <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-neutral">
+                                  <tr>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-dark uppercase tracking-wider">Date</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-dark uppercase tracking-wider">Reward</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-dark uppercase tracking-wider">Points Spent</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-dark uppercase tracking-wider">Status</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                  {redemptions.map(redemption => (
+                                    <tr key={redemption.id}>
+                                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-darker">
+                                        {new Date(redemption.timestamp).toLocaleDateString()}
+                                      </td>
+                                      <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="text-sm font-medium text-neutral-darker">
+                                          {redemption.reward?.name || 'Unnamed Reward'}
+                                        </div>
+                                        <div className="text-xs text-neutral-dark">
+                                          {redemption.reward?.description || 'No description'}
+                                        </div>
+                                      </td>
+                                      <td className="px-6 py-4 whitespace-nowrap text-sm font-mono font-semibold text-primary">
+                                        {redemption.pointsSpent}
+                                      </td>
+                                      <td className="px-6 py-4 whitespace-nowrap">
+                                        <Badge className={
+                                          redemption.status === 'approved' ? 'bg-success' :
+                                          redemption.status === 'delivered' ? 'bg-accent' :
+                                          'bg-secondary'
+                                        }>
+                                          {redemption.status.charAt(0).toUpperCase() + redemption.status.slice(1)}
+                                        </Badge>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center text-center p-8 gap-3">
+                              <Gift className="h-12 w-12 text-gray-300" />
+                              <p className="text-neutral-dark">No reward redemptions found for this student.</p>
+                            </div>
+                          )}
                         </div>
                       </TabsContent>
                     </Tabs>
