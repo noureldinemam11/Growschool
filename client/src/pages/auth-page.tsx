@@ -63,12 +63,27 @@ export default function AuthPage() {
   });
 
   const onLoginSubmit = (values: z.infer<typeof loginSchema>) => {
-    loginMutation.mutate(values);
+    loginMutation.mutate({
+      username: values.username,
+      password: values.password,
+    } as any); // Cast to any to work around type issues
   };
 
   const onRegisterSubmit = (values: z.infer<typeof registerFormSchema>) => {
     const { confirmPassword, ...registrationData } = values;
-    registerMutation.mutate(registrationData);
+    
+    // Create the user object with properly typed fields
+    const userData = {
+      ...registrationData,
+      // Set null values for optional fields if they're empty
+      gradeLevel: registrationData.gradeLevel || null,
+      section: registrationData.section || null,
+      // Initialize other required fields with default values
+      houseId: null,
+      parentId: null
+    };
+    
+    registerMutation.mutate(userData as any); // Cast to any to work around type issues
   };
 
   // Redirect if already logged in

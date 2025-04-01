@@ -2,9 +2,13 @@ import { users, houses, behaviorCategories, behaviorPoints, rewards, rewardRedem
 import type { User, InsertUser, House, InsertHouse, BehaviorCategory, InsertBehaviorCategory, BehaviorPoint, InsertBehaviorPoint, Reward, InsertReward, RewardRedemption, InsertRewardRedemption } from "@shared/schema";
 import createMemoryStore from "memorystore";
 import session from "express-session";
+import connectPg from "connect-pg-simple";
+import { and, eq, desc } from "drizzle-orm";
+import { db, pool } from "./db";
 
-// Create memory store for sessions
+// Create session stores
 const MemoryStore = createMemoryStore(session);
+const PostgresSessionStore = connectPg(session);
 
 export interface IStorage {
   // User management
@@ -45,10 +49,10 @@ export interface IStorage {
   // Reward redemptions
   createRewardRedemption(redemption: InsertRewardRedemption): Promise<RewardRedemption>;
   getRewardRedemptionsByStudentId(studentId: number): Promise<RewardRedemption[]>;
-  updateRewardRedemptionStatus(id: number, status: string): Promise<RewardRedemption | undefined>;
+  updateRewardRedemptionStatus(id: number, status: "pending" | "approved" | "delivered"): Promise<RewardRedemption | undefined>;
   
   // Session store
-  sessionStore: session.SessionStore;
+  sessionStore: any; // Using any for session store type to avoid compatibility issues
 }
 
 export class MemStorage implements IStorage {
@@ -59,7 +63,7 @@ export class MemStorage implements IStorage {
   private rewards: Map<number, Reward>;
   private rewardRedemptions: Map<number, RewardRedemption>;
   
-  sessionStore: session.SessionStore;
+  sessionStore: any; // Using any instead of session.SessionStore
   
   private userCurrentId: number;
   private houseCurrentId: number;
@@ -317,7 +321,7 @@ export class MemStorage implements IStorage {
       .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }
 
-  async updateRewardRedemptionStatus(id: number, status: string): Promise<RewardRedemption | undefined> {
+  async updateRewardRedemptionStatus(id: number, status: "pending" | "approved" | "delivered"): Promise<RewardRedemption | undefined> {
     const redemption = this.rewardRedemptions.get(id);
     if (!redemption) return undefined;
     
@@ -327,4 +331,269 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  sessionStore: any; // Using any instead of session.SessionStore
+  
+  constructor() {
+    this.sessionStore = new PostgresSessionStore({ 
+      pool: pool, 
+      createTableIfMissing: true 
+    });
+    
+    // Initialize demo data if needed
+    this.initializeDemo();
+  }
+  
+  private async initializeDemo() {
+    try {
+      // Check if we already have houses
+      const existingHouses = await this.getAllHouses();
+      if (existingHouses.length === 0) {
+        // Create houses
+        const houses = [
+          { name: 'Phoenix', color: '#3b82f6', description: 'House of courage and rebirth', logoUrl: '' },
+          { name: 'Griffin', color: '#10b981', description: 'House of nobility and strength', logoUrl: '' },
+          { name: 'Dragon', color: '#f59e0b', description: 'House of wisdom and power', logoUrl: '' },
+          { name: 'Pegasus', color: '#ef4444', description: 'House of freedom and inspiration', logoUrl: '' }
+        ];
+        
+        for (const house of houses) {
+          await this.createHouse(house);
+        }
+      }
+      
+      // Check if we already have behavior categories
+      const existingCategories = await this.getAllBehaviorCategories();
+      if (existingCategories.length === 0) {
+        // Create behavior categories
+        const categories = [
+          { name: 'Academic Excellence', description: 'Outstanding academic performance', isPositive: true, pointValue: 5 },
+          { name: 'Helping Others', description: 'Assisting peers or staff', isPositive: true, pointValue: 3 },
+          { name: 'Teamwork', description: 'Great collaboration with others', isPositive: true, pointValue: 4 },
+          { name: 'Leadership', description: 'Demonstrating leadership skills', isPositive: true, pointValue: 5 },
+          { name: 'Classroom Disruption', description: 'Disrupting the learning environment', isPositive: false, pointValue: 2 },
+          { name: 'Late Assignment', description: 'Submitting work after deadline', isPositive: false, pointValue: 1 },
+          { name: 'Tardiness', description: 'Arriving late to class', isPositive: false, pointValue: 1 }
+        ];
+        
+        for (const category of categories) {
+          await this.createBehaviorCategory(category);
+        }
+      }
+      
+      // Check if we already have rewards
+      const existingRewards = await this.getAllRewards();
+      if (existingRewards.length === 0) {
+        // Create rewards
+        const rewards = [
+          { name: 'Homework Pass', description: 'Skip one homework assignment', pointCost: 20, quantity: 10, imageUrl: '' },
+          { name: 'Lunch with Teacher', description: 'Have lunch with your favorite teacher', pointCost: 30, quantity: 5, imageUrl: '' },
+          { name: 'School Store Voucher', description: '$5 voucher for the school store', pointCost: 25, quantity: 15, imageUrl: '' },
+          { name: 'Front of Lunch Line Pass', description: 'Skip the lunch line for a week', pointCost: 15, quantity: 20, imageUrl: '' }
+        ];
+        
+        for (const reward of rewards) {
+          await this.createReward(reward);
+        }
+      }
+    } catch (error) {
+      console.error("Error initializing demo data:", error);
+    }
+  }
+  
+  // User Management
+  async getUser(id: number): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.id, id));
+    return result[0];
+  }
+  
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.username, username));
+    return result[0];
+  }
+  
+  async createUser(user: InsertUser): Promise<User> {
+    const result = await db.insert(users).values(user).returning();
+    return result[0];
+  }
+  
+  async updateUser(id: number, userUpdate: Partial<User>): Promise<User | undefined> {
+    const result = await db.update(users)
+      .set(userUpdate)
+      .where(eq(users.id, id))
+      .returning();
+    return result[0];
+  }
+  
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+  
+  async getUsersByRole(role: string): Promise<User[]> {
+    return await db.select().from(users).where(eq(users.role, role));
+  }
+  
+  async getStudentsByParentId(parentId: number): Promise<User[]> {
+    return await db.select().from(users)
+      .where(and(
+        eq(users.role, 'student'),
+        eq(users.parentId, parentId)
+      ));
+  }
+  
+  async getStudentsByHouseId(houseId: number): Promise<User[]> {
+    return await db.select().from(users)
+      .where(and(
+        eq(users.role, 'student'),
+        eq(users.houseId, houseId)
+      ));
+  }
+  
+  // House Management
+  async getHouse(id: number): Promise<House | undefined> {
+    const result = await db.select().from(houses).where(eq(houses.id, id));
+    return result[0];
+  }
+  
+  async getHouseByName(name: string): Promise<House | undefined> {
+    const result = await db.select().from(houses).where(eq(houses.name, name));
+    return result[0];
+  }
+  
+  async createHouse(house: InsertHouse): Promise<House> {
+    const result = await db.insert(houses).values({
+      ...house,
+      points: 0
+    }).returning();
+    return result[0];
+  }
+  
+  async updateHouse(id: number, houseUpdate: Partial<House>): Promise<House | undefined> {
+    const result = await db.update(houses)
+      .set(houseUpdate)
+      .where(eq(houses.id, id))
+      .returning();
+    return result[0];
+  }
+  
+  async getAllHouses(): Promise<House[]> {
+    return await db.select().from(houses);
+  }
+  
+  async updateHousePoints(id: number, points: number): Promise<House | undefined> {
+    const house = await this.getHouse(id);
+    if (!house) return undefined;
+    
+    const newPoints = house.points + points;
+    return await this.updateHouse(id, { points: newPoints });
+  }
+  
+  // Behavior Categories
+  async getBehaviorCategory(id: number): Promise<BehaviorCategory | undefined> {
+    const result = await db.select().from(behaviorCategories).where(eq(behaviorCategories.id, id));
+    return result[0];
+  }
+  
+  async createBehaviorCategory(category: InsertBehaviorCategory): Promise<BehaviorCategory> {
+    const result = await db.insert(behaviorCategories).values(category).returning();
+    return result[0];
+  }
+  
+  async getAllBehaviorCategories(): Promise<BehaviorCategory[]> {
+    return await db.select().from(behaviorCategories);
+  }
+  
+  // Behavior Points
+  async createBehaviorPoint(point: InsertBehaviorPoint): Promise<BehaviorPoint> {
+    const result = await db.insert(behaviorPoints).values({
+      ...point,
+      timestamp: new Date()
+    }).returning();
+    
+    // Update house points if student is in a house
+    const student = await this.getUser(point.studentId);
+    if (student?.houseId) {
+      await this.updateHousePoints(student.houseId, point.points);
+    }
+    
+    return result[0];
+  }
+  
+  async getBehaviorPointsByStudentId(studentId: number): Promise<BehaviorPoint[]> {
+    return await db.select().from(behaviorPoints)
+      .where(eq(behaviorPoints.studentId, studentId))
+      .orderBy(desc(behaviorPoints.timestamp));
+  }
+  
+  async getBehaviorPointsByTeacherId(teacherId: number): Promise<BehaviorPoint[]> {
+    return await db.select().from(behaviorPoints)
+      .where(eq(behaviorPoints.teacherId, teacherId))
+      .orderBy(desc(behaviorPoints.timestamp));
+  }
+  
+  async getRecentBehaviorPoints(limit: number): Promise<BehaviorPoint[]> {
+    return await db.select().from(behaviorPoints)
+      .orderBy(desc(behaviorPoints.timestamp))
+      .limit(limit);
+  }
+  
+  // Rewards
+  async getReward(id: number): Promise<Reward | undefined> {
+    const result = await db.select().from(rewards).where(eq(rewards.id, id));
+    return result[0];
+  }
+  
+  async createReward(reward: InsertReward): Promise<Reward> {
+    const result = await db.insert(rewards).values(reward).returning();
+    return result[0];
+  }
+  
+  async updateReward(id: number, rewardUpdate: Partial<Reward>): Promise<Reward | undefined> {
+    const result = await db.update(rewards)
+      .set(rewardUpdate)
+      .where(eq(rewards.id, id))
+      .returning();
+    return result[0];
+  }
+  
+  async getAllRewards(): Promise<Reward[]> {
+    return await db.select().from(rewards);
+  }
+  
+  // Reward Redemptions
+  async createRewardRedemption(redemption: InsertRewardRedemption): Promise<RewardRedemption> {
+    const result = await db.insert(rewardRedemptions).values({
+      ...redemption,
+      timestamp: new Date(),
+      status: 'pending'
+    }).returning();
+    
+    // Decrement reward quantity
+    const reward = await this.getReward(redemption.rewardId);
+    if (reward && reward.quantity > 0) {
+      await this.updateReward(reward.id, { quantity: reward.quantity - 1 });
+    }
+    
+    return result[0];
+  }
+  
+  async getRewardRedemptionsByStudentId(studentId: number): Promise<RewardRedemption[]> {
+    return await db.select().from(rewardRedemptions)
+      .where(eq(rewardRedemptions.studentId, studentId))
+      .orderBy(desc(rewardRedemptions.timestamp));
+  }
+  
+  async updateRewardRedemptionStatus(id: number, status: "pending" | "approved" | "delivered"): Promise<RewardRedemption | undefined> {
+    const result = await db.update(rewardRedemptions)
+      .set({ status: status as any }) // Cast to any to work around type issues with Drizzle
+      .where(eq(rewardRedemptions.id, id))
+      .returning();
+    return result[0];
+  }
+}
+
+// Use PostgreSQL storage
+export const storage = new DatabaseStorage();
+
+// Uncomment to use in-memory storage
+// export const storage = new MemStorage();
