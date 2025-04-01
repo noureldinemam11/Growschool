@@ -106,7 +106,7 @@ export default function DashboardPage() {
             <FeatureCard 
               title="House Points" 
               icon={<Shield size={36} className="text-purple-500" />} 
-              onClick={() => setLocation('/house')}
+              onClick={() => setLocation('/house/dashboard')}
             />
             
             <FeatureCard 
