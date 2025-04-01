@@ -698,6 +698,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ error: "Failed to create user" });
     }
   });
+  
+  // Add a DELETE endpoint for users
+  app.delete("/api/users/:id", async (req, res) => {
+    if (!req.isAuthenticated() || !["admin", "teacher"].includes(req.user.role)) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const userId = Number(req.params.id);
+      console.log(`DELETE /api/users/${userId} - Attempting to delete user`);
+      
+      // Check if user exists and is a student
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // For safety, only allow deletion of student accounts
+      if (user.role !== "student") {
+        return res.status(403).json({ error: "Can only delete student accounts" });
+      }
+      
+      // Check if there are any behavior points or reward redemptions for this student
+      const behaviorPoints = await storage.getBehaviorPointsByStudentId(userId);
+      if (behaviorPoints.length > 0) {
+        return res.status(400).json({ 
+          error: "Cannot delete student with behavior points. Please remove the points first." 
+        });
+      }
+      
+      const redemptions = await storage.getRewardRedemptionsByStudentId(userId);
+      if (redemptions.length > 0) {
+        return res.status(400).json({ 
+          error: "Cannot delete student with reward redemptions. Please remove the redemptions first." 
+        });
+      }
+      
+      // Delete the user
+      const result = await storage.deleteUser(userId);
+      if (!result) {
+        return res.status(500).json({ error: "Failed to delete user" });
+      }
+      
+      console.log(`User ${userId} deleted successfully`);
+      return res.status(200).json({ success: true, message: "User deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      return res.status(500).json({ 
+        error: "Failed to delete user",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
 
   app.post("/api/users/bulk-import", async (req, res) => {
     if (!req.isAuthenticated() || !["admin", "teacher"].includes(req.user.role)) {
