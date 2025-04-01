@@ -16,7 +16,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, user: Partial<User>): Promise<User | undefined>;
-  deleteUser(id: number): Promise<boolean>;
+  deleteUser(id: number, forceDelete?: boolean): Promise<boolean>;
   getAllUsers(): Promise<User[]>;
   getUsersByRole(role: string): Promise<User[]>;
   getStudentsByParentId(parentId: number): Promise<User[]>;
@@ -174,8 +174,23 @@ export class MemStorage implements IStorage {
     return updatedUser;
   }
   
-  async deleteUser(id: number): Promise<boolean> {
+  async deleteUser(id: number, forceDelete: boolean = false): Promise<boolean> {
     if (!this.users.has(id)) return false;
+    
+    // If force delete is enabled, also delete related records
+    if (forceDelete) {
+      // Remove behavior points for this user
+      Array.from(this.behaviorPoints.entries())
+        .filter(([_, point]) => point.studentId === id)
+        .forEach(([pointId, _]) => this.behaviorPoints.delete(pointId));
+      
+      // Remove reward redemptions for this user
+      Array.from(this.rewardRedemptions.entries())
+        .filter(([_, redemption]) => redemption.studentId === id)
+        .forEach(([redemptionId, _]) => this.rewardRedemptions.delete(redemptionId));
+    }
+    
+    // Delete the user
     return this.users.delete(id);
   }
 
@@ -511,12 +526,51 @@ export class DatabaseStorage implements IStorage {
     return result[0] as User | undefined;
   }
   
-  async deleteUser(id: number): Promise<boolean> {
+  async deleteUser(id: number, forceDelete: boolean = false): Promise<boolean> {
     try {
-      const result = await db.delete(users)
-        .where(eq(users.id, id))
-        .returning();
-      return result.length > 0;
+      // If force delete is enabled, we need to remove related records first
+      if (forceDelete) {
+        // Start a transaction to ensure data consistency
+        const client = await pool.connect();
+        
+        try {
+          await client.query('BEGIN');
+          
+          // Delete behavior points for this student
+          await client.query(
+            'DELETE FROM behavior_points WHERE student_id = $1',
+            [id]
+          );
+          
+          // Delete reward redemptions for this student
+          await client.query(
+            'DELETE FROM reward_redemptions WHERE student_id = $1',
+            [id]
+          );
+          
+          // Delete the user
+          const deleteResult = await client.query(
+            'DELETE FROM users WHERE id = $1 RETURNING *',
+            [id]
+          );
+          
+          await client.query('COMMIT');
+          
+          return deleteResult.rows.length > 0;
+        } catch (txError) {
+          await client.query('ROLLBACK');
+          console.error("Transaction error in force delete user:", txError);
+          throw txError;
+        } finally {
+          client.release();
+        }
+      } else {
+        // Regular delete without touching related records
+        const result = await db.delete(users)
+          .where(eq(users.id, id))
+          .returning();
+        return result.length > 0;
+      }
     } catch (error) {
       console.error("Error in deleteUser:", error);
       return false;

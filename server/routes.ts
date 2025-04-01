@@ -707,7 +707,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const userId = Number(req.params.id);
-      console.log(`DELETE /api/users/${userId} - Attempting to delete user`);
+      const forceDelete = req.query.force === 'true';
+      console.log(`DELETE /api/users/${userId} - Attempting to delete user. Force delete: ${forceDelete}`);
       
       // Check if user exists and is a student
       const user = await storage.getUser(userId);
@@ -720,23 +721,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Can only delete student accounts" });
       }
       
-      // Check if there are any behavior points or reward redemptions for this student
-      const behaviorPoints = await storage.getBehaviorPointsByStudentId(userId);
-      if (behaviorPoints.length > 0) {
-        return res.status(400).json({ 
-          error: "Cannot delete student with behavior points. Please remove the points first." 
-        });
+      // Only perform these checks if force delete is not enabled
+      if (!forceDelete) {
+        // Check if there are any behavior points or reward redemptions for this student
+        const behaviorPoints = await storage.getBehaviorPointsByStudentId(userId);
+        if (behaviorPoints.length > 0) {
+          return res.status(400).json({ 
+            error: "Cannot delete student with behavior points. Please remove the points first or use force delete option." 
+          });
+        }
+        
+        const redemptions = await storage.getRewardRedemptionsByStudentId(userId);
+        if (redemptions.length > 0) {
+          return res.status(400).json({ 
+            error: "Cannot delete student with reward redemptions. Please remove the redemptions first or use force delete option." 
+          });
+        }
+      } else {
+        console.log(`Force deleting user ${userId}, bypassing behavior points and redemptions checks`);
       }
       
-      const redemptions = await storage.getRewardRedemptionsByStudentId(userId);
-      if (redemptions.length > 0) {
-        return res.status(400).json({ 
-          error: "Cannot delete student with reward redemptions. Please remove the redemptions first." 
-        });
-      }
-      
-      // Delete the user
-      const result = await storage.deleteUser(userId);
+      // Delete the user (and possibly their associated records in other tables, if force delete is used)
+      const result = await storage.deleteUser(userId, forceDelete);
       if (!result) {
         return res.status(500).json({ error: "Failed to delete user" });
       }

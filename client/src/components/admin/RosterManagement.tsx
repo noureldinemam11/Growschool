@@ -244,8 +244,11 @@ export default function RosterManagement() {
 
   // Mutation for deleting a student
   const deleteStudentMutation = useMutation({
-    mutationFn: async (studentId: number) => {
-      const response = await apiRequest('DELETE', `/api/users/${studentId}`);
+    mutationFn: async ({ studentId, forceDelete }: { studentId: number; forceDelete: boolean }) => {
+      const url = forceDelete ? 
+        `/api/users/${studentId}?force=true` : 
+        `/api/users/${studentId}`;
+      const response = await apiRequest('DELETE', url);
       return await response.json();
     },
     onSuccess: () => {
@@ -283,7 +286,14 @@ export default function RosterManagement() {
   // Handle student deletion
   const handleDeleteStudent = (studentId: number) => {
     if (window.confirm('Are you sure you want to remove this student? This action cannot be undone.')) {
-      deleteStudentMutation.mutate(studentId);
+      deleteStudentMutation.mutate({ studentId, forceDelete: false });
+    }
+  };
+  
+  // Handle student force deletion 
+  const handleForceDeleteStudent = (studentId: number) => {
+    if (window.confirm('Force delete will remove all behavior points and rewards records for this student. This action cannot be undone. Continue?')) {
+      deleteStudentMutation.mutate({ studentId, forceDelete: true });
     }
   };
 
@@ -552,15 +562,28 @@ MAYED AHMED MUBARAK OBIAD ALHAMELI"
                       {houses?.find(h => h.id === student.houseId)?.name || "Unassigned"}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteStudent(student.id)}
-                        className="h-8 w-8 p-0 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Delete</span>
-                      </Button>
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteStudent(student.id)}
+                          className="h-8 w-8 p-0 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                          title="Delete student"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Delete</span>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleForceDeleteStudent(student.id)}
+                          className="h-8 w-8 p-0 bg-destructive/5 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          title="Force delete (removes all associated records)"
+                        >
+                          <Trash2 className="h-4 w-4 stroke-[2.5px]" />
+                          <span className="sr-only">Force Delete</span>
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
