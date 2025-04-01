@@ -62,10 +62,11 @@ export default function HouseManagement() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedHouse, setSelectedHouse] = useState<House | null>(null);
+  const [refreshCounter, setRefreshCounter] = useState(0);
 
-  // Fetch houses
-  const { data: houses, isLoading } = useQuery<House[]>({
-    queryKey: ['/api/houses'],
+  // Fetch houses with refresh counter to force refetch
+  const { data: houses, isLoading, refetch } = useQuery<House[]>({
+    queryKey: ['/api/houses', refreshCounter],
   });
 
   // Create house form
@@ -222,7 +223,12 @@ export default function HouseManagement() {
       });
       setIsAddDialogOpen(false);
       form.reset();
+      // Increment refresh counter to force a refetch
+      setRefreshCounter(prev => prev + 1);
+      // Also invalidate the cache
       queryClient.invalidateQueries({ queryKey: ['/api/houses'] });
+      // Manually refetch to ensure UI is updated
+      setTimeout(() => refetch(), 100);
     },
     onError: (error: Error) => {
       toast({
@@ -323,7 +329,12 @@ export default function HouseManagement() {
       });
       setIsEditDialogOpen(false);
       editForm.reset();
+      // Increment refresh counter to force a refetch
+      setRefreshCounter(prev => prev + 1);
+      // Also invalidate the cache
       queryClient.invalidateQueries({ queryKey: ['/api/houses'] });
+      // Manually refetch to ensure UI is updated
+      refetch();
     },
     onError: (error: Error) => {
       toast({
@@ -418,7 +429,12 @@ export default function HouseManagement() {
         title: 'House deleted successfully',
         description: 'The house has been removed from the system.',
       });
+      // Increment refresh counter to force a refetch
+      setRefreshCounter(prev => prev + 1);
+      // Also invalidate the cache
       queryClient.invalidateQueries({ queryKey: ['/api/houses'] });
+      // Manually refetch to ensure UI is updated
+      setTimeout(() => refetch(), 100);
     },
     onError: (error: Error) => {
       toast({
