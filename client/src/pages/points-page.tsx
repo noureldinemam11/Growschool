@@ -225,39 +225,9 @@ export default function PointsPage() {
             <Button 
               variant="ghost" 
               className="rounded-l-full" 
-              onClick={handleSelectAll}
+              onClick={selectedStudents.length > 0 ? handleDeselectAll : handleSelectAll}
             >
-              Select All
-            </Button>
-            <Button 
-              variant="ghost" 
-              onClick={handleDeselectAll}
-            >
-              Deselect
-            </Button>
-            <Button 
-              variant="ghost" 
-              onClick={handleRandomSelect}
-            >
-              Random
-            </Button>
-            <Button 
-              variant="ghost" 
-              disabled
-            >
-              Timeline
-            </Button>
-            <Button 
-              variant="ghost" 
-              disabled
-            >
-              Absent
-            </Button>
-            <Button 
-              variant="ghost" 
-              disabled
-            >
-              More
+              {selectedStudents.length > 0 ? "Deselect All" : "Select All"}
             </Button>
             <Button 
               variant="ghost" 
