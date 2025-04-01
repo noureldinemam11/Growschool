@@ -42,6 +42,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Login successful",
         description: `Welcome back, ${user.firstName}!`,
       });
+      // Redirect to dashboard after login
+      window.location.href = "/";
     },
     onError: (error: Error) => {
       toast({
@@ -63,6 +65,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Registration successful",
         description: `Welcome to LiveSchool, ${user.firstName}!`,
       });
+      // Redirect to dashboard after registration
+      window.location.href = "/";
     },
     onError: (error: Error) => {
       toast({
