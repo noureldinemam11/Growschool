@@ -112,11 +112,12 @@ export default function RosterManagement() {
   // Mutation for bulk importing students
   const bulkImportMutation = useMutation({
     mutationFn: async (data: BulkImportFormData) => {
+      // Split on newlines or carriage returns or a combination
       const processedNames = data.studentNames
-        .split('\\n')
+        .split(/\r?\n/)
         .filter(name => name.trim())
         .map(name => {
-          // Handle different name formats (last, first or first last)
+          // Handle different name formats (last, first or first last or full Arabic names)
           let firstName, lastName;
           
           if (name.includes(',')) {
@@ -125,11 +126,19 @@ export default function RosterManagement() {
             lastName = last;
             firstName = first;
           } else {
-            // Format: "First Last"
+            // Format: "Full Name" - Handle multi-part names
             const parts = name.trim().split(' ');
-            if (parts.length >= 2) {
-              firstName = parts.slice(0, parts.length - 1).join(' ');
-              lastName = parts[parts.length - 1];
+            
+            // For multi-part Arabic names or names with more than 2 parts
+            if (parts.length > 2) {
+              // Take the first part as the first name
+              firstName = parts[0];
+              // Take the rest as the last name
+              lastName = parts.slice(1).join(' ');
+            } else if (parts.length === 2) {
+              // Standard "First Last" format
+              firstName = parts[0];
+              lastName = parts[1];
             } else {
               firstName = name.trim();
               lastName = '[Unknown]';
@@ -150,6 +159,8 @@ export default function RosterManagement() {
             email: `${sanitizedFirstName}.${sanitizedLastName}@school.example`,
             // This satisfies the form requirements - username and password will be set on server
             confirmPassword: 'no-login-required',
+            username: `${sanitizedFirstName}${sanitizedLastName}`,
+            password: 'no-login-required',
           };
         });
       
@@ -418,13 +429,16 @@ export default function RosterManagement() {
                           <FormLabel>Student Names</FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder="Paste student names here, one per line. Format: 'First Last' or 'Last, First'"
+                              placeholder="Paste student names here, one per line. Examples:
+ABDULRAHMAN AHMED HUSAIN AHMED ALKATHEERI
+ALI BADR ALI ABDULLA ALHOSANI
+MAYED AHMED MUBARAK OBIAD ALHAMELI"
                               className="min-h-[200px]"
                               {...field}
                             />
                           </FormControl>
                           <FormDescription>
-                            Enter each student on a new line. You can use either "First Last" or "Last, First" format.
+                            Enter each student on a new line. For names with multiple parts like "ABDULRAHMAN AHMED HUSAIN AHMED ALKATHEERI", the first part will be used as the first name and the rest as the last name.
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
