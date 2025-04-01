@@ -39,7 +39,7 @@ export default function DashboardItems() {
         <DashboardItem 
           icon={<Award size={48} />} 
           title="Points" 
-          onClick={() => setIsPointsModalOpen(true)}
+          onClick={() => navigate('/points')}
         />
         <DashboardItem 
           icon={<BarChart size={48} />} 
