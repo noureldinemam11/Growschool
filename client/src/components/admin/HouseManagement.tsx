@@ -95,15 +95,42 @@ export default function HouseManagement() {
   const createHouseMutation = useMutation({
     mutationFn: async (newHouse: InsertHouse) => {
       try {
-        const res = await apiRequest('POST', '/api/houses', newHouse);
+        console.log('Creating house with data:', newHouse);
+        
+        // Use direct fetch instead of apiRequest
+        const res = await fetch('/api/houses', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newHouse),
+          credentials: 'include'
+        });
+        
+        console.log('Create house response status:', res.status);
+        
+        // Try to get the response text
+        let responseText = '';
+        try {
+          responseText = await res.text();
+          console.log('Create house response text:', responseText);
+        } catch (e) {
+          console.error('Error reading response text:', e);
+        }
         
         // Check if response is OK
         if (!res.ok) {
-          const errorText = await res.text();
-          throw new Error(errorText || 'Failed to create house');
+          throw new Error(responseText || `Failed to create house: ${res.status}`);
         }
         
-        return await res.json();
+        // Try to parse the response as JSON
+        let data;
+        try {
+          data = responseText ? JSON.parse(responseText) : {};
+          console.log('Parsed create house response:', data);
+          return data.house || data;
+        } catch (e) {
+          console.error('Error parsing JSON:', e);
+          throw new Error('Invalid JSON response from server');
+        }
       } catch (err) {
         console.error('House creation error:', err);
         throw err;
@@ -132,21 +159,47 @@ export default function HouseManagement() {
     mutationFn: async (updatedHouse: Partial<House> & { id: number }) => {
       const { id, ...data } = updatedHouse;
       try {
-        const res = await apiRequest('PATCH', `/api/houses/${id}`, data);
+        console.log('Updating house with data:', data);
+        
+        // Use direct fetch instead of apiRequest
+        const res = await fetch(`/api/houses/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+          credentials: 'include'
+        });
+        
+        console.log('Update house response status:', res.status);
+        
+        // Try to get the response text
+        let responseText = '';
+        try {
+          responseText = await res.text();
+          console.log('Update house response text:', responseText);
+        } catch (e) {
+          console.error('Error reading response text:', e);
+        }
         
         // Check if response is OK
         if (!res.ok) {
-          const errorText = await res.text();
-          throw new Error(errorText || 'Failed to update house');
+          throw new Error(responseText || `Failed to update house: ${res.status}`);
         }
         
-        const responseData = await res.json();
-        
-        if (!responseData?.success) {
-          throw new Error(responseData?.error || 'Failed to update house');
+        // Try to parse the response as JSON
+        let responseData;
+        try {
+          responseData = responseText ? JSON.parse(responseText) : {};
+          console.log('Parsed update house response:', responseData);
+          
+          if (!responseData?.success) {
+            throw new Error(responseData?.error || 'Failed to update house');
+          }
+          
+          return responseData.house || responseData; // Return the updated house from the response
+        } catch (e) {
+          console.error('Error parsing JSON:', e);
+          throw new Error('Invalid JSON response from server');
         }
-        
-        return responseData.house; // Return the updated house from the response
       } catch (err) {
         console.error('House update error:', err);
         throw err;
@@ -174,15 +227,39 @@ export default function HouseManagement() {
   const deleteHouseMutation = useMutation({
     mutationFn: async (id: number) => {
       try {
-        const res = await apiRequest('DELETE', `/api/houses/${id}`);
+        console.log('Deleting house with id:', id);
+        
+        // Use direct fetch instead of apiRequest
+        const res = await fetch(`/api/houses/${id}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+        
+        console.log('Delete house response status:', res.status);
+        
+        // Try to get the response text
+        let responseText = '';
+        try {
+          responseText = await res.text();
+          console.log('Delete house response text:', responseText);
+        } catch (e) {
+          console.error('Error reading response text:', e);
+        }
         
         // Check if response is OK
         if (!res.ok) {
-          const errorText = await res.text();
-          throw new Error(errorText || 'Failed to delete house');
+          throw new Error(responseText || `Failed to delete house: ${res.status}`);
         }
         
-        return await res.json();
+        // Try to parse the response as JSON
+        try {
+          const data = responseText ? JSON.parse(responseText) : {};
+          console.log('Parsed delete house response:', data);
+          return data;
+        } catch (e) {
+          console.error('Error parsing JSON:', e);
+          throw new Error('Invalid JSON response from server');
+        }
       } catch (err) {
         console.error('House deletion error:', err);
         throw err;
