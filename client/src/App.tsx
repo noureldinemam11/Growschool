@@ -12,7 +12,7 @@ import RosterPage from "@/pages/roster-page";
 import PointsPage from "@/pages/points-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
-import Header from "@/components/header/Header";
+import AppHeader from "@/components/ui/AppHeader";
 
 function Router() {
   return (
@@ -79,13 +79,15 @@ function Router() {
 
 function App() {
   return (
-    <>
-      <AuthProvider>
-        <Header />
-        <Router />
+    <AuthProvider>
+      <div className="app-container">
+        <AppHeader />
+        <div className="app-content">
+          <Router />
+        </div>
         <Toaster />
-      </AuthProvider>
-    </>
+      </div>
+    </AuthProvider>
   );
 }
 
