@@ -82,7 +82,7 @@ const PointsDistributionChart: FC<PointsDistributionChartProps> = ({ points }) =
             <Cell key={`cell-${index}`} fill={entry.color} />
           ))}
         </Pie>
-        <Tooltip formatter={(value, name, props) => [`${value} points`, name]} />
+        <Tooltip formatter={(value, name) => [`${value} points`, name]} />
         <Legend />
       </PieChart>
     </ResponsiveContainer>
