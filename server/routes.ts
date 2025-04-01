@@ -121,11 +121,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Ensure we're returning a valid JSON response with explicit content type
         return res
           .status(200)
-          .header('Content-Type', 'application/json')
-          .json({ 
+          .setHeader('Content-Type', 'application/json')
+          .send(JSON.stringify({ 
             success: true,
             house: verifiedHouse || updatedHouse 
-          });
+          }));
       } catch (sqlError) {
         console.error("SQL update error:", sqlError);
         throw sqlError; // Re-throw to be caught by the outer catch block
@@ -187,8 +187,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[DEBUG] House deleted successfully:`, deleteResult.rows[0]);
       
       res.status(200)
-        .header('Content-Type', 'application/json')
-        .json({ success: true, message: "House deleted successfully" });
+        .setHeader('Content-Type', 'application/json')
+        .send(JSON.stringify({ success: true, message: "House deleted successfully" }));
     } catch (error) {
       console.error("Error deleting house:", error);
       res.status(500).json({ error: "Failed to delete house" });
