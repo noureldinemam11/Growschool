@@ -1,12 +1,21 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
+import express from "express";
+import path from "path";
 import { setupAuth } from "./auth";
 import { setupExcelImport } from "./excel-import";
 import { storage } from "./storage";
 import { insertBehaviorPointSchema, insertRewardRedemptionSchema, userRoles } from "@shared/schema";
 import { z } from "zod";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Serve static files from client/public directory
+  app.use(express.static(path.join(__dirname, "..", "client", "public")));
+  
   // Setup authentication routes
   setupAuth(app);
   

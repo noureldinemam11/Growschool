@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Upload, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Loader2, Upload, AlertTriangle, CheckCircle2, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -121,6 +121,15 @@ export function ImportStudentsButton() {
               Upload an Excel file (.xlsx, .xls) or CSV file with student information.
               The file should have columns for firstName, lastName, username, email, and password.
               Optional columns include gradeLevel, section, and houseId.
+              <div className="mt-2 text-sm">
+                <a 
+                  href="/student_import_template.xlsx" 
+                  download
+                  className="text-primary hover:underline font-medium flex items-center gap-1"
+                >
+                  <Download className="h-3 w-3" /> Download sample template
+                </a>
+              </div>
             </DialogDescription>
           </DialogHeader>
           
