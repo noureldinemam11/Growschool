@@ -1,204 +1,113 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useQuery } from '@tanstack/react-query';
-import Navbar from '@/components/layout/Navbar';
-import Sidebar from '@/components/layout/Sidebar';
-import MobileNavbar from '@/components/layout/MobileNavbar';
-import HouseCard from '@/components/houses/HouseCard';
-import HouseLeaderboard from '@/components/houses/HouseLeaderboard';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { House, User } from '@shared/schema';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowLeft, Settings } from 'lucide-react';
+import { useLocation } from 'wouter';
 
 export default function HousePage() {
   const { user } = useAuth();
-  const [selectedHouseId, setSelectedHouseId] = useState<number | null>(null);
-
+  const [, setLocation] = useLocation();
+  
+  // Get houses data
   const { data: houses, isLoading: isLoadingHouses } = useQuery<House[]>({
     queryKey: ['/api/houses'],
   });
 
-  const { data: houseStudents, isLoading: isLoadingStudents } = useQuery<Partial<User>[]>({
-    queryKey: ['/api/users/students/house/' + selectedHouseId],
-    enabled: !!selectedHouseId
-  });
-
-  // Auto-select first house when data loads or user's house if they're a student
-  if (houses?.length && !selectedHouseId) {
-    if (user?.role === 'student' && user.houseId) {
-      setSelectedHouseId(user.houseId);
-    } else {
-      setSelectedHouseId(houses[0].id);
-    }
-  }
-
-  const selectedHouse = houses?.find(h => h.id === selectedHouseId);
-  
   return (
-    <div className="h-screen flex flex-col">
-      <Navbar />
-      
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-        <Sidebar />
-        
-        <div className="flex-1 flex flex-col overflow-y-auto bg-neutral">
-          <div className="p-4 md:p-8">
-            <header className="mb-6">
-              <h1 className="text-2xl font-heading font-bold text-neutral-darker">Houses</h1>
-              <p className="text-neutral-dark">Track house points and competition standings</p>
-            </header>
-
-            {isLoadingHouses ? (
-              <div className="flex items-center justify-center h-64">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : houses && houses.length > 0 ? (
-              <div className="space-y-6">
-                <HouseLeaderboard houses={houses} />
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {houses.map(house => (
-                    <HouseCard 
-                      key={house.id}
-                      house={house}
-                      isSelected={house.id === selectedHouseId}
-                      onClick={() => setSelectedHouseId(house.id)}
-                    />
-                  ))}
-                </div>
-                
-                {selectedHouse && (
-                  <div className="bg-white rounded-lg shadow-sm">
-                    <Tabs defaultValue="overview" className="w-full">
-                      <div className="border-b px-6 pt-6">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between mb-4">
-                          <div className="flex items-center mb-4 md:mb-0">
-                            <div className="w-12 h-12 rounded-full" style={{ backgroundColor: selectedHouse.color }}></div>
-                            <div className="ml-4">
-                              <h2 className="text-xl font-heading font-bold text-neutral-darker">{selectedHouse.name} House</h2>
-                              <p className="text-neutral-dark text-sm">{selectedHouse.description || 'No description available'}</p>
-                            </div>
-                          </div>
-                          <div className="text-center md:text-right">
-                            <div className="text-xs text-neutral-dark">Total Points</div>
-                            <div className="text-3xl font-mono font-bold text-primary">{selectedHouse.points.toLocaleString()}</div>
-                          </div>
-                        </div>
-                        
-                        <TabsList className="mb-0">
-                          <TabsTrigger value="overview">Overview</TabsTrigger>
-                          <TabsTrigger value="members">Members</TabsTrigger>
-                          <TabsTrigger value="history">Point History</TabsTrigger>
-                        </TabsList>
-                      </div>
-                      
-                      <TabsContent value="overview" className="p-6 space-y-4">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>House Information</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                              <div>
-                                <div className="text-neutral-dark text-sm mb-1">House Name</div>
-                                <div className="font-medium">{selectedHouse.name}</div>
-                              </div>
-                              <div>
-                                <div className="text-neutral-dark text-sm mb-1">House Color</div>
-                                <div className="flex items-center">
-                                  <div className="w-4 h-4 rounded mr-2" style={{ backgroundColor: selectedHouse.color }}></div>
-                                  <span className="font-medium">{selectedHouse.color}</span>
-                                </div>
-                              </div>
-                              <div>
-                                <div className="text-neutral-dark text-sm mb-1">Total Points</div>
-                                <div className="font-medium font-mono">{selectedHouse.points.toLocaleString()}</div>
-                              </div>
-                            </div>
-                            
-                            <div className="mt-4">
-                              <div className="text-neutral-dark text-sm mb-1">Description</div>
-                              <div className="font-medium">{selectedHouse.description || 'No description available'}</div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                        
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>House Achievements</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <p className="text-neutral-dark">Achievements will be displayed here.</p>
-                          </CardContent>
-                        </Card>
-                      </TabsContent>
-                      
-                      <TabsContent value="members" className="p-6">
-                        {isLoadingStudents ? (
-                          <div className="flex items-center justify-center h-32">
-                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                          </div>
-                        ) : houseStudents && houseStudents.length > 0 ? (
-                          <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                              <thead className="bg-neutral">
-                                <tr>
-                                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-dark uppercase tracking-wider">Student</th>
-                                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-dark uppercase tracking-wider">Grade</th>
-                                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-dark uppercase tracking-wider">Section</th>
-                                </tr>
-                              </thead>
-                              <tbody className="bg-white divide-y divide-gray-200">
-                                {houseStudents.map(student => (
-                                  <tr key={student.id}>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                      <div className="flex items-center">
-                                        <div className="h-8 w-8 rounded-full bg-neutral-light flex items-center justify-center">
-                                          <span className="font-semibold text-neutral-dark">
-                                            {student.firstName?.charAt(0)}{student.lastName?.charAt(0)}
-                                          </span>
-                                        </div>
-                                        <div className="ml-4">
-                                          <div className="text-sm font-medium text-neutral-darker">
-                                            {student.firstName} {student.lastName}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-darker">
-                                      {student.gradeLevel || '-'}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-darker">
-                                      {student.section || '-'}
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        ) : (
-                          <p className="text-neutral-dark">No students assigned to this house.</p>
-                        )}
-                      </TabsContent>
-                      
-                      <TabsContent value="history" className="p-6">
-                        <p className="text-neutral-dark">Point history will be available soon.</p>
-                      </TabsContent>
-                    </Tabs>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="bg-white rounded-lg shadow-sm p-6 text-center">
-                <p className="text-neutral-dark">No houses found in the system.</p>
-              </div>
-            )}
+    <div className="min-h-screen flex flex-col">
+      {/* Top Navigation Bar */}
+      <header className="bg-primary text-white py-3 px-4">
+        <div className="container mx-auto flex justify-between items-center">
+          <div className="flex items-center space-x-2">
+            <button 
+              onClick={() => setLocation('/')}
+              className="p-2 hover:bg-primary-dark rounded-md"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <div className="font-bold text-lg">House Points</div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button className="p-2 rounded-md hover:bg-primary-dark text-white/90 hover:text-white">
+              <Settings size={20} />
+            </button>
           </div>
         </div>
-      </div>
-      
-      <MobileNavbar />
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-1 bg-slate-50 p-6">
+        <div className="container mx-auto space-y-8">
+          {isLoadingHouses ? (
+            <div className="flex items-center justify-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <>
+              {/* Dashboard Button */}
+              <div className="bg-blue-50 rounded-md p-4">
+                <button 
+                  onClick={() => setLocation('/house/dashboard')}
+                  className="w-full text-left flex items-center space-x-3 text-primary hover:text-primary-dark"
+                >
+                  <span className="border border-blue-300 rounded p-2 bg-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                  </span>
+                  <div>
+                    <div className="font-semibold">Points Dashboard</div>
+                  </div>
+                </button>
+              </div>
+              
+              {/* Points Posters */}
+              <div className="bg-white border rounded-md p-4">
+                <button 
+                  onClick={() => setLocation('/house/posters')}
+                  className="w-full text-left flex items-center space-x-3 text-gray-700 hover:text-primary"
+                >
+                  <span className="border border-gray-200 rounded p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="8" x2="8" y2="8"></line><line x1="16" y1="12" x2="8" y2="12"></line><line x1="16" y1="16" x2="8" y2="16"></line></svg>
+                  </span>
+                  <div>
+                    <div className="font-semibold">Points Posters</div>
+                  </div>
+                </button>
+              </div>
+              
+              {/* House Setup */}
+              <div className="bg-white border rounded-md p-4">
+                <button 
+                  onClick={() => setLocation('/house/setup')}
+                  className="w-full text-left flex items-center space-x-3 text-gray-700 hover:text-primary"
+                >
+                  <span className="border border-gray-200 rounded p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                  </span>
+                  <div>
+                    <div className="font-semibold">House Setup</div>
+                  </div>
+                </button>
+              </div>
+              
+              {/* House Options */}
+              <div className="bg-white border rounded-md p-4">
+                <button 
+                  onClick={() => setLocation('/house/options')}
+                  className="w-full text-left flex items-center space-x-3 text-gray-700 hover:text-primary"
+                >
+                  <span className="border border-gray-200 rounded p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                  </span>
+                  <div>
+                    <div className="font-semibold">Options</div>
+                  </div>
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </main>
     </div>
   );
 }
