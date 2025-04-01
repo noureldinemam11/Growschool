@@ -1,6 +1,7 @@
 import { FC, useEffect, useState } from 'react';
-import { BehaviorPoint } from '@shared/schema';
+import { BehaviorPoint, BehaviorCategory } from '@shared/schema';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { useQuery } from '@tanstack/react-query';
 
 interface PointsDistributionChartProps {
   points: BehaviorPoint[];
@@ -25,6 +26,17 @@ const DEFAULT_COLORS = [
 const PointsDistributionChart: FC<PointsDistributionChartProps> = ({ points }) => {
   const [chartData, setChartData] = useState<any[]>([]);
   
+  // Fetch behavior categories
+  const { data: categories } = useQuery<BehaviorCategory[]>({
+    queryKey: ['/api/behavior-categories'],
+  });
+  
+  // Create a lookup map for category names
+  const categoryNames = categories?.reduce<Record<number, string>>((acc, category) => {
+    acc[category.id] = category.name;
+    return acc;
+  }, {}) || {};
+  
   useEffect(() => {
     // Group points by category
     const categoryData: Record<number, { categoryId: number; total: number }> = {};
@@ -46,12 +58,12 @@ const PointsDistributionChart: FC<PointsDistributionChartProps> = ({ points }) =
       .sort((a, b) => b.total - a.total)
       .map((item, index) => ({
         ...item,
-        name: `Category ${item.categoryId}`, // We'd normally fetch the category name
+        name: categoryNames[item.categoryId] || `Category ${item.categoryId}`,
         color: CATEGORY_COLORS[item.categoryId] || DEFAULT_COLORS[index % DEFAULT_COLORS.length]
       }));
     
     setChartData(data);
-  }, [points]);
+  }, [points, categoryNames]);
   
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -70,7 +82,7 @@ const PointsDistributionChart: FC<PointsDistributionChartProps> = ({ points }) =
             <Cell key={`cell-${index}`} fill={entry.color} />
           ))}
         </Pie>
-        <Tooltip formatter={(value) => [`${value} points`, `Category ${chartData[index]?.categoryId}`]} />
+        <Tooltip formatter={(value, name, props) => [`${value} points`, name]} />
         <Legend />
       </PieChart>
     </ResponsiveContainer>

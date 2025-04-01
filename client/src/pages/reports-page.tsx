@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, FC } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useQuery } from '@tanstack/react-query';
 import Navbar from '@/components/layout/Navbar';
@@ -12,6 +12,57 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { BehaviorPoint, House, User } from '@shared/schema';
 import { Loader2, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
+// Component to fetch and display a student's points
+const StudentPoints: FC<{ studentId: number | undefined }> = ({ studentId }) => {
+  if (!studentId) return <span>-</span>;
+  
+  const { data: pointsBalance, isLoading } = useQuery<{ earned: number; spent: number; balance: number }>({
+    queryKey: [`/api/students/${studentId}/points-balance`],
+    enabled: !!studentId,
+  });
+
+  const { data: behaviorPoints } = useQuery<BehaviorPoint[]>({
+    queryKey: [`/api/behavior-points/student/${studentId}`],
+    enabled: !!studentId,
+  });
+  
+  // Calculate total from behavior points as fallback
+  const calculateTotal = () => {
+    if (!behaviorPoints) return 0;
+    return behaviorPoints.reduce((total, point) => total + point.points, 0);
+  };
+
+  if (isLoading) {
+    return <Loader2 className="h-4 w-4 animate-spin inline-block" />;
+  }
+
+  // Use the points balance if available, otherwise calculate from behavior points
+  return <span>{pointsBalance ? pointsBalance.balance : calculateTotal()}</span>;
+};
+
+// Component to fetch and display a house name
+const StudentHouse: FC<{ houseId: number | undefined }> = ({ houseId }) => {
+  if (!houseId) return <span>-</span>;
+  
+  const { data: houses } = useQuery<House[]>({
+    queryKey: ['/api/houses'],
+  });
+  
+  const house = houses?.find(h => h.id === houseId);
+  
+  if (!house) return <span>House #{houseId}</span>;
+  
+  return (
+    <div className="flex items-center">
+      <div 
+        className="w-3 h-3 rounded-full mr-2" 
+        style={{ backgroundColor: house.color }}
+      ></div>
+      <span>{house.name}</span>
+    </div>
+  );
+};
 
 export default function ReportsPage() {
   const { user } = useAuth();
@@ -241,12 +292,10 @@ export default function ReportsPage() {
                                     {student.gradeLevel}{student.section}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-darker">
-                                    {/* Would fetch house name in real implementation */}
-                                    {student.houseId ? `House #${student.houseId}` : '-'}
+                                    <StudentHouse houseId={student.houseId} />
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm font-mono font-semibold text-primary">
-                                    {/* Mock data for example - would calculate from actual points */}
-                                    {Math.floor(Math.random() * 100 + 50)}
+                                    <StudentPoints studentId={student.id} />
                                   </td>
                                 </tr>
                               ))}
