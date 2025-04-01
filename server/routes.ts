@@ -671,6 +671,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Bulk import students
+  // Add a dedicated endpoint for adding a single user
+  app.post("/api/users", async (req, res) => {
+    if (!req.isAuthenticated() || !["admin", "teacher"].includes(req.user.role)) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    try {
+      console.log("POST /api/users - Request body:", req.body);
+      
+      // Validate role
+      if (!userRoles.includes(req.body.role)) {
+        return res.status(400).json({ error: "Invalid role" });
+      }
+      
+      // Create the user
+      const newUser = await storage.createUser(req.body);
+      console.log("User created successfully:", newUser);
+      
+      return res.status(201).json(newUser);
+    } catch (error) {
+      console.error("Error creating user:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      return res.status(500).json({ error: "Failed to create user" });
+    }
+  });
+
   app.post("/api/users/bulk-import", async (req, res) => {
     if (!req.isAuthenticated() || !["admin", "teacher"].includes(req.user.role)) {
       return res.status(403).json({ error: "Unauthorized" });
