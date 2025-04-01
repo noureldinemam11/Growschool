@@ -35,6 +35,9 @@ export interface IStorage {
   getBehaviorCategory(id: number): Promise<BehaviorCategory | undefined>;
   createBehaviorCategory(category: InsertBehaviorCategory): Promise<BehaviorCategory>;
   getAllBehaviorCategories(): Promise<BehaviorCategory[]>;
+  updateBehaviorCategory(id: number, category: Partial<BehaviorCategory>): Promise<BehaviorCategory | undefined>;
+  deleteBehaviorCategory(id: number): Promise<boolean>;
+  getBehaviorPointsByCategoryId(categoryId: number): Promise<BehaviorPoint[]>;
   
   // Behavior points
   createBehaviorPoint(point: InsertBehaviorPoint): Promise<BehaviorPoint>;
@@ -286,6 +289,26 @@ export class MemStorage implements IStorage {
 
   async getAllBehaviorCategories(): Promise<BehaviorCategory[]> {
     return Array.from(this.behaviorCategories.values());
+  }
+  
+  async updateBehaviorCategory(id: number, categoryUpdate: Partial<BehaviorCategory>): Promise<BehaviorCategory | undefined> {
+    const category = this.behaviorCategories.get(id);
+    if (!category) return undefined;
+    
+    const updatedCategory = { ...category, ...categoryUpdate };
+    this.behaviorCategories.set(id, updatedCategory);
+    return updatedCategory;
+  }
+  
+  async deleteBehaviorCategory(id: number): Promise<boolean> {
+    if (!this.behaviorCategories.has(id)) return false;
+    return this.behaviorCategories.delete(id);
+  }
+  
+  async getBehaviorPointsByCategoryId(categoryId: number): Promise<BehaviorPoint[]> {
+    return Array.from(this.behaviorPoints.values())
+      .filter(point => point.categoryId === categoryId)
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }
 
   // Behavior points methods
@@ -714,6 +737,34 @@ export class DatabaseStorage implements IStorage {
   async getAllBehaviorCategories(): Promise<BehaviorCategory[]> {
     const result = await db.select().from(behaviorCategories);
     return result as BehaviorCategory[];
+  }
+  
+  async updateBehaviorCategory(id: number, categoryUpdate: Partial<BehaviorCategory>): Promise<BehaviorCategory | undefined> {
+    const result = await db.update(behaviorCategories)
+      .set(categoryUpdate)
+      .where(eq(behaviorCategories.id, id))
+      .returning();
+    return result[0] as BehaviorCategory | undefined;
+  }
+  
+  async deleteBehaviorCategory(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(behaviorCategories)
+        .where(eq(behaviorCategories.id, id))
+        .returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error("Error in deleteBehaviorCategory:", error);
+      return false;
+    }
+  }
+  
+  async getBehaviorPointsByCategoryId(categoryId: number): Promise<BehaviorPoint[]> {
+    const result = await db.select()
+      .from(behaviorPoints)
+      .where(eq(behaviorPoints.categoryId, categoryId))
+      .orderBy(desc(behaviorPoints.timestamp));
+    return result as BehaviorPoint[];
   }
   
   // Behavior Points

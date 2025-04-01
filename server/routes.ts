@@ -204,6 +204,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch behavior categories" });
     }
   });
+  
+  app.post("/api/behavior-categories", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.status(403).json({ error: "Only admins can create behavior categories" });
+    }
+    
+    try {
+      const category = await storage.createBehaviorCategory(req.body);
+      res.status(201).json(category);
+    } catch (error) {
+      console.error("Error creating behavior category:", error);
+      res.status(500).json({ error: "Failed to create behavior category" });
+    }
+  });
+  
+  app.patch("/api/behavior-categories/:id", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.status(403).json({ error: "Only admins can update behavior categories" });
+    }
+    
+    try {
+      const categoryId = Number(req.params.id);
+      const category = await storage.getBehaviorCategory(categoryId);
+      
+      if (!category) {
+        return res.status(404).json({ error: "Behavior category not found" });
+      }
+      
+      // Update the category - implement updateBehaviorCategory in storage
+      const updatedCategory = await storage.updateBehaviorCategory(categoryId, req.body);
+      
+      if (!updatedCategory) {
+        return res.status(500).json({ error: "Failed to update behavior category" });
+      }
+      
+      res.json(updatedCategory);
+    } catch (error) {
+      console.error("Error updating behavior category:", error);
+      res.status(500).json({ error: "Failed to update behavior category" });
+    }
+  });
+  
+  app.delete("/api/behavior-categories/:id", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.status(403).json({ error: "Only admins can delete behavior categories" });
+    }
+    
+    try {
+      const categoryId = Number(req.params.id);
+      const category = await storage.getBehaviorCategory(categoryId);
+      
+      if (!category) {
+        return res.status(404).json({ error: "Behavior category not found" });
+      }
+      
+      // Check if this category is used in behavior points
+      const pointsWithCategory = await storage.getBehaviorPointsByCategoryId(categoryId);
+      
+      if (pointsWithCategory.length > 0) {
+        return res.status(400).json({ 
+          error: "Cannot delete category that is being used in behavior points. Please reassign these points first." 
+        });
+      }
+      
+      // Delete the category - implement deleteBehaviorCategory in storage
+      const deleted = await storage.deleteBehaviorCategory(categoryId);
+      
+      if (!deleted) {
+        return res.status(500).json({ error: "Failed to delete behavior category" });
+      }
+      
+      res.json({ success: true, message: "Behavior category deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting behavior category:", error);
+      res.status(500).json({ error: "Failed to delete behavior category" });
+    }
+  });
 
   // Behavior Points
   app.post("/api/behavior-points", async (req, res) => {
