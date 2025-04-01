@@ -24,7 +24,23 @@ function Router() {
           allowedRoles={["admin", "teacher"]}
         />
         <ProtectedRoute 
-          path="/houses" 
+          path="/house" 
+          component={HousePage} 
+        />
+        <ProtectedRoute 
+          path="/house/dashboard" 
+          component={HousePage} 
+        />
+        <ProtectedRoute 
+          path="/house/posters" 
+          component={HousePage} 
+        />
+        <ProtectedRoute 
+          path="/house/setup" 
+          component={HousePage} 
+        />
+        <ProtectedRoute 
+          path="/house/options" 
           component={HousePage} 
         />
         <ProtectedRoute 

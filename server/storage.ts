@@ -1,5 +1,5 @@
 import { users, houses, behaviorCategories, behaviorPoints, rewards, rewardRedemptions } from "@shared/schema";
-import type { User, InsertUser, House, InsertHouse, BehaviorCategory, InsertBehaviorCategory, BehaviorPoint, InsertBehaviorPoint, Reward, InsertReward, RewardRedemption, InsertRewardRedemption } from "@shared/schema";
+import type { User, InsertUser, House, InsertHouse, BehaviorCategory, InsertBehaviorCategory, BehaviorPoint, InsertBehaviorPoint, Reward, InsertReward, RewardRedemption, InsertRewardRedemption, UserRole } from "@shared/schema";
 import createMemoryStore from "memorystore";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
@@ -144,11 +144,16 @@ export class MemStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userCurrentId++;
     // Extract only the needed properties and ensure correct typing
-    const { username, password, firstName, lastName, role, email } = insertUser;
-    const gradeLevel = insertUser.gradeLevel || null;
-    const section = insertUser.section || null;
-    const houseId = typeof insertUser.houseId === 'number' ? insertUser.houseId : null;
-    const parentId = typeof insertUser.parentId === 'number' ? insertUser.parentId : null;
+    const username: string = insertUser.username;
+    const password: string = insertUser.password;
+    const firstName: string = insertUser.firstName;
+    const lastName: string = insertUser.lastName;
+    const role: UserRole = insertUser.role as UserRole;
+    const email: string = insertUser.email;
+    const gradeLevel: string | null = insertUser.gradeLevel || null;
+    const section: string | null = insertUser.section || null;
+    const houseId: number | null = typeof insertUser.houseId === 'number' ? insertUser.houseId : null;
+    const parentId: number | null = typeof insertUser.parentId === 'number' ? insertUser.parentId : null;
     
     const user: User = {
       id,
@@ -469,6 +474,9 @@ export class DatabaseStorage implements IStorage {
   
   async createUser(user: InsertUser): Promise<User> {
     const result = await db.insert(users).values(user).returning();
+    if (!result || result.length === 0) {
+      throw new Error('Failed to create user');
+    }
     return result[0] as User;
   }
   
