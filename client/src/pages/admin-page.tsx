@@ -36,12 +36,12 @@ export default function AdminPage() {
             </header>
 
             <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="mb-4">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="users">User Management</TabsTrigger>
-                <TabsTrigger value="behavior">Behavior Categories</TabsTrigger>
-                <TabsTrigger value="rewards">Rewards</TabsTrigger>
-                <TabsTrigger value="houses">Houses</TabsTrigger>
+              <TabsList className="mb-6">
+                <TabsTrigger value="overview" className="mr-6">Overview</TabsTrigger>
+                <TabsTrigger value="users" className="mr-6">User Management</TabsTrigger>
+                <TabsTrigger value="behavior" className="mr-6">Behavior Categories</TabsTrigger>
+                <TabsTrigger value="rewards" className="mr-6">Rewards</TabsTrigger>
+                <TabsTrigger value="houses" className="mr-6">Houses</TabsTrigger>
                 <TabsTrigger value="system">System Settings</TabsTrigger>
               </TabsList>
               

@@ -88,16 +88,16 @@ export default function StudentPage() {
                 <div className="md:col-span-3">
                   {selectedStudent ? (
                     <Tabs defaultValue="overview" className="w-full">
-                      <TabsList className="mb-4 w-full grid grid-cols-3 p-1.5 gap-1 bg-white rounded-lg border border-gray-200 shadow-sm">
-                        <TabsTrigger value="overview" className="font-medium text-sm flex items-center justify-center gap-1.5 text-gray-800">
+                      <TabsList className="mb-6">
+                        <TabsTrigger value="overview" className="font-medium text-sm flex items-center gap-1.5 mr-6">
                           <UserCircle className="h-4 w-4" />
                           <span>Overview</span>
                         </TabsTrigger>
-                        <TabsTrigger value="behavior" className="font-medium text-sm flex items-center justify-center gap-1.5 text-gray-800">
+                        <TabsTrigger value="behavior" className="font-medium text-sm flex items-center gap-1.5 mr-6">
                           <FileText className="h-4 w-4" />
                           <span>Behavior Records</span>
                         </TabsTrigger>
-                        <TabsTrigger value="rewards" className="font-medium text-sm flex items-center justify-center gap-1.5 text-gray-800">
+                        <TabsTrigger value="rewards" className="font-medium text-sm flex items-center gap-1.5">
                           <Award className="h-4 w-4" />
                           <span>Rewards</span>
                         </TabsTrigger>
