@@ -143,7 +143,19 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userCurrentId++;
-    const user: User = { ...insertUser, id };
+    const user: User = {
+      id,
+      username: insertUser.username,
+      password: insertUser.password,
+      firstName: insertUser.firstName,
+      lastName: insertUser.lastName,
+      role: insertUser.role,
+      email: insertUser.email,
+      gradeLevel: insertUser.gradeLevel || null,
+      section: insertUser.section || null,
+      houseId: insertUser.houseId || null,
+      parentId: insertUser.parentId || null
+    };
     this.users.set(id, user);
     return user;
   }
@@ -190,7 +202,14 @@ export class MemStorage implements IStorage {
 
   async createHouse(house: InsertHouse): Promise<House> {
     const id = this.houseCurrentId++;
-    const newHouse: House = { ...house, id, points: 0 };
+    const newHouse: House = {
+      id,
+      name: house.name,
+      color: house.color,
+      points: 0,
+      description: house.description || null,
+      logoUrl: house.logoUrl || null
+    };
     this.houses.set(id, newHouse);
     return newHouse;
   }
@@ -224,7 +243,13 @@ export class MemStorage implements IStorage {
 
   async createBehaviorCategory(category: InsertBehaviorCategory): Promise<BehaviorCategory> {
     const id = this.categoryCurrentId++;
-    const newCategory: BehaviorCategory = { ...category, id };
+    const newCategory: BehaviorCategory = {
+      id,
+      name: category.name,
+      description: category.description || null,
+      isPositive: category.isPositive,
+      pointValue: category.pointValue
+    };
     this.behaviorCategories.set(id, newCategory);
     return newCategory;
   }
@@ -237,8 +262,12 @@ export class MemStorage implements IStorage {
   async createBehaviorPoint(point: InsertBehaviorPoint): Promise<BehaviorPoint> {
     const id = this.pointCurrentId++;
     const newPoint: BehaviorPoint = { 
-      ...point, 
       id,
+      points: point.points,
+      studentId: point.studentId,
+      teacherId: point.teacherId,
+      categoryId: point.categoryId,
+      notes: point.notes || null,
       timestamp: new Date() 
     };
     this.behaviorPoints.set(id, newPoint);
@@ -277,7 +306,14 @@ export class MemStorage implements IStorage {
 
   async createReward(reward: InsertReward): Promise<Reward> {
     const id = this.rewardCurrentId++;
-    const newReward: Reward = { ...reward, id };
+    const newReward: Reward = {
+      id,
+      name: reward.name,
+      description: reward.description || null,
+      pointCost: reward.pointCost,
+      quantity: reward.quantity,
+      imageUrl: reward.imageUrl || null
+    };
     this.rewards.set(id, newReward);
     return newReward;
   }

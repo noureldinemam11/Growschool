@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -84,6 +84,9 @@ export default function AwardPointsModal({ onClose }: AwardPointsModalProps) {
     <DialogContent className="sm:max-w-lg">
       <DialogHeader>
         <DialogTitle className="text-xl font-heading font-bold text-primary">Award Points</DialogTitle>
+        <DialogDescription>
+          Recognize positive student behavior by awarding points.
+        </DialogDescription>
       </DialogHeader>
       
       <div className="grid gap-4 py-4">

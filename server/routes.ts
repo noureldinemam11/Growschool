@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertBehaviorPointSchema, insertRewardRedemptionSchema } from "@shared/schema";
+import { insertBehaviorPointSchema, insertRewardRedemptionSchema, userRoles } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {

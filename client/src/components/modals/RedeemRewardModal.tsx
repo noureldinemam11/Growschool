@@ -1,7 +1,7 @@
 import { FC } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
-import { DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Reward } from '@shared/schema';
@@ -51,6 +51,9 @@ const RedeemRewardModal: FC<RedeemRewardModalProps> = ({ reward, availablePoints
     <DialogContent className="sm:max-w-md">
       <DialogHeader>
         <DialogTitle className="text-xl font-heading font-bold">Redeem Reward</DialogTitle>
+        <DialogDescription>
+          Exchange your earned points for a reward from the store.
+        </DialogDescription>
       </DialogHeader>
       
       <div className="py-4">
