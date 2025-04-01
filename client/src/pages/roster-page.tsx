@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { ImportStudentsButton } from '@/components/roster/ImportStudentsButton';
 
 // Type definitions
 interface Student {
@@ -168,6 +169,7 @@ export default function RosterPage() {
         </div>
         
         <div className="flex items-center space-x-2">
+          <ImportStudentsButton />
           <Input
             placeholder="Search students..."
             value={searchTerm}

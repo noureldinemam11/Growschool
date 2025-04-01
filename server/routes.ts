@@ -1,6 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
+import { setupExcelImport } from "./excel-import";
 import { storage } from "./storage";
 import { insertBehaviorPointSchema, insertRewardRedemptionSchema, userRoles } from "@shared/schema";
 import { z } from "zod";
@@ -8,6 +9,9 @@ import { z } from "zod";
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
   setupAuth(app);
+  
+  // Setup Excel import functionality
+  setupExcelImport(app);
 
   // Houses
   app.get("/api/houses", async (req, res) => {
