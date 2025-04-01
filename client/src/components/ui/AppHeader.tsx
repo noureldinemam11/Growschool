@@ -8,39 +8,22 @@ export default function AppHeader() {
   const { user } = useAuth();
   const [location, navigate] = useLocation();
   
-  // Check if we're in the categories view of the points page
-  const isPointsCategories = location.includes('/points') && location.includes('categories');
-  
   const handleBackClick = () => {
-    if (isPointsCategories) {
-      window.history.back(); // Go back to previous page
-    } else {
-      navigate('/'); // Otherwise go home
-    }
+    window.history.back(); // Go back to previous page
   };
 
   return (
     <header className="bg-primary text-white py-3 px-4">
       <div className="flex justify-between items-center">
-        {/* Left side with back button in points category view or logo otherwise */}
-        {isPointsCategories ? (
-          <Button 
-            variant="ghost" 
-            className="p-0 h-8 w-8 rounded-full text-white hover:bg-primary/20 hover:text-white focus:bg-primary/20"
-            onClick={handleBackClick}
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-        ) : (
-          <Link href="/">
-            <div className="flex items-center cursor-pointer">
-              <div className="flex items-center justify-center w-5 h-5 bg-white rounded-full mr-2">
-                <span className="text-primary text-xs">⌘</span>
-              </div>
-              <span className="text-base font-medium">Points</span>
-            </div>
-          </Link>
-        )}
+        {/* Left side with back button */}
+        <Button 
+          variant="ghost" 
+          className="p-0 h-8 text-white hover:bg-primary/20 hover:text-white focus:bg-primary/20"
+          onClick={handleBackClick}
+        >
+          <ChevronLeft className="h-5 w-5 mr-1" />
+          <span className="text-base font-medium">Back</span>
+        </Button>
         
         {/* Right side with Help and Profile */}
         <div className="flex items-center gap-4">
