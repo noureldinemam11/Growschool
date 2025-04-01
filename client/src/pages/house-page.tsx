@@ -2,14 +2,22 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useQuery } from '@tanstack/react-query';
 import { House, User } from '@shared/schema';
-import { Loader2, ArrowLeft, Settings } from 'lucide-react';
+import { Loader2, ArrowLeft, Settings, Building, UserPlus, LineChart, Award } from 'lucide-react';
 import { useLocation, useRoute } from 'wouter';
+import Navbar from '@/components/layout/Navbar';
+import Sidebar from '@/components/layout/Sidebar';
+import MobileNavbar from '@/components/layout/MobileNavbar';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function HousePage() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   
-  // Check which sub-route we're on
+  // Check which route we're on
+  const [isHousesPath] = useRoute('/houses');
   const [isBasePath] = useRoute('/house');
   const [isDashboard] = useRoute('/house/dashboard');
   const [isPosters] = useRoute('/house/posters');
@@ -21,6 +29,129 @@ export default function HousePage() {
     queryKey: ['/api/houses'],
   });
 
+  // If we're on the /houses path, show the Houses list page
+  if (isHousesPath) {
+    return (
+      <div className="h-screen flex flex-col">
+        <Navbar />
+        
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+          <Sidebar />
+          
+          <div className="flex-1 flex flex-col overflow-y-auto bg-neutral">
+            <div className="p-4 md:p-8">
+              <header className="mb-6">
+                <h1 className="text-2xl font-heading font-bold text-neutral-darker">Houses</h1>
+                <p className="text-neutral-dark">View and manage house teams and competitions</p>
+              </header>
+
+              {isLoadingHouses ? (
+                <div className="flex items-center justify-center h-64">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : houses && houses.length > 0 ? (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {houses.map(house => (
+                      <Card key={house.id} className="overflow-hidden">
+                        <div className="h-2" style={{ backgroundColor: house.color }}></div>
+                        <CardHeader className="pb-2">
+                          <div className="flex justify-between items-start">
+                            <CardTitle>{house.name}</CardTitle>
+                            <Badge variant="outline" className="font-mono">
+                              {house.points} pts
+                            </Badge>
+                          </div>
+                          <CardDescription>
+                            {house.description || "No description available"}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex justify-between mt-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setLocation(`/house/dashboard?house=${house.id}`)}
+                            >
+                              View Details
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="text-primary"
+                              onClick={() => setLocation(`/house/setup?house=${house.id}`)}
+                            >
+                              Manage
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                  
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>House Management</CardTitle>
+                      <CardDescription>
+                        Manage house settings and student assignments
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <Button 
+                          variant="outline" 
+                          className="h-auto py-6 flex flex-col items-center justify-center gap-2"
+                          onClick={() => setLocation('/house/dashboard')}
+                        >
+                          <LineChart className="h-8 w-8 text-primary" />
+                          <span>Points Dashboard</span>
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          className="h-auto py-6 flex flex-col items-center justify-center gap-2"
+                          onClick={() => setLocation('/house/setup')}
+                        >
+                          <Building className="h-8 w-8 text-primary" />
+                          <span>House Setup</span>
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          className="h-auto py-6 flex flex-col items-center justify-center gap-2"
+                          onClick={() => setLocation('/house/posters')}
+                        >
+                          <Award className="h-8 w-8 text-primary" />
+                          <span>House Posters</span>
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          className="h-auto py-6 flex flex-col items-center justify-center gap-2"
+                          onClick={() => setLocation('/house/options')}
+                        >
+                          <Settings className="h-8 w-8 text-primary" />
+                          <span>Options</span>
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : (
+                <div className="bg-white rounded-lg shadow-sm p-6 text-center">
+                  <p className="text-neutral-dark mb-4">No houses have been set up yet.</p>
+                  <Button onClick={() => setLocation('/house/setup')}>
+                    Set Up Houses
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        <MobileNavbar />
+      </div>
+    );
+  }
+
+  // For other house-related routes, show the original layout
   return (
     <div className="min-h-screen flex flex-col">
       {/* Top Navigation Bar */}
@@ -28,7 +159,7 @@ export default function HousePage() {
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center space-x-2">
             <button 
-              onClick={() => setLocation('/')}
+              onClick={() => setLocation('/houses')}
               className="p-2 hover:bg-primary-dark rounded-md"
             >
               <ArrowLeft size={20} />
