@@ -136,12 +136,20 @@ export default function RosterManagement() {
             }
           }
           
+          // Create a sanitized username from firstName and lastName
+          const sanitizedFirstName = firstName.toLowerCase().replace(/\s+/g, '');
+          const sanitizedLastName = lastName.toLowerCase().replace(/\s+/g, '');
+          
           return {
             firstName,
             lastName,
             houseId: parseInt(data.houseId),
             gradeLevel: data.gradeLevel,
             role: 'student',
+            // Generate a placeholder email since it's required by the database
+            email: `${sanitizedFirstName}.${sanitizedLastName}@school.example`,
+            // This satisfies the form requirements - username and password will be set on server
+            confirmPassword: 'no-login-required',
           };
         });
       
@@ -181,8 +189,17 @@ export default function RosterManagement() {
   // Mutation for adding a single student
   const addStudentMutation = useMutation({
     mutationFn: async (data: StudentFormData) => {
+      // Generate a sanitized username from firstName and lastName
+      const sanitizedFirstName = data.firstName.toLowerCase().replace(/\s+/g, '');
+      const sanitizedLastName = data.lastName.toLowerCase().replace(/\s+/g, '');
+      
+      // Generate placeholder email and username for the student (since they won't actually log in)
       const response = await apiRequest('POST', '/api/users', {
         ...data,
+        email: `${sanitizedFirstName}.${sanitizedLastName}@school.example`,
+        username: `${sanitizedFirstName}${sanitizedLastName}`,
+        password: 'no-login-required',
+        confirmPassword: 'no-login-required',
         role: 'student',
       });
       
