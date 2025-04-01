@@ -720,22 +720,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Can only delete student accounts" });
       }
       
-      // Always use force delete to remove all associated records
-      console.log(`Deleting user ${userId} along with all associated records`);
+      // Use direct SQL queries to delete associated records, bypassing ORM and foreign key constraints
+      const client = await pool.connect();
       
-      // Delete the user and all associated records
-      const result = await storage.deleteUser(userId, true);
-      if (!result) {
-        return res.status(500).json({ error: "Failed to delete user" });
+      try {
+        await client.query('BEGIN');
+        console.log(`Transaction started for deletion of user ${userId}`);
+        
+        // Step 1: Delete behavior points for this student
+        console.log(`Deleting behavior points for student ${userId}`);
+        const bpResult = await client.query(
+          'DELETE FROM behavior_points WHERE student_id = $1',
+          [userId]
+        );
+        console.log(`Deleted ${bpResult.rowCount} behavior points`);
+        
+        // Step 2: Delete reward redemptions for this student
+        console.log(`Deleting reward redemptions for student ${userId}`);
+        const rrResult = await client.query(
+          'DELETE FROM reward_redemptions WHERE student_id = $1',
+          [userId]
+        );
+        console.log(`Deleted ${rrResult.rowCount} reward redemptions`);
+        
+        // Step 3: Finally, delete the user
+        console.log(`Deleting user ${userId}`);
+        const userResult = await client.query(
+          'DELETE FROM users WHERE id = $1',
+          [userId]
+        );
+        
+        if (userResult.rowCount === 0) {
+          console.error(`No user deleted with id ${userId}`);
+          throw new Error(`Failed to delete user ${userId}`);
+        }
+        
+        console.log(`Deleted user ${userId} successfully`);
+        
+        // Step 4: Commit the transaction
+        await client.query('COMMIT');
+        console.log(`Transaction committed successfully`);
+        
+        return res.status(200).json({ 
+          success: true, 
+          message: "User deleted successfully",
+          details: {
+            behaviorPointsDeleted: bpResult.rowCount,
+            rewardRedemptionsDeleted: rrResult.rowCount
+          }
+        });
+      } catch (txError: any) {
+        // Roll back the transaction if any step fails
+        await client.query('ROLLBACK');
+        console.error(`Transaction rolled back: ${txError.message || 'Unknown error'}`);
+        
+        return res.status(500).json({
+          error: "Failed to delete user",
+          details: txError.message || "Unknown database error",
+        });
+      } finally {
+        // Always release the client
+        client.release();
+        console.log(`Database client released`);
       }
-      
-      console.log(`User ${userId} deleted successfully`);
-      return res.status(200).json({ success: true, message: "User deleted successfully" });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting user:", error);
       return res.status(500).json({ 
         error: "Failed to delete user",
-        details: error instanceof Error ? error.message : "Unknown error"
+        details: error.message || "Unknown error"
       });
     }
   });
