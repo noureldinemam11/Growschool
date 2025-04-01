@@ -12,77 +12,79 @@ import RosterPage from "@/pages/roster-page";
 import PointsPage from "@/pages/points-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
+import Header from "@/components/header/Header";
 
 function Router() {
   return (
-    <AuthProvider>
-      <Switch>
-        <Route path="/auth" component={AuthPage} />
-        <ProtectedRoute path="/" component={DashboardPage} />
-        <ProtectedRoute 
-          path="/students" 
-          component={StudentPage} 
-          allowedRoles={["admin", "teacher"]}
-        />
-        <ProtectedRoute 
-          path="/houses" 
-          component={HousePage} 
-        />
-        <ProtectedRoute 
-          path="/house" 
-          component={HousePage} 
-        />
-        <ProtectedRoute 
-          path="/house/dashboard" 
-          component={HousePage} 
-        />
-        <ProtectedRoute 
-          path="/house/posters" 
-          component={HousePage} 
-        />
-        <ProtectedRoute 
-          path="/house/setup" 
-          component={HousePage} 
-        />
-        <ProtectedRoute 
-          path="/house/options" 
-          component={HousePage} 
-        />
-        <ProtectedRoute 
-          path="/rewards" 
-          component={RewardsPage}
-        />
-        <ProtectedRoute 
-          path="/reports" 
-          component={ReportsPage}
-          allowedRoles={["admin", "teacher"]}
-        />
-        <ProtectedRoute 
-          path="/admin" 
-          component={AdminPage}
-          allowedRoles={["admin"]}
-        />
-        <ProtectedRoute 
-          path="/roster" 
-          component={RosterPage}
-          allowedRoles={["admin", "teacher"]}
-        />
-        <ProtectedRoute 
-          path="/points" 
-          component={PointsPage}
-          allowedRoles={["admin", "teacher"]}
-        />
-        <Route component={NotFound} />
-      </Switch>
-    </AuthProvider>
+    <Switch>
+      <Route path="/auth" component={AuthPage} />
+      <ProtectedRoute path="/" component={DashboardPage} />
+      <ProtectedRoute 
+        path="/students" 
+        component={StudentPage} 
+        allowedRoles={["admin", "teacher"]}
+      />
+      <ProtectedRoute 
+        path="/houses" 
+        component={HousePage} 
+      />
+      <ProtectedRoute 
+        path="/house" 
+        component={HousePage} 
+      />
+      <ProtectedRoute 
+        path="/house/dashboard" 
+        component={HousePage} 
+      />
+      <ProtectedRoute 
+        path="/house/posters" 
+        component={HousePage} 
+      />
+      <ProtectedRoute 
+        path="/house/setup" 
+        component={HousePage} 
+      />
+      <ProtectedRoute 
+        path="/house/options" 
+        component={HousePage} 
+      />
+      <ProtectedRoute 
+        path="/rewards" 
+        component={RewardsPage}
+      />
+      <ProtectedRoute 
+        path="/reports" 
+        component={ReportsPage}
+        allowedRoles={["admin", "teacher"]}
+      />
+      <ProtectedRoute 
+        path="/admin" 
+        component={AdminPage}
+        allowedRoles={["admin"]}
+      />
+      <ProtectedRoute 
+        path="/roster" 
+        component={RosterPage}
+        allowedRoles={["admin", "teacher"]}
+      />
+      <ProtectedRoute 
+        path="/points" 
+        component={PointsPage}
+        allowedRoles={["admin", "teacher"]}
+      />
+      <Route component={NotFound} />
+    </Switch>
   );
 }
 
 function App() {
   return (
     <>
-      <Router />
-      <Toaster />
+      <AuthProvider>
+        <Header />
+        <Router />
+        <Toaster />
+      </AuthProvider>
     </>
   );
 }
