@@ -1,33 +1,229 @@
 import React, { useState } from 'react';
-import { PageHeader } from "@/components/ui/page-header";
-import StudentGrid from '@/components/points/StudentGrid';
-import PointsAssignment from '@/components/points/PointsAssignment';
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useQuery } from '@tanstack/react-query';
+import { User, BehaviorPoint } from '@shared/schema';
 import { useAuth } from '@/hooks/use-auth';
-import { Redirect } from 'wouter';
+import { Filter, Settings, ChevronDown, Grid, Rows, Calendar, Users } from 'lucide-react';
+import PointsModal from '@/components/points/PointsModal';
 
 export default function PointsPage() {
   const { user } = useAuth();
-  const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
+  const [selectedStudents, setSelectedStudents] = useState<number[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [filterTeacher, setFilterTeacher] = useState<string>('all');
+  const [filterDate, setFilterDate] = useState<string>('today');
+  const [selectedStudentForPoints, setSelectedStudentForPoints] = useState<number | null>(null);
 
-  if (!user || !['admin', 'teacher'].includes(user.role)) {
-    return <Redirect to="/auth" />;
-  }
+  // Fetch students
+  const { data: students, isLoading: loadingStudents } = useQuery<User[]>({
+    queryKey: ['/api/users/role/student'],
+  });
+
+  // Fetch teachers 
+  const { data: teachers, isLoading: loadingTeachers } = useQuery<User[]>({
+    queryKey: ['/api/users/role/teacher'],
+  });
+
+  const handleSelectStudent = (studentId: number) => {
+    if (selectedStudents.includes(studentId)) {
+      setSelectedStudents(selectedStudents.filter(id => id !== studentId));
+    } else {
+      setSelectedStudents([...selectedStudents, studentId]);
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (students) {
+      if (selectedStudents.length === students.length) {
+        setSelectedStudents([]);
+      } else {
+        setSelectedStudents(students.map(student => student.id));
+      }
+    }
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedStudents([]);
+  };
+
+  const handleRandomSelect = () => {
+    if (students && students.length > 0) {
+      const randomIndex = Math.floor(Math.random() * students.length);
+      setSelectedStudents([students[randomIndex].id]);
+    }
+  };
+
+  const handleAwardPoints = (studentId?: number) => {
+    if (studentId) {
+      setSelectedStudentForPoints(studentId);
+    } else if (selectedStudents.length > 0) {
+      // If no specific student is provided, use the first selected student
+      setSelectedStudentForPoints(selectedStudents[0]);
+    }
+    setIsModalOpen(true);
+  };
 
   return (
-    <div className="container mx-auto py-6 space-y-8">
-      <PageHeader
-        heading="Points Management"
-        subheading="Assign points to students for positive and negative behaviors"
-      />
+    <div className="min-h-screen flex flex-col">
+      {/* Top Navigation Bar */}
+      <header className="bg-primary text-white py-3 px-4 sticky top-0 z-10">
+        <div className="container mx-auto flex justify-between items-center">
+          <div className="flex items-center space-x-2">
+            <div className="bg-white text-primary rounded-full p-1">
+              <Grid size={20} />
+            </div>
+            <h1 className="text-xl font-bold flex items-center">
+              Points <ChevronDown className="ml-1 h-5 w-5" />
+            </h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" className="text-white">
+              Help <ChevronDown className="ml-1 h-4 w-4" />
+            </Button>
+            <div className="w-8 h-8 rounded-full bg-white text-primary flex items-center justify-center font-semibold">
+              {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+            </div>
+          </div>
+        </div>
+      </header>
 
-      {selectedStudentId ? (
-        <PointsAssignment 
-          studentId={selectedStudentId} 
-          onBack={() => setSelectedStudentId(null)}
-        />
-      ) : (
-        <StudentGrid onSelectStudent={(studentId) => setSelectedStudentId(studentId)} />
-      )}
+      {/* Filter Bar */}
+      <div className="bg-white border-b py-2 px-4 sticky top-14 z-10">
+        <div className="container mx-auto flex flex-wrap justify-between items-center gap-2">
+          <div className="flex items-center gap-2">
+            <Select value={filterDate} onValueChange={setFilterDate}>
+              <SelectTrigger className="w-[120px]">
+                <Calendar className="mr-2 h-4 w-4" />
+                <SelectValue placeholder="Date" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="today">Today</SelectItem>
+                <SelectItem value="week">This Week</SelectItem>
+                <SelectItem value="month">This Month</SelectItem>
+                <SelectItem value="year">This Year</SelectItem>
+                <SelectItem value="all">All Time</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={filterTeacher} onValueChange={setFilterTeacher}>
+              <SelectTrigger className="w-[170px]">
+                <Users className="mr-2 h-4 w-4" />
+                <SelectValue placeholder="All Teachers" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Teachers</SelectItem>
+                {teachers?.map(teacher => (
+                  <SelectItem key={teacher.id} value={teacher.id.toString()}>
+                    {teacher.firstName} {teacher.lastName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm">
+              <Settings className="mr-2 h-4 w-4" />
+              Settings
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <main className="flex-1 bg-slate-50 p-4">
+        <div className="container mx-auto">
+          <div className="mb-2">
+            <h2 className="text-sm text-slate-500">
+              Showing points earned <span className="font-semibold">Today</span> given by <span className="font-semibold">All Teachers</span>
+            </h2>
+          </div>
+
+          {/* Student Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {students?.map(student => (
+              <Card 
+                key={student.id} 
+                className={`cursor-pointer border-t-4 ${
+                  selectedStudents.includes(student.id) 
+                    ? 'border-t-primary shadow-md' 
+                    : 'border-t-amber-500'
+                }`}
+                onClick={() => handleSelectStudent(student.id)}
+              >
+                <CardContent className="p-3">
+                  <div className="font-semibold">{student.firstName}</div>
+                  <div className="text-sm text-slate-500">{student.lastName}</div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </main>
+
+      {/* Footer Toolbar */}
+      <footer className="bg-white border-t py-3 px-4 sticky bottom-0">
+        <div className="container mx-auto flex justify-center">
+          <div className="bg-white rounded-full shadow-md flex divide-x">
+            <Button 
+              variant="ghost" 
+              className="rounded-l-full" 
+              onClick={handleSelectAll}
+            >
+              Select All
+            </Button>
+            <Button 
+              variant="ghost" 
+              onClick={handleDeselectAll}
+            >
+              Deselect
+            </Button>
+            <Button 
+              variant="ghost" 
+              onClick={handleRandomSelect}
+            >
+              Random
+            </Button>
+            <Button 
+              variant="ghost" 
+              disabled
+            >
+              Timeline
+            </Button>
+            <Button 
+              variant="ghost" 
+              disabled
+            >
+              Absent
+            </Button>
+            <Button 
+              variant="ghost" 
+              disabled
+            >
+              More
+            </Button>
+            <Button 
+              variant="ghost" 
+              className="rounded-r-full"
+              onClick={() => handleAwardPoints()}
+              disabled={selectedStudents.length === 0}
+            >
+              Continue
+            </Button>
+          </div>
+        </div>
+      </footer>
+
+      {/* Points Modal */}
+      <PointsModal 
+        isOpen={isModalOpen} 
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedStudentForPoints(null);
+        }} 
+      />
     </div>
   );
 }
