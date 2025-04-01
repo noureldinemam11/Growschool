@@ -51,7 +51,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const house = await storage.createHouse(req.body);
-      res.status(201).json(house);
+      res.status(201)
+        .header('Content-Type', 'application/json')
+        .json(house);
     } catch (error) {
       console.error("Error creating house:", error);
       res.status(500).json({ error: "Failed to create house" });
@@ -76,11 +78,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "Failed to update house" });
       }
       
-      // Ensure we're returning a valid JSON response
-      return res.json({ 
-        success: true,
-        house: updatedHouse 
-      });
+      // Ensure we're returning a valid JSON response with explicit content type
+      return res
+        .status(200)
+        .header('Content-Type', 'application/json')
+        .json({ 
+          success: true,
+          house: updatedHouse 
+        });
     } catch (error) {
       console.error("Error updating house:", error);
       return res.status(500).json({ 
@@ -115,7 +120,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // In a real app, you'd have a proper delete method
       await storage.updateHouse(houseId, { name: `${house.name} (Deleted)`, description: "This house has been deleted." });
       
-      res.json({ success: true, message: "House deleted successfully" });
+      res.status(200)
+        .header('Content-Type', 'application/json')
+        .json({ success: true, message: "House deleted successfully" });
     } catch (error) {
       console.error("Error deleting house:", error);
       res.status(500).json({ error: "Failed to delete house" });
