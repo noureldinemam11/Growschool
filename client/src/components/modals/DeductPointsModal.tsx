@@ -46,7 +46,15 @@ export default function DeductPointsModal({ onClose }: DeductPointsModalProps) {
         title: "Points deducted successfully",
         description: `${points} points have been deducted from the student.`
       });
+      // Invalidate all affected queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/behavior-points/recent'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/houses'] }); // Refresh house standings
+      
+      // Invalidate the selected student's points specifically
+      const studentIdNum = parseInt(studentId, 10);
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/behavior-points/student', studentIdNum]
+      });
       onClose();
     },
     onError: (error: Error) => {
