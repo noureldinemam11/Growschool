@@ -1,9 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useQuery } from '@tanstack/react-query';
-import Navbar from '@/components/layout/Navbar';
-import Sidebar from '@/components/layout/Sidebar';
-import MobileNavbar from '@/components/layout/MobileNavbar';
 import RewardCard from '@/components/rewards/RewardCard';
 import { Dialog } from '@/components/ui/dialog';
 import RedeemRewardModal from '@/components/modals/RedeemRewardModal';
@@ -42,228 +39,218 @@ export default function RewardsPage() {
   const totalPoints = pointsBalance?.balance || 0;
 
   return (
-    <div className="h-screen flex flex-col">
-      <Navbar />
-      
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-        <Sidebar />
-        
-        <div className="flex-1 flex flex-col overflow-y-auto bg-neutral">
-          <div className="p-4 md:p-8">
-            <header className="mb-6">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                <div>
-                  <h1 className="text-2xl font-heading font-bold text-neutral-darker">Rewards Store</h1>
-                  <p className="text-neutral-dark">Redeem your points for exciting rewards</p>
+    <div className="flex flex-col">
+      <div className="p-4 md:p-8">
+        <header className="mb-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+            <div>
+              <h1 className="text-2xl font-heading font-bold text-neutral-darker">Rewards Store</h1>
+              <p className="text-neutral-dark">Redeem your points for exciting rewards</p>
+            </div>
+            
+            {user?.role === 'student' && (
+              <div className="mt-4 md:mt-0 bg-white p-5 rounded-lg shadow-md min-w-[220px] border border-gray-100">
+                <div className="text-sm text-gray-600 font-medium mb-2">Your Points Balance</div>
+                <div className="text-3xl font-mono font-bold text-primary mb-3">
+                  {isLoadingPoints ? (
+                    <Loader2 className="h-5 w-5 animate-spin inline-block mr-1" />
+                  ) : (
+                    totalPoints
+                  )}
                 </div>
                 
-                {user?.role === 'student' && (
-                  <div className="mt-4 md:mt-0 bg-white p-5 rounded-lg shadow-md min-w-[220px] border border-gray-100">
-                    <div className="text-sm text-gray-600 font-medium mb-2">Your Points Balance</div>
-                    <div className="text-3xl font-mono font-bold text-primary mb-3">
-                      {isLoadingPoints ? (
-                        <Loader2 className="h-5 w-5 animate-spin inline-block mr-1" />
-                      ) : (
-                        totalPoints
-                      )}
+                {!isLoadingPoints && pointsBalance && (
+                  <div className="flex flex-col text-sm space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Total Earned:</span>
+                      <span className="font-mono font-semibold text-emerald-600">+{pointsBalance.earned}</span>
                     </div>
-                    
-                    {!isLoadingPoints && pointsBalance && (
-                      <div className="flex flex-col text-sm space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Total Earned:</span>
-                          <span className="font-mono font-semibold text-emerald-600">+{pointsBalance.earned}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Total Spent:</span>
-                          <span className="font-mono font-semibold text-red-600">-{pointsBalance.spent}</span>
-                        </div>
-                        <div className="flex justify-between pt-2 mt-1 border-t border-gray-200">
-                          <span className="font-semibold text-gray-700">Available:</span>
-                          <span className="font-mono font-bold text-primary">{pointsBalance.balance}</span>
-                        </div>
-                      </div>
-                    )}
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Total Spent:</span>
+                      <span className="font-mono font-semibold text-red-600">-{pointsBalance.spent}</span>
+                    </div>
+                    <div className="flex justify-between pt-2 mt-1 border-t border-gray-200">
+                      <span className="font-semibold text-gray-700">Available:</span>
+                      <span className="font-mono font-bold text-primary">{pointsBalance.balance}</span>
+                    </div>
                   </div>
-                )}
-              </div>
-            </header>
-
-            {user?.role === 'student' ? (
-              <Tabs defaultValue="available" className="w-full">
-                <TabsList className="mb-4">
-                  <TabsTrigger value="available">Available Rewards</TabsTrigger>
-                  <TabsTrigger value="redeemed">My Redemptions</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="available" className="space-y-4">
-                  {isLoadingRewards ? (
-                    <div className="flex items-center justify-center h-64">
-                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    </div>
-                  ) : rewards && rewards.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {rewards.map(reward => (
-                        <RewardCard 
-                          key={reward.id} 
-                          reward={reward}
-                          canAfford={totalPoints >= reward.pointCost}
-                          availablePoints={totalPoints}
-                          onRedeem={() => setRedeemReward(reward)}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="bg-white rounded-lg shadow-sm p-6 text-center">
-                      <p className="text-neutral-dark">No rewards available at this time.</p>
-                    </div>
-                  )}
-                </TabsContent>
-                
-                <TabsContent value="redeemed" className="space-y-4">
-                  {isLoadingRedemptions ? (
-                    <div className="flex items-center justify-center h-64">
-                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    </div>
-                  ) : redemptions && redemptions.length > 0 ? (
-                    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-neutral">
-                          <tr>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-dark uppercase tracking-wider">Reward</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-dark uppercase tracking-wider">Redeemed On</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-dark uppercase tracking-wider">Points Spent</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-dark uppercase tracking-wider">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {redemptions.map(redemption => (
-                            <tr key={redemption.id}>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm font-medium text-neutral-darker">
-                                  {redemption.reward?.name || 'Unnamed Reward'}
-                                </div>
-                                <div className="text-xs text-neutral-dark">
-                                  {redemption.reward?.description || 'No description'}
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-darker">
-                                {new Date(redemption.timestamp).toLocaleDateString()}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-mono font-semibold text-primary">
-                                {redemption.pointsSpent}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <Badge className={
-                                  redemption.status === 'approved' ? 'bg-success' :
-                                  redemption.status === 'delivered' ? 'bg-accent' :
-                                  'bg-secondary'
-                                }>
-                                  {redemption.status.charAt(0).toUpperCase() + redemption.status.slice(1)}
-                                </Badge>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <div className="bg-white rounded-lg shadow-sm p-6 text-center">
-                      <p className="text-neutral-dark">You haven't redeemed any rewards yet.</p>
-                    </div>
-                  )}
-                </TabsContent>
-              </Tabs>
-            ) : (
-              // View for teachers, admins, parents
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Available Rewards</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {isLoadingRewards ? (
-                      <div className="flex items-center justify-center h-32">
-                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                      </div>
-                    ) : rewards && rewards.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {rewards.map(reward => (
-                          <div key={reward.id} className="border rounded-md p-4">
-                            <h3 className="font-semibold text-neutral-darker">{reward.name}</h3>
-                            <p className="text-sm text-neutral-dark mb-2">{reward.description}</p>
-                            <div className="flex justify-between items-center">
-                              <span className="text-xs font-mono font-bold bg-primary text-white px-3 py-1 rounded-md shadow-sm">
-                                {reward.pointCost} points
-                              </span>
-                              <span className="text-xs font-medium bg-gray-100 px-2 py-1 rounded text-gray-700">
-                                {reward.quantity} remaining
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-neutral-dark">No rewards available at this time.</p>
-                    )}
-                  </CardContent>
-                </Card>
-                
-                {user?.role === 'admin' && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Reward Management</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-neutral-dark">Use the Admin panel to manage rewards.</p>
-                    </CardContent>
-                  </Card>
-                )}
-                
-                {(user?.role === 'admin' || user?.role === 'teacher') && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Redeem Rewards for Students</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-neutral-dark mb-4">
-                        Select a reward below to redeem it on behalf of a student. This will automatically approve the reward.
-                      </p>
-                      
-                      {isLoadingRewards ? (
-                        <div className="flex items-center justify-center h-32">
-                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                        </div>
-                      ) : rewards && rewards.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                          {rewards.map(reward => (
-                            <div key={reward.id} className="border rounded-md p-4 hover:border-primary hover:shadow-sm transition-all cursor-pointer" onClick={() => setRedeemReward(reward)}>
-                              <h3 className="font-semibold text-neutral-darker">{reward.name}</h3>
-                              <p className="text-sm text-neutral-dark mb-2 line-clamp-2">{reward.description}</p>
-                              <div className="flex justify-between items-center mt-3">
-                                <span className="text-xs font-mono font-bold bg-primary text-white px-3 py-1 rounded-md shadow-sm">
-                                  {reward.pointCost} points
-                                </span>
-                                <span className="text-xs font-medium bg-gray-100 px-2 py-1 rounded text-gray-700">
-                                  {reward.quantity} remaining
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-neutral-dark">No rewards available at this time.</p>
-                      )}
-                    </CardContent>
-                  </Card>
                 )}
               </div>
             )}
           </div>
-        </div>
+        </header>
+
+        {user?.role === 'student' ? (
+          <Tabs defaultValue="available" className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="available">Available Rewards</TabsTrigger>
+              <TabsTrigger value="redeemed">My Redemptions</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="available" className="space-y-4">
+              {isLoadingRewards ? (
+                <div className="flex items-center justify-center h-64">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : rewards && rewards.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {rewards.map(reward => (
+                    <RewardCard 
+                      key={reward.id} 
+                      reward={reward}
+                      canAfford={totalPoints >= reward.pointCost}
+                      availablePoints={totalPoints}
+                      onRedeem={() => setRedeemReward(reward)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white rounded-lg shadow-sm p-6 text-center">
+                  <p className="text-neutral-dark">No rewards available at this time.</p>
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="redeemed" className="space-y-4">
+              {isLoadingRedemptions ? (
+                <div className="flex items-center justify-center h-64">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : redemptions && redemptions.length > 0 ? (
+                <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-neutral">
+                      <tr>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-dark uppercase tracking-wider">Reward</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-dark uppercase tracking-wider">Redeemed On</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-dark uppercase tracking-wider">Points Spent</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-dark uppercase tracking-wider">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {redemptions.map(redemption => (
+                        <tr key={redemption.id}>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-neutral-darker">
+                              {redemption.reward?.name || 'Unnamed Reward'}
+                            </div>
+                            <div className="text-xs text-neutral-dark">
+                              {redemption.reward?.description || 'No description'}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-darker">
+                            {new Date(redemption.timestamp).toLocaleDateString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-mono font-semibold text-primary">
+                            {redemption.pointsSpent}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <Badge className={
+                              redemption.status === 'approved' ? 'bg-success' :
+                              redemption.status === 'delivered' ? 'bg-accent' :
+                              'bg-secondary'
+                            }>
+                              {redemption.status.charAt(0).toUpperCase() + redemption.status.slice(1)}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="bg-white rounded-lg shadow-sm p-6 text-center">
+                  <p className="text-neutral-dark">You haven't redeemed any rewards yet.</p>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        ) : (
+          // View for teachers, admins, parents
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Available Rewards</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoadingRewards ? (
+                  <div className="flex items-center justify-center h-32">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                ) : rewards && rewards.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {rewards.map(reward => (
+                      <div key={reward.id} className="border rounded-md p-4">
+                        <h3 className="font-semibold text-neutral-darker">{reward.name}</h3>
+                        <p className="text-sm text-neutral-dark mb-2">{reward.description}</p>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs font-mono font-bold bg-primary text-white px-3 py-1 rounded-md shadow-sm">
+                            {reward.pointCost} points
+                          </span>
+                          <span className="text-xs font-medium bg-gray-100 px-2 py-1 rounded text-gray-700">
+                            {reward.quantity} remaining
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-neutral-dark">No rewards available at this time.</p>
+                )}
+              </CardContent>
+            </Card>
+            
+            {user?.role === 'admin' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Reward Management</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-neutral-dark">Use the Admin panel to manage rewards.</p>
+                </CardContent>
+              </Card>
+            )}
+            
+            {(user?.role === 'admin' || user?.role === 'teacher') && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Redeem Rewards for Students</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-neutral-dark mb-4">
+                    Select a reward below to redeem it on behalf of a student. This will automatically approve the reward.
+                  </p>
+                  
+                  {isLoadingRewards ? (
+                    <div className="flex items-center justify-center h-32">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    </div>
+                  ) : rewards && rewards.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {rewards.map(reward => (
+                        <div key={reward.id} className="border rounded-md p-4 hover:border-primary hover:shadow-sm transition-all cursor-pointer" onClick={() => setRedeemReward(reward)}>
+                          <h3 className="font-semibold text-neutral-darker">{reward.name}</h3>
+                          <p className="text-sm text-neutral-dark mb-2 line-clamp-2">{reward.description}</p>
+                          <div className="flex justify-between items-center mt-3">
+                            <span className="text-xs font-mono font-bold bg-primary text-white px-3 py-1 rounded-md shadow-sm">
+                              {reward.pointCost} points
+                            </span>
+                            <span className="text-xs font-medium bg-gray-100 px-2 py-1 rounded text-gray-700">
+                              {reward.quantity} remaining
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-neutral-dark">No rewards available at this time.</p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
       </div>
-      
-      <MobileNavbar />
       
       {/* Redemption Modal */}
       <Dialog open={redeemReward !== null} onOpenChange={(open) => !open && setRedeemReward(null)}>

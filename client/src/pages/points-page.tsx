@@ -93,29 +93,7 @@ export default function PointsPage() {
 
   if (view === 'categories' && selectedStudent) {
     return (
-      <div className="min-h-screen flex flex-col">
-        {/* Top Navigation Bar */}
-        <header className="bg-primary text-white py-3 px-4 sticky top-0 z-10">
-          <div className="container mx-auto flex justify-between items-center">
-            <div className="flex items-center space-x-2">
-              <div className="bg-white text-primary rounded-full p-1">
-                <Grid size={20} />
-              </div>
-              <h1 className="text-xl font-bold flex items-center">
-                Points <ChevronDown className="ml-1 h-5 w-5" />
-              </h1>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" className="text-white">
-                Help <ChevronDown className="ml-1 h-4 w-4" />
-              </Button>
-              <div className="w-8 h-8 rounded-full bg-white text-primary flex items-center justify-center font-semibold">
-                {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
-              </div>
-            </div>
-          </div>
-        </header>
-
+      <div className="flex flex-col">
         {/* Behavior Categories View */}
         <div className="container mx-auto">
           <BehaviorCategoriesView 
@@ -130,31 +108,9 @@ export default function PointsPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Top Navigation Bar */}
-      <header className="bg-primary text-white py-3 px-4 sticky top-0 z-10">
-        <div className="container mx-auto flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <div className="bg-white text-primary rounded-full p-1">
-              <Grid size={20} />
-            </div>
-            <h1 className="text-xl font-bold flex items-center">
-              Points <ChevronDown className="ml-1 h-5 w-5" />
-            </h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" className="text-white">
-              Help <ChevronDown className="ml-1 h-4 w-4" />
-            </Button>
-            <div className="w-8 h-8 rounded-full bg-white text-primary flex items-center justify-center font-semibold">
-              {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
-            </div>
-          </div>
-        </div>
-      </header>
-
+    <div className="flex flex-col">
       {/* Filter Bar */}
-      <div className="bg-white border-b py-2 px-4 sticky top-14 z-10">
+      <div className="bg-white border-b py-2 px-4 sticky top-0 z-10">
         <div className="container mx-auto flex flex-wrap justify-between items-center gap-2">
           <div className="flex items-center gap-2">
             <Button variant="ghost" className="mr-2" onClick={() => window.history.back()}>
