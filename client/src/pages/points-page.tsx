@@ -92,6 +92,10 @@ export default function PointsPage() {
   };
 
   if (view === 'categories' && selectedStudent) {
+    // Set a custom URL parameter to help the header component detect we're in categories view
+    // This doesn't actually navigate, just helps with UI state detection
+    window.history.replaceState(null, '', '/points/categories');
+    
     return (
       <div className="flex flex-col">
         {/* Behavior Categories View */}
@@ -105,6 +109,9 @@ export default function PointsPage() {
         </div>
       </div>
     );
+  } else {
+    // Reset URL when not in categories view
+    window.history.replaceState(null, '', '/points');
   }
 
   return (
@@ -113,11 +120,6 @@ export default function PointsPage() {
       <div className="bg-white border-b py-2 px-4 sticky top-0 z-10">
         <div className="container mx-auto flex flex-wrap justify-between items-center gap-2">
           <div className="flex items-center gap-2">
-            <Button variant="ghost" className="mr-2" onClick={() => window.history.back()}>
-              <ChevronLeft className="mr-1 h-4 w-4" />
-              Back
-            </Button>
-            
             <Select value={filterHouse} onValueChange={setFilterHouse}>
               <SelectTrigger className="w-[140px]">
                 <Home className="mr-2 h-4 w-4" />

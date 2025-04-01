@@ -182,16 +182,11 @@ export default function BehaviorCategoriesView({
 
   return (
     <div className="py-4">
-      {/* Back button and student name */}
+      {/* Student name header */}
       <div className="mb-6 flex items-center">
-        <Button 
-          variant="ghost" 
-          className="text-blue-500"
-          onClick={onBack}
-        >
-          <ChevronLeft className="mr-1 h-4 w-4" /> 
+        <h2 className="text-lg font-medium text-neutral-darker">
           {studentName}
-        </Button>
+        </h2>
       </div>
 
       {/* Category groups */}
@@ -217,15 +212,8 @@ export default function BehaviorCategoriesView({
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-3 flex justify-center">
         <div className="bg-white rounded-full shadow-md flex divide-x">
           <Button 
-            variant="ghost" 
-            className="rounded-l-full" 
-            onClick={onBack}
-          >
-            <ChevronLeft className="mr-1 h-4 w-4" />
-            Back
-          </Button>
-          <Button 
             variant="ghost"
+            className="rounded-l-full"
           >
             <Calendar className="mr-1 h-4 w-4" />
             Comment
