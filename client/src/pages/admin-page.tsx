@@ -7,6 +7,7 @@ import MobileNavbar from '@/components/layout/MobileNavbar';
 import UserManagement from '@/components/admin/UserManagement';
 import BehaviorCategoryManagement from '@/components/admin/BehaviorCategoryManagement';
 import RewardManagement from '@/components/admin/RewardManagement';
+import HouseManagement from '@/components/admin/HouseManagement';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';

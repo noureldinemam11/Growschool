@@ -256,6 +256,7 @@ export default function HouseManagement() {
                           <Textarea
                             placeholder="A brief description of the house and its values..."
                             {...field}
+                            value={field.value || ''}
                           />
                         </FormControl>
                         <FormMessage />
@@ -269,7 +270,7 @@ export default function HouseManagement() {
                       <FormItem>
                         <FormLabel>Logo URL (Optional)</FormLabel>
                         <FormControl>
-                          <Input placeholder="https://example.com/logo.png" {...field} />
+                          <Input placeholder="https://example.com/logo.png" {...field} value={field.value || ''} />
                         </FormControl>
                         <FormDescription>Enter a URL for the house logo image</FormDescription>
                         <FormMessage />
@@ -421,7 +422,7 @@ export default function HouseManagement() {
                     <FormItem>
                       <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <Textarea {...field} />
+                        <Textarea {...field} value={field.value || ''} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -434,7 +435,7 @@ export default function HouseManagement() {
                     <FormItem>
                       <FormLabel>Logo URL (Optional)</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field} value={field.value || ''} />
                       </FormControl>
                       <FormDescription>Enter a URL for the house logo image</FormDescription>
                       <FormMessage />
