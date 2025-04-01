@@ -16,13 +16,13 @@ interface BehaviorCategoryGroupProps {
 
 function BehaviorCategoryGroup({ title, children, onToggle, isHidden = false }: BehaviorCategoryGroupProps) {
   return (
-    <div className="mb-8">
+    <div className="mb-8 bg-gray-50 p-4 rounded-lg">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-medium">{title}</h2>
+        <h2 className="text-base font-medium text-gray-700">{title}</h2>
         {onToggle && (
           <Button 
             variant="link" 
-            className="text-blue-500 font-medium" 
+            className="text-blue-500 font-medium text-sm" 
             onClick={onToggle}
           >
             {isHidden ? 'show' : 'hide'}
@@ -30,7 +30,7 @@ function BehaviorCategoryGroup({ title, children, onToggle, isHidden = false }: 
         )}
       </div>
       {!isHidden && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="flex flex-wrap justify-center gap-8">
           {children}
         </div>
       )}
@@ -48,20 +48,17 @@ interface PointOptionProps {
 
 function PointOption({ icon, title, points, description, onClick }: PointOptionProps) {
   return (
-    <div 
-      className="bg-white rounded-lg border border-gray-100 p-4 flex flex-col items-center cursor-pointer hover:shadow-md transition-shadow"
-      onClick={onClick}
-    >
-      <div className="text-center mb-2">
-        {icon || (
-          <div className="w-8 h-8 rounded-full bg-green-100 text-green-500 flex items-center justify-center mb-1">
-            <Plus size={20} />
-          </div>
-        )}
+    <div className="flex flex-col items-center">
+      <button 
+        className="w-16 h-16 rounded-full bg-white border-2 border-green-500 text-green-500 flex items-center justify-center hover:bg-green-50 transition-colors focus:outline-none focus:ring-2 focus:ring-green-300"
+        onClick={onClick}
+      >
+        <Plus size={24} />
+      </button>
+      <div className="text-center mt-2">
         <div className="text-sm font-medium">{title}</div>
+        <div className="text-xs text-gray-500">{points} {points === 1 ? 'point' : 'points'}</div>
       </div>
-      {description && <div className="text-xs text-gray-500 mb-1">{description}</div>}
-      <div className="text-xs text-gray-500">{points} {points === 1 ? 'point' : 'points'}</div>
     </div>
   );
 }
@@ -208,34 +205,45 @@ export default function BehaviorCategoriesView({
         </BehaviorCategoryGroup>
       ))}
 
-      {/* Bottom toolbar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-3 flex justify-center">
-        <div className="bg-white rounded-full shadow-md flex divide-x">
+      {/* Fixed bottom toolbar - styled to match the design */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-2 flex justify-center">
+        <div className="max-w-md w-full bg-white rounded-full shadow-md flex items-center justify-between">
           <Button 
             variant="ghost"
-            className="rounded-l-full"
+            className="rounded-l-full flex items-center justify-center"
+            onClick={onBack}
           >
-            <Calendar className="mr-1 h-4 w-4" />
-            Comment
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            <span className="text-sm">Back</span>
           </Button>
+          
           <Button 
             variant="ghost"
+            className="flex items-center justify-center"
           >
-            <Calendar className="mr-1 h-4 w-4" />
-            Today
+            <span className="text-sm">Comment</span>
           </Button>
+          
           <Button 
             variant="ghost"
+            className="flex items-center justify-center"
           >
-            <Clock className="mr-1 h-4 w-4" />
-            12:30 a.m.
+            <span className="text-sm">Today</span>
           </Button>
+          
+          <Button 
+            variant="ghost"
+            className="flex items-center justify-center"
+          >
+            <span className="text-sm">1:11 a.m.</span>
+          </Button>
+          
           <Button 
             variant="ghost" 
-            className="rounded-r-full"
+            className="rounded-r-full flex items-center justify-center"
             onClick={onComplete}
           >
-            Submit
+            <span className="text-sm">Submit</span>
           </Button>
         </div>
       </div>
