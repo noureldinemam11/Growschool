@@ -23,12 +23,6 @@ export default function Sidebar() {
       allowedRoles: ['admin', 'teacher', 'parent']
     },
     {
-      name: 'Roster',
-      href: '/roster',
-      icon: ClipboardList,
-      allowedRoles: ['admin', 'teacher']
-    },
-    {
       name: 'Houses',
       href: '/houses',
       icon: Building,

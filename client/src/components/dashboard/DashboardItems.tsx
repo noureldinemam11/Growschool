@@ -3,8 +3,7 @@ import {
   Award, 
   Printer, 
   BarChart, 
-  Settings,
-  UserSquare2
+  Settings
 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import PointsModal from '../points/PointsModal';
@@ -50,11 +49,6 @@ export default function DashboardItems() {
           icon={<Printer size={48} />} 
           title="Printables" 
           onClick={() => navigate('/printables')}
-        />
-        <DashboardItem 
-          icon={<UserSquare2 size={48} />} 
-          title="Roster" 
-          onClick={() => navigate('/roster')}
         />
         <DashboardItem 
           icon={<Settings size={48} />} 
