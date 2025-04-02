@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
@@ -83,10 +83,15 @@ function Router() {
 }
 
 function App() {
+  const [location] = useLocation();
+  
+  // Don't show the global header on points pages as they have their own custom headers
+  const hideGlobalHeader = location.startsWith('/points');
+  
   return (
     <AuthProvider>
       <div className="app-container">
-        <AppHeader />
+        {!hideGlobalHeader && <AppHeader />}
         <div className="app-content">
           <Router />
         </div>
