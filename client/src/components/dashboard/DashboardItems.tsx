@@ -50,11 +50,7 @@ export default function DashboardItems() {
           title="House Points" 
           onClick={() => navigate('/house-points')}
         />
-        <DashboardItem 
-          icon={<Settings size={48} />} 
-          title="Setup" 
-          onClick={() => navigate('/admin')}
-        />
+        {/* Settings button removed as requested */}
       </div>
 
       <PointsModal 

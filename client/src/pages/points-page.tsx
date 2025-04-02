@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQuery } from '@tanstack/react-query';
 import { User, BehaviorPoint } from '@shared/schema';
 import { useAuth } from '@/hooks/use-auth';
-import { Settings, ChevronDown, Grid, Home, ChevronLeft } from 'lucide-react';
+import { ChevronDown, Grid, Home, ChevronLeft } from 'lucide-react';
 import PointsModal from '@/components/points/PointsModal';
 import BehaviorCategoriesView from '@/components/points/BehaviorCategoriesView';
 import { useLocation } from 'wouter';
@@ -179,12 +179,7 @@ export default function PointsPage() {
             </Select>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
-              <Settings className="mr-2 h-4 w-4" />
-              Settings
-            </Button>
-          </div>
+          {/* Settings button removed as requested */}
         </div>
       </div>
 
