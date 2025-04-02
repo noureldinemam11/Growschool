@@ -196,15 +196,6 @@ export default function HousePage() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header is now provided globally in App.tsx */}
-      <div className="pt-2 px-4">
-        <button 
-          onClick={() => setLocation('/houses')}
-          className="p-2 hover:bg-gray-100 rounded-md flex items-center text-gray-700"
-        >
-          <ArrowLeft size={20} className="mr-1" />
-          <span>Back to Houses</span>
-        </button>
-      </div>
 
       {/* Main Content */}
       <main className="flex-1 bg-slate-50 p-6">
