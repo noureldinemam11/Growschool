@@ -14,12 +14,17 @@ interface AppHeaderProps {
 
 export default function AppHeader({
   customBackAction,
-  showBackButton = true,
+  showBackButton,
   showHomeButton = false,
   title
 }: AppHeaderProps) {
   const { user } = useAuth();
   const [location, navigate] = useLocation();
+  
+  // If showBackButton isn't explicitly set, show it except on the main dashboard
+  const shouldShowBackButton = showBackButton !== undefined 
+    ? showBackButton 
+    : location !== '/';
   
   const handleBackClick = () => {
     if (customBackAction) {
@@ -54,7 +59,7 @@ export default function AppHeader({
       <div className="flex justify-between items-center">
         {/* Left side with navigation */}
         <div className="flex items-center">
-          {showBackButton && (
+          {shouldShowBackButton && (
             <Button 
               variant="ghost" 
               className="p-0 h-8 text-white hover:bg-primary/20 hover:text-white focus:bg-primary/20"
