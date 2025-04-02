@@ -504,8 +504,19 @@ export class DatabaseStorage implements IStorage {
   
   // User Management
   async getUser(id: number): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.id, id));
-    return result[0] as User | undefined;
+    // Validate id is a proper number before querying the database
+    if (isNaN(id) || id === null || id === undefined) {
+      console.warn(`Invalid user ID (${id}) passed to getUser`);
+      return undefined;
+    }
+    
+    try {
+      const result = await db.select().from(users).where(eq(users.id, id));
+      return result[0] as User | undefined;
+    } catch (error: any) {
+      console.error(`Error in getUser for ID ${id}:`, error.message || 'Unknown error');
+      throw error; // Re-throw to allow the caller to handle
+    }
   }
   
   async getUserByUsername(username: string): Promise<User | undefined> {
@@ -654,21 +665,43 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getStudentsByParentId(parentId: number): Promise<User[]> {
-    const result = await db.select().from(users)
-      .where(and(
-        eq(users.role, 'student'),
-        eq(users.parentId, parentId)
-      ));
-    return result as User[];
+    // Validate parentId
+    if (isNaN(parentId) || parentId === null || parentId === undefined) {
+      console.warn(`Invalid parent ID (${parentId}) passed to getStudentsByParentId`);
+      return [];
+    }
+    
+    try {
+      const result = await db.select().from(users)
+        .where(and(
+          eq(users.role, 'student'),
+          eq(users.parentId, parentId)
+        ));
+      return result as User[];
+    } catch (error: any) {
+      console.error(`Error in getStudentsByParentId for parentId ${parentId}:`, error.message || 'Unknown error');
+      throw error;
+    }
   }
   
   async getStudentsByHouseId(houseId: number): Promise<User[]> {
-    const result = await db.select().from(users)
-      .where(and(
-        eq(users.role, 'student'),
-        eq(users.houseId, houseId)
-      ));
-    return result as User[];
+    // Validate houseId
+    if (isNaN(houseId) || houseId === null || houseId === undefined) {
+      console.warn(`Invalid house ID (${houseId}) passed to getStudentsByHouseId`);
+      return [];
+    }
+    
+    try {
+      const result = await db.select().from(users)
+        .where(and(
+          eq(users.role, 'student'),
+          eq(users.houseId, houseId)
+        ));
+      return result as User[];
+    } catch (error: any) {
+      console.error(`Error in getStudentsByHouseId for houseId ${houseId}:`, error.message || 'Unknown error');
+      throw error;
+    }
   }
   
   // House Management

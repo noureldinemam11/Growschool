@@ -391,8 +391,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Fetch related data for the response
       const enrichedPoints = await Promise.all(points.map(async (point) => {
-        const student = await storage.getUser(point.studentId);
-        const teacher = await storage.getUser(point.teacherId);
+        let student = null;
+        let teacher = null;
+        
+        // Make sure IDs are valid numbers before querying
+        if (!isNaN(point.studentId)) {
+          student = await storage.getUser(point.studentId);
+        } else {
+          console.warn(`Invalid student ID in behavior point: ${point.id}, studentId: ${point.studentId}`);
+        }
+        
+        if (!isNaN(point.teacherId)) {
+          teacher = await storage.getUser(point.teacherId);
+        } else {
+          console.warn(`Invalid teacher ID in behavior point: ${point.id}, teacherId: ${point.teacherId}`);
+        }
+        
         const category = await storage.getBehaviorCategory(point.categoryId);
         
         return {
@@ -414,7 +428,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }));
       
       res.json(enrichedPoints);
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Error fetching recent behavior points:", error.message || 'Unknown error', error.stack);
       res.status(500).json({ error: "Failed to fetch recent behavior points" });
     }
   });
@@ -486,6 +501,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       const validatedData = redeemSchema.parse(req.body);
+      
+      // Validate student ID is a valid number before querying database
+      if (isNaN(validatedData.studentId)) {
+        return res.status(400).json({ error: "Invalid student ID format" });
+      }
       
       // Check if student exists
       const student = await storage.getUser(validatedData.studentId);
@@ -634,6 +654,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = Number(req.params.id);
       
+      // Check if userId is a valid number
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+      
       const user = await storage.getUser(userId);
       
       if (!user) {
@@ -668,6 +693,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users/students/house/:houseId", async (req, res) => {
     try {
       const houseId = Number(req.params.houseId);
+      
+      // Check if houseId is a valid number
+      if (isNaN(houseId)) {
+        return res.status(400).json({ error: "Invalid house ID" });
+      }
+      
       const students = await storage.getStudentsByHouseId(houseId);
       
       // Only return necessary fields for security
@@ -689,6 +720,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users/students/parent/:parentId", async (req, res) => {
     try {
       const parentId = Number(req.params.parentId);
+      
+      // Check if parentId is a valid number
+      if (isNaN(parentId)) {
+        return res.status(400).json({ error: "Invalid parent ID" });
+      }
       
       // Check authorization: must be admin, teacher, or the parent
       if (req.isAuthenticated()) {
@@ -723,7 +759,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
+      // Get all students directly from the database without relying on getUser
       const students = await storage.getUsersByRole("student");
+      
+      if (!students || !Array.isArray(students)) {
+        throw new Error("Failed to retrieve student data");
+      }
       
       // Only return necessary fields for security
       const safeStudents = students.map(student => ({
@@ -737,9 +778,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         houseId: student.houseId
       }));
       
-      res.json(safeStudents);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch students roster" });
+      return res.json(safeStudents);
+    } catch (error: any) {
+      console.error("Error fetching student roster:", error.message || 'Unknown error', error.stack);
+      return res.status(500).json({ error: "Failed to fetch students roster" });
     }
   });
 
@@ -824,6 +866,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const userId = Number(req.params.id);
+      
+      // Check if userId is a valid number
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+      
       console.log(`DELETE /api/users/${userId} - Attempting to delete user with associated records`);
       
       // Check if user exists and is a student
