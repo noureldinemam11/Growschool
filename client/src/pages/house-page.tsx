@@ -439,14 +439,23 @@ export default function HousePage() {
                             <h3 className="text-lg font-semibold">{house.name}</h3>
                             <p className="text-sm text-gray-500">{house.description || 'No description'}</p>
                           </div>
-                          <button className="absolute right-4 top-4 text-gray-400 hover:text-gray-600">
+                          <button 
+                            onClick={() => {
+                              // Open edit dialog or navigate to edit page
+                              setLocation(`/house/options?house=${house.id}`);
+                            }}
+                            className="absolute right-4 top-4 text-gray-400 hover:text-gray-600"
+                          >
                             <Settings size={18} />
                           </button>
                         </div>
                         
                         <div className="flex justify-between items-center">
                           <div className="text-sm text-gray-500">Students: <span className="font-semibold">24</span></div>
-                          <button className="px-3 py-1 rounded text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center gap-1">
+                          <button 
+                            onClick={() => setLocation(`/roster?house=${house.id}`)}
+                            className="px-3 py-1 rounded text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center gap-1"
+                          >
                             <UserPlus size={14} />
                             <span>Assign Students</span>
                           </button>
