@@ -3,7 +3,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useQuery } from '@tanstack/react-query';
 import { House, User } from '@shared/schema';
 import { globalEventBus } from '@/lib/queryClient';
-import { Loader2, ArrowLeft, Settings, Building, UserPlus, LineChart, Award } from 'lucide-react';
+import { Loader2, ArrowLeft, Settings, Building, UserPlus, LineChart, Award, Maximize2, Minimize2 } from 'lucide-react';
 import { useLocation, useRoute } from 'wouter';
 import Navbar from '@/components/layout/Navbar';
 import Sidebar from '@/components/layout/Sidebar';
@@ -27,6 +27,9 @@ export default function HousePage() {
   
   // State to force refetch
   const [refreshCounter, setRefreshCounter] = useState(0);
+  
+  // State for fullscreen mode
+  const [isFullscreen, setIsFullscreen] = useState(false);
   
   // Get houses data with refresh counter to force refetch
   const { data: houses, isLoading: isLoadingHouses, refetch: houseRefetch } = useQuery<House[]>({
@@ -69,6 +72,21 @@ export default function HousePage() {
       unsubscribe();
     };
   }, [houseRefetch]);
+  
+  // Effect to handle ESC key to exit fullscreen mode
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isFullscreen]);
 
   // If we're on the /houses path, show the Houses list page
   if (isHousesPath) {
@@ -273,14 +291,24 @@ export default function HousePage() {
               
               {/* Dashboard Content */}
               {isDashboard && (
-                <div>
+                <div className={isFullscreen ? "fixed inset-0 z-50 bg-slate-50 overflow-auto p-6" : ""}>
                   <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
-                    <div className="mb-6">
+                    <div className="mb-6 flex justify-between items-center">
                       <h2 className="text-2xl font-bold text-gray-800">House Points Dashboard</h2>
+                      <button 
+                        onClick={() => setIsFullscreen(!isFullscreen)}
+                        className="p-2 rounded-full hover:bg-gray-100"
+                        title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+                      >
+                        {isFullscreen ? 
+                          <Minimize2 className="h-5 w-5 text-gray-700" /> : 
+                          <Maximize2 className="h-5 w-5 text-gray-700" />
+                        }
+                      </button>
                     </div>
                     
-                    {/* Colorful pods grid */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {/* Colorful pods grid - Make cards larger when in fullscreen mode */}
+                    <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 ${isFullscreen ? 'lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6' : ''}`}>
                       {houses?.map((house, index) => {
                         // Generate a vibrant color for each pod based on its index
                         const colors = [
@@ -306,10 +334,10 @@ export default function HousePage() {
                             key={house.id} 
                             className={`${colorClass} rounded-lg shadow p-6 flex flex-col items-center justify-center text-center aspect-[3/2] transition-transform hover:scale-105 cursor-pointer`}
                           >
-                            <div className="text-blue-900 font-bold text-3xl md:text-4xl lg:text-5xl mb-2">
+                            <div className={`text-blue-900 font-bold text-3xl md:text-4xl ${isFullscreen ? 'text-5xl md:text-6xl lg:text-7xl' : 'lg:text-5xl'} mb-2`}>
                               {new Intl.NumberFormat().format(house.points)}
                             </div>
-                            <div className="text-blue-900 font-medium">
+                            <div className={`text-blue-900 font-medium ${isFullscreen ? 'text-xl' : ''}`}>
                               {house.name}
                             </div>
                             {/* Show top student if available */}
@@ -320,25 +348,25 @@ export default function HousePage() {
                                   if (houseData?.topStudent) {
                                     return (
                                       <div className="mt-3 pt-2 border-t border-blue-900/20 w-full flex flex-col items-center">
-                                        <div className="bg-blue-900/20 px-3 py-0.5 rounded-full text-xs uppercase text-blue-900 font-bold tracking-wide mb-1.5">
+                                        <div className={`bg-blue-900/20 px-3 py-0.5 rounded-full ${isFullscreen ? 'text-sm' : 'text-xs'} uppercase text-blue-900 font-bold tracking-wide mb-1.5`}>
                                           Star Student
                                         </div>
                                         <div className="relative">
-                                          <div className="text-blue-900 font-semibold text-sm flex items-center justify-center">
-                                            <span className="inline-block bg-blue-900/10 w-5 h-5 rounded-full flex items-center justify-center mr-1">
-                                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
+                                          <div className={`text-blue-900 font-semibold ${isFullscreen ? 'text-base' : 'text-sm'} flex items-center justify-center`}>
+                                            <span className={`inline-block bg-blue-900/10 ${isFullscreen ? 'w-6 h-6' : 'w-5 h-5'} rounded-full flex items-center justify-center mr-1`}>
+                                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={isFullscreen ? 'w-4 h-4' : 'w-3 h-3'}>
                                                 <path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clipRule="evenodd" />
                                               </svg>
                                             </span>
                                             {houseData.topStudent.firstName} {houseData.topStudent.lastName.charAt(0)}.
                                           </div>
                                           <div className="flex items-center justify-center mt-0.5">
-                                            <span className="inline-block bg-blue-900/10 w-4 h-4 rounded-full flex items-center justify-center mr-1">
-                                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-2.5 h-2.5">
+                                            <span className={`inline-block bg-blue-900/10 ${isFullscreen ? 'w-5 h-5' : 'w-4 h-4'} rounded-full flex items-center justify-center mr-1`}>
+                                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={isFullscreen ? 'w-3 h-3' : 'w-2.5 h-2.5'}>
                                                 <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
                                               </svg>
                                             </span>
-                                            <span className="text-xs font-semibold text-blue-900">
+                                            <span className={`${isFullscreen ? 'text-sm' : 'text-xs'} font-semibold text-blue-900`}>
                                               {houseData.topStudent.totalPoints} points
                                             </span>
                                           </div>
