@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronDown, ArrowLeft, Home } from 'lucide-react';
+import { ArrowLeft, Home } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { Link, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
@@ -80,12 +80,8 @@ export default function AppHeader({
           )}
         </div>
         
-        {/* Right side with Help and Profile */}
+        {/* Right side with Profile */}
         <div className="flex items-center gap-4">
-          <div className="flex items-center">
-            <span className="mr-1">Help</span>
-            <ChevronDown className="h-4 w-4" />
-          </div>
           <div className="w-8 h-8 rounded-full bg-white text-primary flex items-center justify-center font-semibold">
             {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
           </div>
