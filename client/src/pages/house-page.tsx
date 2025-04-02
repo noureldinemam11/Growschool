@@ -34,8 +34,22 @@ export default function HousePage() {
     refetchInterval: 2000, // Refresh every 2 seconds to keep data in sync
   });
   
+  // Define an interface for the top student data
+  interface TopStudentData {
+    houseId: number;
+    houseName: string;
+    houseColor: string;
+    housePoints: number;
+    topStudent: {
+      id: number;
+      firstName: string;
+      lastName: string;
+      totalPoints: number;
+    } | null;
+  }
+  
   // Get top students for each house
-  const { data: topStudentsByHouse, isLoading: isLoadingTopStudents } = useQuery({
+  const { data: topStudentsByHouse, isLoading: isLoadingTopStudents } = useQuery<TopStudentData[]>({
     queryKey: ['/api/houses-top-students', refreshCounter],
     refetchInterval: 2000, // Refresh every 2 seconds to keep data in sync
   });
@@ -311,43 +325,30 @@ export default function HousePage() {
                               {house.name}
                             </div>
                             {/* Show top student if available */}
-                            {topStudentsByHouse && topStudentsByHouse.find(h => h.houseId === house.id)?.topStudent && (
-                              <div className="mt-2 flex flex-col items-center">
-                                <div className="text-xs uppercase text-blue-900/70 font-semibold">Top Student</div>
-                                <div className="text-blue-900 font-medium">
-                                  {topStudentsByHouse.find(h => h.houseId === house.id)?.topStudent?.firstName} {topStudentsByHouse.find(h => h.houseId === house.id)?.topStudent?.lastName?.charAt(0)}.
-                                </div>
-                                <div className="text-xs text-blue-900/70">
-                                  {topStudentsByHouse.find(h => h.houseId === house.id)?.topStudent?.totalPoints} pts
-                                </div>
-                              </div>
+                            {topStudentsByHouse && topStudentsByHouse.length > 0 && (
+                              <>
+                                {(() => {
+                                  const houseData = topStudentsByHouse.find(h => h.houseId === house.id);
+                                  if (houseData?.topStudent) {
+                                    return (
+                                      <div className="mt-2 flex flex-col items-center">
+                                        <div className="text-xs uppercase text-blue-900/70 font-semibold">Top Student</div>
+                                        <div className="text-blue-900 font-medium">
+                                          {houseData.topStudent.firstName} {houseData.topStudent.lastName.charAt(0)}.
+                                        </div>
+                                        <div className="text-xs text-blue-900/70">
+                                          {houseData.topStudent.totalPoints} pts
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                })()}
+                              </>
                             )}
                           </div>
                         );
                       })}
-                    </div>
-                  </div>
-                  
-                  {/* Summary cards */}
-                  <div className="bg-white p-6 rounded-lg shadow-sm">
-                    <h3 className="text-xl font-bold mb-4 text-gray-800">House Rankings</h3>
-                    <div className="space-y-4">
-                      {houses?.sort((a, b) => b.points - a.points).map((house, index) => (
-                        <div key={house.id} className="flex items-center border-b pb-3">
-                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center font-bold mr-3">
-                            {index + 1}
-                          </div>
-                          <div className="flex-shrink-0">
-                            <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold" style={{ backgroundColor: house.color, color: 'white' }}>
-                              {house.name.charAt(0)}
-                            </div>
-                          </div>
-                          <div className="ml-3 flex-grow">
-                            <div className="font-medium">{house.name}</div>
-                          </div>
-                          <div className="font-bold text-xl">{house.points}</div>
-                        </div>
-                      ))}
                     </div>
                   </div>
                 </div>
