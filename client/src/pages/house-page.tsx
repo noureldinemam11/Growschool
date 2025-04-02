@@ -31,6 +31,20 @@ export default function HousePage() {
   // State for fullscreen mode
   const [isFullscreen, setIsFullscreen] = useState(false);
   
+  // Add ESC key handler for exiting fullscreen mode
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isFullscreen]);
+  
   // Get houses data with refresh counter to force refetch
   const { data: houses, isLoading: isLoadingHouses, refetch: houseRefetch } = useQuery<House[]>({
     queryKey: ['/api/houses', refreshCounter],
@@ -73,20 +87,7 @@ export default function HousePage() {
     };
   }, [houseRefetch]);
   
-  // Effect to handle ESC key to exit fullscreen mode
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isFullscreen) {
-        setIsFullscreen(false);
-      }
-    };
-    
-    document.addEventListener('keydown', handleKeyDown);
-    
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isFullscreen]);
+
 
   // If we're on the /houses path, show the Houses list page
   if (isHousesPath) {
@@ -296,16 +297,18 @@ export default function HousePage() {
                     <div className="mb-6 flex justify-between items-center">
                       <div className="flex items-center">
                         {isFullscreen && (
-                          <button 
-                            onClick={() => {
-                              setIsFullscreen(false);
-                              setLocation('/houses');
-                            }}
-                            className="mr-4 p-2 rounded-full hover:bg-gray-100 flex items-center text-gray-700"
-                          >
-                            <ArrowLeft className="h-5 w-5 mr-1" />
-                            <span>Back</span>
-                          </button>
+                          <div className="fixed top-0 left-0 right-0 bg-primary text-white py-2 px-4 z-[60] flex items-center">
+                            <button 
+                              onClick={() => {
+                                setIsFullscreen(false);
+                                // Keep the user on the same page, just exit fullscreen
+                              }}
+                              className="flex items-center text-white hover:bg-primary/80 font-medium"
+                            >
+                              <ArrowLeft className="h-5 w-5 mr-2" />
+                              <span>Back</span>
+                            </button>
+                          </div>
                         )}
                         <h2 className="text-2xl font-bold text-gray-800">House Points Dashboard</h2>
                       </div>
