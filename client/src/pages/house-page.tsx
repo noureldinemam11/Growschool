@@ -262,27 +262,75 @@ export default function HousePage() {
               
               {/* Dashboard Content */}
               {isDashboard && (
-                <div className="bg-white p-6 rounded-lg shadow-sm">
-                  <h2 className="text-2xl font-bold mb-6 text-gray-800">House Points Dashboard</h2>
+                <div>
+                  <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
+                    <div className="flex justify-between items-center mb-6">
+                      <h2 className="text-2xl font-bold text-gray-800">House Points Dashboard</h2>
+                      <button className="bg-primary hover:bg-primary-dark text-white px-3 py-1 rounded">
+                        Reset View
+                      </button>
+                    </div>
+                    
+                    {/* Colorful pods grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {houses?.map((house, index) => {
+                        // Generate a vibrant color for each pod based on its index
+                        const colors = [
+                          'bg-gradient-to-br from-green-300 to-green-400',
+                          'bg-gradient-to-br from-pink-400 to-pink-500',
+                          'bg-gradient-to-br from-amber-300 to-amber-400',
+                          'bg-gradient-to-br from-yellow-300 to-yellow-400',
+                          'bg-gradient-to-br from-yellow-400 to-orange-400',
+                          'bg-gradient-to-br from-blue-300 to-blue-400',
+                          'bg-gradient-to-br from-red-400 to-red-500',
+                          'bg-gradient-to-br from-lime-300 to-lime-400',
+                          'bg-gradient-to-br from-purple-300 to-purple-400',
+                          'bg-gradient-to-br from-teal-300 to-teal-400',
+                          'bg-gradient-to-br from-cyan-300 to-cyan-400',
+                          'bg-gradient-to-br from-amber-600 to-amber-700',
+                        ];
+                        
+                        // Alternate colors based on index
+                        const colorClass = colors[index % colors.length];
+                        
+                        return (
+                          <div 
+                            key={house.id} 
+                            className={`${colorClass} rounded-lg shadow p-6 flex flex-col items-center justify-center text-center aspect-[3/2] transition-transform hover:scale-105 cursor-pointer`}
+                          >
+                            <div className="text-blue-900 font-bold text-3xl md:text-4xl lg:text-5xl mb-2">
+                              {new Intl.NumberFormat().format(house.points)}
+                            </div>
+                            <div className="text-blue-900 italic font-medium">
+                              Pod {house.name}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                   
-                  <div className="grid md:grid-cols-2 gap-6">
-                    {houses?.map(house => (
-                      <div key={house.id} className="border rounded-lg p-4 flex items-center space-x-4" style={{ borderLeftWidth: '8px', borderLeftColor: house.color }}>
-                        <div className="flex-shrink-0">
-                          {house.logoUrl ? (
-                            <img src={house.logoUrl} alt={house.name} className="w-16 h-16 object-contain" />
-                          ) : (
-                            <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-xl font-bold" style={{ color: house.color }}>
+                  {/* Summary cards */}
+                  <div className="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 className="text-xl font-bold mb-4 text-gray-800">House Rankings</h3>
+                    <div className="space-y-4">
+                      {houses?.sort((a, b) => b.points - a.points).map((house, index) => (
+                        <div key={house.id} className="flex items-center border-b pb-3">
+                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center font-bold mr-3">
+                            {index + 1}
+                          </div>
+                          <div className="flex-shrink-0">
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold" style={{ backgroundColor: house.color, color: 'white' }}>
                               {house.name.charAt(0)}
                             </div>
-                          )}
+                          </div>
+                          <div className="ml-3 flex-grow">
+                            <div className="font-medium">Pod {house.name}</div>
+                          </div>
+                          <div className="font-bold text-xl">{house.points}</div>
                         </div>
-                        <div>
-                          <h3 className="text-lg font-semibold">{house.name}</h3>
-                          <p className="text-3xl font-bold">{house.points} pts</p>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
