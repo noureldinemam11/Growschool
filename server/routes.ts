@@ -434,6 +434,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch recent behavior points" });
     }
   });
+  
+  // Top Students per House
+  app.get("/api/houses-top-students", async (req, res) => {
+    try {
+      const houses = await storage.getAllHouses();
+      const result = await Promise.all(
+        houses.map(async (house) => {
+          const students = await storage.getStudentsByHouseId(house.id);
+          let topStudent = null;
+          let maxPoints = 0;
+          
+          for (const student of students) {
+            const points = await storage.getBehaviorPointsByStudentId(student.id);
+            const totalPoints = points.reduce((sum, point) => sum + point.points, 0);
+            
+            if (totalPoints > maxPoints) {
+              maxPoints = totalPoints;
+              topStudent = {
+                id: student.id,
+                firstName: student.firstName,
+                lastName: student.lastName,
+                totalPoints: totalPoints
+              };
+            }
+          }
+          
+          return {
+            houseId: house.id,
+            houseName: house.name,
+            houseColor: house.color,
+            housePoints: house.points,
+            topStudent: topStudent
+          };
+        })
+      );
+      
+      res.json(result);
+    } catch (error) {
+      console.error('Error fetching top students:', error);
+      res.status(500).json({ error: 'Failed to fetch top students' });
+    }
+  });
 
   // Rewards
   app.get("/api/rewards", async (req, res) => {

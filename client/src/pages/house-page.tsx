@@ -34,6 +34,12 @@ export default function HousePage() {
     refetchInterval: 2000, // Refresh every 2 seconds to keep data in sync
   });
   
+  // Get top students for each house
+  const { data: topStudentsByHouse, isLoading: isLoadingTopStudents } = useQuery({
+    queryKey: ['/api/houses-top-students', refreshCounter],
+    refetchInterval: 2000, // Refresh every 2 seconds to keep data in sync
+  });
+  
   // Subscribe to house-updated events to refresh data immediately
   useEffect(() => {
     // Subscribe to house-updated events
@@ -301,9 +307,21 @@ export default function HousePage() {
                             <div className="text-blue-900 font-bold text-3xl md:text-4xl lg:text-5xl mb-2">
                               {new Intl.NumberFormat().format(house.points)}
                             </div>
-                            <div className="text-blue-900 italic font-medium">
+                            <div className="text-blue-900 font-medium">
                               {house.name}
                             </div>
+                            {/* Show top student if available */}
+                            {topStudentsByHouse && topStudentsByHouse.find(h => h.houseId === house.id)?.topStudent && (
+                              <div className="mt-2 flex flex-col items-center">
+                                <div className="text-xs uppercase text-blue-900/70 font-semibold">Top Student</div>
+                                <div className="text-blue-900 font-medium">
+                                  {topStudentsByHouse.find(h => h.houseId === house.id)?.topStudent?.firstName} {topStudentsByHouse.find(h => h.houseId === house.id)?.topStudent?.lastName?.charAt(0)}.
+                                </div>
+                                <div className="text-xs text-blue-900/70">
+                                  {topStudentsByHouse.find(h => h.houseId === house.id)?.topStudent?.totalPoints} pts
+                                </div>
+                              </div>
+                            )}
                           </div>
                         );
                       })}
