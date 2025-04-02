@@ -328,13 +328,29 @@ export default function HousePage() {
                                   const houseData = topStudentsByHouse.find(h => h.houseId === house.id);
                                   if (houseData?.topStudent) {
                                     return (
-                                      <div className="mt-2 flex flex-col items-center">
-                                        <div className="text-xs uppercase text-blue-900/70 font-semibold">Top Student</div>
-                                        <div className="text-blue-900 font-medium">
-                                          {houseData.topStudent.firstName} {houseData.topStudent.lastName.charAt(0)}.
+                                      <div className="mt-3 pt-2 border-t border-blue-900/20 w-full flex flex-col items-center">
+                                        <div className="bg-blue-900/20 px-3 py-0.5 rounded-full text-xs uppercase text-blue-900 font-bold tracking-wide mb-1.5">
+                                          Star Student
                                         </div>
-                                        <div className="text-xs text-blue-900/70">
-                                          {houseData.topStudent.totalPoints} pts
+                                        <div className="relative">
+                                          <div className="text-blue-900 font-semibold text-sm flex items-center justify-center">
+                                            <span className="inline-block bg-blue-900/10 w-5 h-5 rounded-full flex items-center justify-center mr-1">
+                                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
+                                                <path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clipRule="evenodd" />
+                                              </svg>
+                                            </span>
+                                            {houseData.topStudent.firstName} {houseData.topStudent.lastName.charAt(0)}.
+                                          </div>
+                                          <div className="flex items-center justify-center mt-0.5">
+                                            <span className="inline-block bg-blue-900/10 w-4 h-4 rounded-full flex items-center justify-center mr-1">
+                                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-2.5 h-2.5">
+                                                <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
+                                              </svg>
+                                            </span>
+                                            <span className="text-xs font-semibold text-blue-900">
+                                              {houseData.topStudent.totalPoints} points
+                                            </span>
+                                          </div>
                                         </div>
                                       </div>
                                     );
