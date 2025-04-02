@@ -1,14 +1,15 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import express from "express";
 import path from "path";
 import { setupAuth } from "./auth";
 import { setupExcelImport } from "./excel-import";
 import { storage } from "./storage";
-import { pool } from "./db";
-import { insertBehaviorPointSchema, insertRewardRedemptionSchema, userRoles } from "@shared/schema";
+import { db, pool } from "./db";
+import { insertBehaviorPointSchema, insertRewardRedemptionSchema, userRoles, users } from "@shared/schema";
 import { z } from "zod";
 import { fileURLToPath } from "url";
+import { eq } from "drizzle-orm";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -752,22 +753,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // New endpoints for student roster management
+  // Endpoint to get all students for the roster management
   app.get("/api/users/students", async (req, res) => {
     if (!req.isAuthenticated() || !["admin", "teacher"].includes(req.user.role)) {
       return res.status(403).json({ error: "Unauthorized" });
     }
 
     try {
-      // Get all students directly from the database without relying on getUser
-      const students = await storage.getUsersByRole("student");
+      // Use the direct database query to get students instead of any helper that might use getUser
+      const result = await db.select().from(users).where(eq(users.role, "student"));
       
-      if (!students || !Array.isArray(students)) {
+      if (!result || !Array.isArray(result)) {
         throw new Error("Failed to retrieve student data");
       }
       
       // Only return necessary fields for security
-      const safeStudents = students.map(student => ({
+      const safeStudents = result.map(student => ({
         id: student.id,
         firstName: student.firstName,
         lastName: student.lastName,
