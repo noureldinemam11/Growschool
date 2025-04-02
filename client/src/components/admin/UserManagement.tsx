@@ -17,7 +17,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 export default function UserManagement() {
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedRole, setSelectedRole] = useState<string>('admin');
+  const [selectedRole, setSelectedRole] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<string>('view');
   const queryClient = useQueryClient();
   
@@ -232,8 +232,12 @@ export default function UserManagement() {
     createUserMutation.mutate(userData);
   };
 
-  // Filter users based on search query
+  // Filter users based on search query and only include app users (admin and teacher)
   const filteredUsers = users?.filter(user => {
+    // Only show app users (admin and teacher)
+    if (!appUserRoles.includes(user.role as any)) return false;
+    
+    // Apply search filter
     if (!searchQuery) return true;
     
     const fullName = `${user.firstName} ${user.lastName}`.toLowerCase();
@@ -407,8 +411,8 @@ export default function UserManagement() {
                   <SelectValue placeholder="Filter by role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Users</SelectItem>
-                  {userRoles.map(role => (
+                  <SelectItem value="all">All App Users</SelectItem>
+                  {appUserRoles.map(role => (
                     <SelectItem key={role} value={role}>
                       {role.charAt(0).toUpperCase() + role.slice(1)}s
                     </SelectItem>
