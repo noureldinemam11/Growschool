@@ -977,9 +977,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "User not found" });
       }
       
-      // For safety, only allow deletion of student accounts
-      if (user.role !== "student") {
-        return res.status(403).json({ error: "Can only delete student accounts" });
+      // Admin users can delete any account, non-admin users can only delete student accounts
+      if (req.user.role !== "admin" && user.role !== "student") {
+        return res.status(403).json({ error: "Only admin users can delete non-student accounts" });
+      }
+      
+      // Prevent users from deleting their own account
+      if (user.id === req.user.id) {
+        return res.status(403).json({ error: "Cannot delete your own account" });
       }
       
       // Use direct SQL queries to delete associated records, bypassing ORM and foreign key constraints
@@ -989,21 +994,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await client.query('BEGIN');
         console.log(`Transaction started for deletion of user ${userId}`);
         
-        // Step 1: Delete behavior points for this student
-        console.log(`Deleting behavior points for student ${userId}`);
-        const bpResult = await client.query(
-          'DELETE FROM behavior_points WHERE student_id = $1',
-          [userId]
-        );
-        console.log(`Deleted ${bpResult.rowCount} behavior points`);
+        let bpResultStudentId: { rowCount: number } = { rowCount: 0 };
+        let bpResultTeacherId: { rowCount: number } = { rowCount: 0 };
+        let rrResult: { rowCount: number } = { rowCount: 0 };
         
-        // Step 2: Delete reward redemptions for this student
-        console.log(`Deleting reward redemptions for student ${userId}`);
-        const rrResult = await client.query(
-          'DELETE FROM reward_redemptions WHERE student_id = $1',
-          [userId]
-        );
-        console.log(`Deleted ${rrResult.rowCount} reward redemptions`);
+        if (user.role === 'student') {
+          // Delete behavior points for this student
+          console.log(`Deleting behavior points for student ${userId}`);
+          const studBpResult = await client.query(
+            'DELETE FROM behavior_points WHERE student_id = $1',
+            [userId]
+          );
+          bpResultStudentId.rowCount = studBpResult.rowCount || 0;
+          console.log(`Deleted ${bpResultStudentId.rowCount} behavior points for student`);
+          
+          // Delete reward redemptions for this student
+          console.log(`Deleting reward redemptions for student ${userId}`);
+          const rewardResult = await client.query(
+            'DELETE FROM reward_redemptions WHERE student_id = $1',
+            [userId]
+          );
+          rrResult.rowCount = rewardResult.rowCount || 0;
+          console.log(`Deleted ${rrResult.rowCount} reward redemptions`);
+        }
+        
+        if (user.role === 'teacher') {
+          // Delete behavior points assigned by this teacher
+          console.log(`Deleting behavior points assigned by teacher ${userId}`);
+          const teachBpResult = await client.query(
+            'DELETE FROM behavior_points WHERE teacher_id = $1',
+            [userId]
+          );
+          bpResultTeacherId.rowCount = teachBpResult.rowCount || 0;
+          console.log(`Deleted ${bpResultTeacherId.rowCount} behavior points assigned by teacher`);
+        }
         
         // Step 3: Finally, delete the user
         console.log(`Deleting user ${userId}`);
@@ -1027,7 +1051,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           success: true, 
           message: "User deleted successfully",
           details: {
-            behaviorPointsDeleted: bpResult.rowCount,
+            behaviorPointsStudentDeleted: bpResultStudentId.rowCount,
+            behaviorPointsTeacherDeleted: bpResultTeacherId.rowCount,
             rewardRedemptionsDeleted: rrResult.rowCount
           }
         });
