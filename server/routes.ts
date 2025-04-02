@@ -2,7 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import express from "express";
 import path from "path";
-import { setupAuth } from "./auth";
+import { setupAuth, comparePasswords, hashPassword } from "./auth";
 import { setupExcelImport } from "./excel-import";
 import { storage } from "./storage";
 import { db, pool } from "./db";
@@ -963,6 +963,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/users/:id/change-password", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "You must be logged in" });
+    }
+    
+    try {
+      const userId = Number(req.params.id);
+      
+      // Only allow users to change their own password, or admins to change anyone's
+      if (req.user.id !== userId && req.user.role !== "admin") {
+        return res.status(403).json({ error: "You can only change your own password" });
+      }
+      
+      // Validate request body
+      if (!req.body.currentPassword || !req.body.newPassword) {
+        return res.status(400).json({ error: "Current password and new password are required" });
+      }
+      
+      // Get the user
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Verify the current password
+      const passwordMatches = await comparePasswords(req.body.currentPassword, user.password);
+      
+      if (!passwordMatches) {
+        return res.status(401).json({ error: "Current password is incorrect" });
+      }
+      
+      // Hash the new password
+      const hashedPassword = await hashPassword(req.body.newPassword);
+      
+      // Update the user with the new password
+      const updatedUser = await storage.updateUser(userId, { password: hashedPassword });
+      
+      if (!updatedUser) {
+        return res.status(500).json({ error: "Failed to update password" });
+      }
+      
+      res.json({ success: true, message: "Password updated successfully" });
+    } catch (error) {
+      console.error("Error changing password:", error);
+      res.status(500).json({ error: "Failed to change password" });
+    }
+  });
+  
   app.delete("/api/users/:id", async (req, res) => {
     if (!req.isAuthenticated() || !["admin", "teacher"].includes(req.user.role)) {
       return res.status(403).json({ error: "Unauthorized" });

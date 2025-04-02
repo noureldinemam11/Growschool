@@ -9,8 +9,9 @@ import HousePage from "@/pages/house-page";
 import RewardsPage from "@/pages/rewards-page";
 import ReportsPage from "@/pages/reports-page";
 import AdminPage from "@/pages/admin-page";
-// Removed RosterPage import
 import PointsPage from "@/pages/points-page";
+import ProfilePage from "@/pages/profile-page";
+import ChangePasswordPage from "@/pages/change-password-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
 import AppHeader from "@/components/ui/AppHeader";
@@ -86,6 +87,14 @@ function Router() {
         component={PointsPage}
         allowedRoles={["admin", "teacher"]}
       />
+      <ProtectedRoute 
+        path="/profile" 
+        component={ProfilePage}
+      />
+      <ProtectedRoute 
+        path="/change-password" 
+        component={ChangePasswordPage}
+      />
       <Route component={NotFound} />
     </Switch>
   );
@@ -94,8 +103,11 @@ function Router() {
 function App() {
   const [location] = useLocation();
   
-  // Don't show the global header on points pages as they have their own custom headers
-  const hideGlobalHeader = location.startsWith('/points');
+  // Don't show the global header on certain pages that have their own custom headers
+  const hideGlobalHeader = 
+    location.startsWith('/points') || 
+    location === '/profile' || 
+    location === '/change-password';
   
   return (
     <AuthProvider>
