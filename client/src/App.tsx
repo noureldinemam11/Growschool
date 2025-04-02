@@ -1,3 +1,4 @@
+import React from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
@@ -13,6 +14,15 @@ import PointsPage from "@/pages/points-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
 import AppHeader from "@/components/ui/AppHeader";
+
+// Redirect component for simple routes
+function Redirect({ to }: { to: string }) {
+  const [, navigate] = useLocation();
+  React.useEffect(() => {
+    navigate(to);
+  }, [navigate, to]);
+  return <div className="redirect-component"></div>;
+}
 
 function Router() {
   return (
@@ -35,6 +45,10 @@ function Router() {
       <ProtectedRoute 
         path="/house/dashboard" 
         component={HousePage} 
+      />
+      <ProtectedRoute 
+        path="/house-points" 
+        component={() => <Redirect to="/house/dashboard" />} 
       />
       <ProtectedRoute 
         path="/house/posters" 

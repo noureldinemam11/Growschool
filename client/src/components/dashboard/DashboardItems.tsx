@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { 
   Award, 
-  Printer, 
   BarChart, 
-  Settings
+  Settings,
+  Trophy
 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import PointsModal from '../points/PointsModal';
@@ -46,9 +46,9 @@ export default function DashboardItems() {
           onClick={() => navigate('/reports')}
         />
         <DashboardItem 
-          icon={<Printer size={48} />} 
-          title="Printables" 
-          onClick={() => navigate('/printables')}
+          icon={<Trophy size={48} />} 
+          title="House Points" 
+          onClick={() => navigate('/house-points')}
         />
         <DashboardItem 
           icon={<Settings size={48} />} 
