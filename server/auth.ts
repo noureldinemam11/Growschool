@@ -5,7 +5,7 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
-import { User as SelectUser, userRoles } from "@shared/schema";
+import { User as SelectUser, userRoles, appUserRoles } from "@shared/schema";
 
 declare global {
   namespace Express {
@@ -49,11 +49,19 @@ export function setupAuth(app: Express) {
     new LocalStrategy(async (username, password, done) => {
       try {
         const user = await storage.getUserByUsername(username);
+        
+        // Check if user exists and password is correct
         if (!user || !(await comparePasswords(password, user.password))) {
           return done(null, false);
-        } else {
-          return done(null, user);
         }
+        
+        // Only allow admin and teacher roles to log in (app users)
+        if (!appUserRoles.includes(user.role as any)) {
+          console.log(`Login rejected for ${username}: Role '${user.role}' is not allowed to log in`);
+          return done(null, false);
+        }
+        
+        return done(null, user);
       } catch (err) {
         return done(err);
       }
@@ -76,6 +84,14 @@ export function setupAuth(app: Express) {
       const existingUser = await storage.getUserByUsername(req.body.username);
       if (existingUser) {
         return res.status(400).send("Username already exists");
+      }
+      
+      // Only allow admin and teacher roles to be registered
+      if (!appUserRoles.includes(req.body.role as any)) {
+        return res.status(400).json({ 
+          error: "Invalid role", 
+          message: "Only administrators and teachers can be registered as users" 
+        });
       }
 
       const user = await storage.createUser({

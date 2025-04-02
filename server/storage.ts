@@ -660,7 +660,11 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getUsersByRole(role: string): Promise<User[]> {
-    const result = await db.select().from(users).where(eq(users.role, role));
+    if (role === 'all') {
+      const result = await db.select().from(users);
+      return result as User[];
+    }
+    const result = await db.select().from(users).where(eq(users.role, role as any));
     return result as User[];
   }
   

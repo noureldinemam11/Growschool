@@ -6,29 +6,9 @@ import { z } from "zod";
 export const userRoles = ["admin", "teacher", "student", "parent"] as const;
 export type UserRole = typeof userRoles[number];
 
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-  firstName: text("first_name").notNull(),
-  lastName: text("last_name").notNull(),
-  role: text("role", { enum: userRoles }).notNull(),
-  email: text("email").notNull().unique(),
-  gradeLevel: text("grade_level"),
-  section: text("section"),
-  houseId: integer("house_id").references(() => houses.id),
-  parentId: integer("parent_id").references(() => users.id),
-});
-
-export const insertUserSchema = createInsertSchema(users)
-  .omit({ id: true })
-  .extend({
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  });
+// App users are only admins and teachers, they can log in
+export const appUserRoles = ["admin", "teacher"] as const;
+export type AppUserRole = typeof appUserRoles[number];
 
 // Houses for house competitions
 export const houses = pgTable("houses", {
@@ -41,6 +21,31 @@ export const houses = pgTable("houses", {
 });
 
 export const insertHouseSchema = createInsertSchema(houses).omit({ id: true, points: true });
+
+// User model - avoid circular dependency by recreating a parentId definition
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  role: text("role", { enum: userRoles }).notNull(),
+  email: text("email").notNull().unique(),
+  gradeLevel: text("grade_level"),
+  section: text("section"),
+  houseId: integer("house_id").references(() => houses.id),
+  parentId: integer("parent_id"), // This will reference the users table but not with a direct reference
+});
+
+export const insertUserSchema = createInsertSchema(users)
+  .omit({ id: true })
+  .extend({
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
 
 // Behavior categories
 export const behaviorCategories = pgTable("behavior_categories", {

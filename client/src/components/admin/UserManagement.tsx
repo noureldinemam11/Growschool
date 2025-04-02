@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { userRoles, User } from '@shared/schema';
+import { userRoles, appUserRoles, User } from '@shared/schema';
 import { Loader2, Search, Plus, Edit, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
@@ -315,7 +315,7 @@ export default function UserManagement() {
                         <SelectValue placeholder="Select a role" />
                       </SelectTrigger>
                       <SelectContent>
-                        {userRoles.map(role => (
+                        {appUserRoles.map(role => (
                           <SelectItem key={role} value={role}>
                             {role.charAt(0).toUpperCase() + role.slice(1)}
                           </SelectItem>
@@ -533,7 +533,7 @@ export default function UserManagement() {
                       <SelectValue placeholder="Select a role" />
                     </SelectTrigger>
                     <SelectContent>
-                      {userRoles.map(role => (
+                      {appUserRoles.map(role => (
                         <SelectItem key={role} value={role}>
                           {role.charAt(0).toUpperCase() + role.slice(1)}
                         </SelectItem>
