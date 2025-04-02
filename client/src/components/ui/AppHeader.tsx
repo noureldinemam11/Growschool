@@ -3,6 +3,7 @@ import { ArrowLeft, Home } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { Link, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
+import ProfileDropdown from './ProfileDropdown';
 
 interface AppHeaderProps {
   customBackAction?: () => void;
@@ -80,11 +81,9 @@ export default function AppHeader({
           )}
         </div>
         
-        {/* Right side with Profile */}
+        {/* Right side with Profile Dropdown */}
         <div className="flex items-center gap-4">
-          <div className="w-8 h-8 rounded-full bg-white text-primary flex items-center justify-center font-semibold">
-            {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
-          </div>
+          <ProfileDropdown />
         </div>
       </div>
     </header>
