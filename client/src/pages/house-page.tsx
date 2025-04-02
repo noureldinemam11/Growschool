@@ -294,7 +294,21 @@ export default function HousePage() {
                 <div className={isFullscreen ? "fixed inset-0 z-50 bg-slate-50 overflow-auto p-6" : ""}>
                   <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
                     <div className="mb-6 flex justify-between items-center">
-                      <h2 className="text-2xl font-bold text-gray-800">House Points Dashboard</h2>
+                      <div className="flex items-center">
+                        {isFullscreen && (
+                          <button 
+                            onClick={() => {
+                              setIsFullscreen(false);
+                              setLocation('/houses');
+                            }}
+                            className="mr-4 p-2 rounded-full hover:bg-gray-100 flex items-center text-gray-700"
+                          >
+                            <ArrowLeft className="h-5 w-5 mr-1" />
+                            <span>Back</span>
+                          </button>
+                        )}
+                        <h2 className="text-2xl font-bold text-gray-800">House Points Dashboard</h2>
+                      </div>
                       <button 
                         onClick={() => setIsFullscreen(!isFullscreen)}
                         className="p-2 rounded-full hover:bg-gray-100"
