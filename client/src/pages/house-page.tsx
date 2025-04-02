@@ -284,11 +284,8 @@ export default function HousePage() {
               {isDashboard && (
                 <div>
                   <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
-                    <div className="flex justify-between items-center mb-6">
+                    <div className="mb-6">
                       <h2 className="text-2xl font-bold text-gray-800">House Points Dashboard</h2>
-                      <button className="bg-primary hover:bg-primary-dark text-white px-3 py-1 rounded">
-                        Reset View
-                      </button>
                     </div>
                     
                     {/* Colorful pods grid */}
