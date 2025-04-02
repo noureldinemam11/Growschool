@@ -56,10 +56,9 @@ export default function UserManagement() {
     confirmPassword: '',
   });
 
-  // Query to get users by role
+  // Query to get users by role (including the "all" role)
   const { data: users, isLoading } = useQuery<Partial<User>[]>({
-    queryKey: ['/api/users/role/' + selectedRole],
-    enabled: selectedRole !== 'all'
+    queryKey: ['/api/users/role/' + selectedRole]
   });
   
   // Mutation for updating a user

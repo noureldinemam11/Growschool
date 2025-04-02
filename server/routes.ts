@@ -664,11 +664,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const { role } = req.params;
-      if (!userRoles.includes(role as any)) {
+      let users = [];
+      
+      // Special handling for "all" role
+      if (role === 'all') {
+        users = await storage.getAllUsers();
+      } else if (userRoles.includes(role as any)) {
+        users = await storage.getUsersByRole(role);
+      } else {
         return res.status(400).json({ error: "Invalid role" });
       }
-      
-      const users = await storage.getUsersByRole(role);
       
       // Only return necessary fields for security
       const safeUsers = users.map(user => ({
@@ -676,6 +681,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         firstName: user.firstName,
         lastName: user.lastName,
         username: user.username,
+        email: user.email,
         role: user.role,
         gradeLevel: user.gradeLevel,
         section: user.section,
@@ -684,6 +690,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(safeUsers);
     } catch (error) {
+      console.error("Error fetching users by role:", error);
       res.status(500).json({ error: "Failed to fetch users" });
     }
   });
