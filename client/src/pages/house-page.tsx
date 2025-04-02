@@ -301,7 +301,7 @@ export default function HousePage() {
                             <button 
                               onClick={() => {
                                 setIsFullscreen(false);
-                                // Keep the user on the same page, just exit fullscreen
+                                // Stay on the same page, just exit fullscreen
                               }}
                               className="flex items-center text-white hover:bg-primary/80 font-medium"
                             >

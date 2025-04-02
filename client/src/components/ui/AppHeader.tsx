@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronDown, ChevronLeft, Home } from 'lucide-react';
+import { ChevronDown, ArrowLeft, Home } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { Link, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
@@ -24,8 +24,23 @@ export default function AppHeader({
     if (customBackAction) {
       customBackAction();
     } else {
-      // Default action - go back in history
-      window.history.back();
+      // Determine which page to navigate to based on current location
+      if (location.includes('/house/') || location.includes('/houses/')) {
+        navigate('/houses');
+      } else if (location.includes('/points/')) {
+        navigate('/points');
+      } else if (location.includes('/students/')) {
+        navigate('/students');
+      } else if (location.includes('/rewards/')) {
+        navigate('/rewards');
+      } else if (location.includes('/reports/')) {
+        navigate('/reports');
+      } else if (location.includes('/admin/')) {
+        navigate('/admin');
+      } else {
+        // Default fallback
+        navigate('/');
+      }
     }
   };
 
@@ -44,8 +59,8 @@ export default function AppHeader({
               className="p-0 h-8 text-white hover:bg-primary/20 hover:text-white focus:bg-primary/20"
               onClick={handleBackClick}
             >
-              <ChevronLeft className="h-5 w-5 mr-1" />
-              <span className="text-base font-medium">Back</span>
+              <ArrowLeft className="h-5 w-5 mr-2" />
+              <span className="text-base">Back</span>
             </Button>
           )}
           
