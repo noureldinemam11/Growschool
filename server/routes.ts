@@ -913,6 +913,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Add a DELETE endpoint for users
+  app.patch("/api/users/:id", async (req, res) => {
+    if (!req.isAuthenticated() || !["admin", "teacher"].includes(req.user.role)) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const userId = Number(req.params.id);
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // If password is included, hash it before update
+      let userData = req.body;
+      
+      if (userData.password) {
+        const { scrypt, randomBytes } = await import('crypto');
+        const { promisify } = await import('util');
+        const scryptAsync = promisify(scrypt);
+        
+        // Hash the password using the same method as in auth.ts
+        const salt = randomBytes(16).toString("hex");
+        const buf = (await scryptAsync(userData.password, salt, 64)) as Buffer;
+        userData.password = `${buf.toString("hex")}.${salt}`;
+      }
+      
+      // Update user
+      const updatedUser = await storage.updateUser(userId, userData);
+      
+      if (!updatedUser) {
+        return res.status(500).json({ error: "Failed to update user" });
+      }
+      
+      // Remove password from response
+      const { password, ...userWithoutPassword } = updatedUser;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ error: "Failed to update user" });
+    }
+  });
+
   app.delete("/api/users/:id", async (req, res) => {
     if (!req.isAuthenticated() || !["admin", "teacher"].includes(req.user.role)) {
       return res.status(403).json({ error: "Unauthorized" });
