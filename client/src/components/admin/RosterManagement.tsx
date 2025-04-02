@@ -83,9 +83,9 @@ export default function RosterManagement() {
     queryKey: ['/api/houses'],
   });
 
-  // Fetch current students
+  // Fetch current students - use the `/api/users/role/student` endpoint which works correctly
   const { data: students, isLoading: isLoadingStudents, refetch: refetchStudents } = useQuery<User[]>({
-    queryKey: ['/api/users/students'],
+    queryKey: ['/api/users/role/student'],
   });
 
   // Set up form for bulk import
@@ -182,7 +182,7 @@ export default function RosterManagement() {
       bulkImportForm.reset();
       
       // Refresh student data
-      queryClient.invalidateQueries({ queryKey: ['/api/users/students'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users/role/student'] });
       refetchStudents();
       
       // Publish event to notify other components
@@ -227,7 +227,7 @@ export default function RosterManagement() {
       singleStudentForm.reset();
       
       // Refresh student data
-      queryClient.invalidateQueries({ queryKey: ['/api/users/students'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users/role/student'] });
       refetchStudents();
       
       // Publish event to notify other components
@@ -262,7 +262,7 @@ export default function RosterManagement() {
       });
       
       // Refresh student data
-      queryClient.invalidateQueries({ queryKey: ['/api/users/students'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users/role/student'] });
       refetchStudents();
       
       // Publish event to notify other components

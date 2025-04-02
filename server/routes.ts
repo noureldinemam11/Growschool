@@ -755,31 +755,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Endpoint to get all students for the roster management
   app.get("/api/users/students", async (req, res) => {
-    if (!req.isAuthenticated() || !["admin", "teacher"].includes(req.user.role)) {
-      return res.status(403).json({ error: "Unauthorized" });
-    }
-
     try {
-      // Use the direct database query to get students instead of any helper that might use getUser
-      const result = await db.select().from(users).where(eq(users.role, "student"));
+      // Check authentication first without trying to access user properties
+      if (!req.isAuthenticated()) {
+        return res.status(403).json({ error: "Unauthorized - Authentication required" });
+      }
+      
+      // Now safely check the user role after confirming authentication
+      const user = req.user;
+      if (!user || !["admin", "teacher"].includes(user.role)) {
+        return res.status(403).json({ error: "Unauthorized - Insufficient permissions" });
+      }
+
+      console.log("Fetching students roster for user:", user.id, user.username, user.role);
+      
+      // Use direct database query with explicit column selection
+      const result = await db
+        .select({
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          username: users.username,
+          email: users.email,
+          gradeLevel: users.gradeLevel,
+          section: users.section,
+          houseId: users.houseId
+        })
+        .from(users)
+        .where(eq(users.role, "student"));
       
       if (!result || !Array.isArray(result)) {
+        console.error("Unexpected result format from database query:", result);
         throw new Error("Failed to retrieve student data");
       }
       
-      // Only return necessary fields for security
-      const safeStudents = result.map(student => ({
-        id: student.id,
-        firstName: student.firstName,
-        lastName: student.lastName,
-        username: student.username,
-        email: student.email,
-        gradeLevel: student.gradeLevel,
-        section: student.section,
-        houseId: student.houseId
-      }));
-      
-      return res.json(safeStudents);
+      console.log(`Retrieved ${result.length} students`);
+      return res.json(result);
     } catch (error: any) {
       console.error("Error fetching student roster:", error.message || 'Unknown error', error.stack);
       return res.status(500).json({ error: "Failed to fetch students roster" });
