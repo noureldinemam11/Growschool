@@ -302,7 +302,7 @@ export default function HousePage() {
                               {new Intl.NumberFormat().format(house.points)}
                             </div>
                             <div className="text-blue-900 italic font-medium">
-                              Pod {house.name}
+                              {house.name}
                             </div>
                           </div>
                         );
@@ -325,7 +325,7 @@ export default function HousePage() {
                             </div>
                           </div>
                           <div className="ml-3 flex-grow">
-                            <div className="font-medium">Pod {house.name}</div>
+                            <div className="font-medium">{house.name}</div>
                           </div>
                           <div className="font-bold text-xl">{house.points}</div>
                         </div>
