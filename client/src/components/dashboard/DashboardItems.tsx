@@ -21,7 +21,31 @@ import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BehaviorPoint, House } from '@shared/schema';
+import { House } from '@shared/schema';
+
+// Extend the BehaviorPoint interface to include student and category data
+interface BehaviorPoint {
+  id: number;
+  studentId: number;
+  teacherId: number;
+  categoryId: number;
+  points: number;
+  notes: string;
+  timestamp: string;
+  student?: {
+    firstName: string;
+    lastName: string;
+    gradeLevel?: string;
+    section?: string;
+  };
+  teacher?: {
+    firstName: string;
+    lastName: string;
+  };
+  category?: {
+    name: string;
+  };
+}
 
 interface DashboardItemProps {
   icon: React.ReactNode;
@@ -254,8 +278,19 @@ export default function DashboardItems() {
                             <Star className="h-5 w-5 text-success" />
                           </div>
                           <div>
-                            <p className="font-medium text-gray-900">Student {point.studentId}</p>
-                            <p className="text-sm text-gray-500">Received +{point.points} points</p>
+                            <p className="font-medium text-gray-900">
+                              {/* Display student name if available in the API response */}
+                              {point.student 
+                                ? `${point.student.firstName} ${point.student.lastName}` 
+                                : `Student ${point.studentId}`}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {/* Display category name if available or extract from notes */}
+                              {point.category?.name || point.notes?.split(' - ')[0] || 'Achievement'}: +{point.points} points
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              Awarded by: {point.teacher ? `${point.teacher.firstName} ${point.teacher.lastName}` : `Teacher ${point.teacherId}`}
+                            </p>
                           </div>
                         </div>
                         <Badge variant="outline" className="text-xs">
@@ -293,8 +328,19 @@ export default function DashboardItems() {
                             <Star className="h-5 w-5 text-error" />
                           </div>
                           <div>
-                            <p className="font-medium text-gray-900">Student {point.studentId}</p>
-                            <p className="text-sm text-gray-500">Received {point.points} points</p>
+                            <p className="font-medium text-gray-900">
+                              {/* Display student name if available in the API response */}
+                              {point.student 
+                                ? `${point.student.firstName} ${point.student.lastName}` 
+                                : `Student ${point.studentId}`}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {/* Display category name if available or extract from notes */}
+                              {point.category?.name || point.notes?.split(' - ')[0] || 'Concern'}: {point.points} points
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              Awarded by: {point.teacher ? `${point.teacher.firstName} ${point.teacher.lastName}` : `Teacher ${point.teacherId}`}
+                            </p>
                           </div>
                         </div>
                         <Badge variant="outline" className="text-xs">
