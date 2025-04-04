@@ -148,51 +148,6 @@ export default function HousePage() {
                       </Card>
                     ))}
                   </div>
-                  
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>House Management</CardTitle>
-                      <CardDescription>
-                        Manage house settings and student assignments
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <Button 
-                          variant="outline" 
-                          className="h-auto py-6 flex flex-col items-center justify-center gap-2"
-                          onClick={() => setLocation('/house/dashboard')}
-                        >
-                          <LineChart className="h-8 w-8 text-primary" />
-                          <span>Points Dashboard</span>
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          className="h-auto py-6 flex flex-col items-center justify-center gap-2"
-                          onClick={() => setLocation('/house/setup')}
-                        >
-                          <Building className="h-8 w-8 text-primary" />
-                          <span>House Setup</span>
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          className="h-auto py-6 flex flex-col items-center justify-center gap-2"
-                          onClick={() => setLocation('/house/posters')}
-                        >
-                          <Award className="h-8 w-8 text-primary" />
-                          <span>House Posters</span>
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          className="h-auto py-6 flex flex-col items-center justify-center gap-2"
-                          onClick={() => setLocation('/house/options')}
-                        >
-                          <Settings className="h-8 w-8 text-primary" />
-                          <span>Options</span>
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
                 </div>
               ) : (
                 <div className="bg-white rounded-lg shadow-sm p-6 text-center">
