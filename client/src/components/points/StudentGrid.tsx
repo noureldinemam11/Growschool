@@ -157,9 +157,9 @@ export default function StudentGrid({ onSelectStudent, selectedDate, teacherFilt
           </Button>
           
           <Button
-            variant="primary"
+            variant="default"
             size="sm"
-            className="rounded-full flex items-center gap-1 ml-2"
+            className="rounded-full flex items-center gap-1 ml-2 bg-primary hover:bg-primary/90"
             onClick={handleContinue}
             disabled={selectedStudents.length === 0}
           >
@@ -174,7 +174,7 @@ export default function StudentGrid({ onSelectStudent, selectedDate, teacherFilt
         <BatchPointsAssignment 
           isOpen={isBatchModalOpen}
           onClose={() => setIsBatchModalOpen(false)}
-          selectedStudentIds={selectedStudents}
+          selectedStudentIds={selectedStudents.map(student => student.id)}
         />
       )}
     </div>

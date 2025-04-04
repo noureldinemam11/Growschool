@@ -59,56 +59,7 @@ export default function BatchPointsAssignment({
     `${s.firstName} ${s.lastName}`
   ).join(', ');
 
-  // Individual point assignment mutation
-  const assignPointMutation = useMutation({
-    mutationFn: async (data: any) => {
-      // We'll use the single point assignment endpoint to ensure it works
-      const res = await fetch('/api/behavior-points', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-        credentials: 'include',
-      });
-      
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`Error assigning points: ${errorText}`);
-      }
-      
-      return res.json();
-    },
-    onSuccess: () => {
-      // Count successful assignments
-      successfulAssignments.current += 1;
-      
-      // Check if all assignments are complete
-      if (successfulAssignments.current === selectedStudentIds.length) {
-        // Show success message
-        toast({
-          title: "Points assigned successfully",
-          description: `Assigned points to ${selectedStudentIds.length} students.`,
-        });
-        
-        // Reset form and close
-        resetForm();
-        
-        // Refresh all relevant data
-        invalidateQueries();
-      }
-    },
-    onError: (error) => {
-      toast({
-        title: "Error assigning points",
-        description: `${error}`,
-        variant: "destructive",
-      });
-    }
-  });
-
-  // Use a ref to track successful assignments
-  const successfulAssignments = React.useRef(0);
+  // We now use batchAssignMutation instead to handle all students at once
 
   // Reset the form
   const resetForm = () => {
@@ -116,8 +67,6 @@ export default function BatchPointsAssignment({
     setPoints(1);
     setNotes('');
     onClose();
-    // Reset counter
-    successfulAssignments.current = 0;
   };
 
   // Invalidate all relevant queries
@@ -132,6 +81,47 @@ export default function BatchPointsAssignment({
     queryClient.refetchQueries({ queryKey: ['/api/houses'] });
   };
 
+  // Batch assignment mutation
+  const batchAssignMutation = useMutation({
+    mutationFn: async (pointsArray: any[]) => {
+      const res = await fetch('/api/behavior-points/batch', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ points: pointsArray }),
+        credentials: 'include',
+      });
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Error assigning batch points: ${errorText}`);
+      }
+      
+      return res.json();
+    },
+    onSuccess: () => {
+      // Show success message
+      toast({
+        title: "Points assigned successfully",
+        description: `Assigned points to ${selectedStudentIds.length} students.`,
+      });
+      
+      // Reset form and close
+      resetForm();
+      
+      // Refresh all relevant data
+      invalidateQueries();
+    },
+    onError: (error) => {
+      toast({
+        title: "Error assigning points",
+        description: `${error}`,
+        variant: "destructive",
+      });
+    }
+  });
+  
   // Handle submit
   const handleSubmit = async () => {
     if (!selectedCategory) {
@@ -162,11 +152,8 @@ export default function BatchPointsAssignment({
       });
       return;
     }
-
-    // Reset the counter
-    successfulAssignments.current = 0;
     
-    // For each student, assign points individually
+    // Create an array of point assignments for all students at once
     const pointValue = category.pointValue * points;
     
     // Show processing toast
@@ -175,20 +162,20 @@ export default function BatchPointsAssignment({
       description: `Assigning ${pointValue} points to ${selectedStudentIds.length} students...`,
     });
     
-    // Process each student sequentially
-    for (const studentId of selectedStudentIds) {
-      try {
-        await assignPointMutation.mutateAsync({
-          studentId,
-          categoryId: selectedCategory,
-          points: pointValue,
-          teacherId: user.id,
-          notes: notes || undefined,
-        });
-      } catch (error) {
-        // Error already handled in onError
-        console.error(`Failed to assign points to student ${studentId}:`, error);
-      }
+    // Create batch points array
+    const pointsArray = selectedStudentIds.map(studentId => ({
+      studentId,
+      categoryId: selectedCategory,
+      points: pointValue,
+      teacherId: user.id,
+      notes: notes || undefined,
+    }));
+    
+    // Send as a single batch request
+    try {
+      await batchAssignMutation.mutateAsync(pointsArray);
+    } catch (error) {
+      console.error('Failed to assign batch points:', error);
     }
   };
 
@@ -285,9 +272,9 @@ export default function BatchPointsAssignment({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={assignPointMutation.isPending || !selectedCategory}
+            disabled={batchAssignMutation.isPending || !selectedCategory}
           >
-            {assignPointMutation.isPending ? (
+            {batchAssignMutation.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Processing...
