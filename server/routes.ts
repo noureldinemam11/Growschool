@@ -303,7 +303,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // New endpoint for batch behavior points submission
   app.post("/api/behavior-points/batch", async (req, res) => {
+    console.log("Batch points request received");
+    console.log("Authenticated:", req.isAuthenticated());
+    if (req.isAuthenticated()) {
+      console.log("User role:", req.user.role);
+    }
+    
     if (!req.isAuthenticated() || !["admin", "teacher"].includes(req.user.role)) {
+      console.log("Unauthorized attempt to batch assign points");
       return res.status(403).json({ error: "Unauthorized" });
     }
 

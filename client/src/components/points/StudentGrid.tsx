@@ -82,12 +82,30 @@ export default function StudentGrid({ onSelectStudent, selectedDate, teacherFilt
   // Batch assignment mutation
   const batchAssignMutation = useMutation({
     mutationFn: async (data: { points: any[] }) => {
+      // Log what we're sending
+      console.log("Batch assigning points for students:", 
+        data.points.map(p => p.studentId).join(", "));
+      
+      // Make the API request
       const res = await apiRequest('POST', '/api/behavior-points/batch', data);
+      
+      if (!res.ok) {
+        // Debug failed response
+        const errorText = await res.text();
+        console.error("Batch points assignment failed:", errorText);
+        throw new Error(`Failed to assign batch points: ${errorText}`);
+      }
+      
       return res.json();
     },
     onSuccess: (data) => {
+      // Log the successful response
+      console.log("Batch points assigned successfully:", data);
+      
       const studentsCount = data.count || data.points?.length || 0;
       const studentNames = data.points?.map((p: any) => p.student?.firstName).filter(Boolean);
+      
+      console.log(`Assigned points to ${studentsCount} students:`, studentNames);
       
       // Create a student list for the toast notification
       let studentList = "";
@@ -121,14 +139,17 @@ export default function StudentGrid({ onSelectStudent, selectedDate, teacherFilt
       queryClient.invalidateQueries({ queryKey: ['/api/houses'] });
       queryClient.invalidateQueries({ queryKey: ['/api/houses-top-students'] });
       
-      // Force a refetch of the recent points to ensure we get the latest data
+      // Force an immediate refetch of the key data
       queryClient.refetchQueries({ queryKey: ['/api/behavior-points/recent'] });
+      queryClient.refetchQueries({ queryKey: ['/api/behavior-points/teacher'] });
+      queryClient.refetchQueries({ queryKey: ['/api/houses'] });
       queryClient.refetchQueries({ queryKey: ['/api/houses-top-students'] });
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error("Error assigning batch points:", error);
       toast({
         title: "Error assigning points",
-        description: "There was an error assigning points to students. Please try again.",
+        description: error.message || "There was an error assigning points to students. Please try again.",
         variant: "destructive",
       });
     }
