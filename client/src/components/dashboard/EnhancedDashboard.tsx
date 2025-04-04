@@ -981,126 +981,39 @@ function TeacherDashboard() {
               <CardDescription>Latest behavior records</CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="all" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 mb-4">
-                  <TabsTrigger value="all">All</TabsTrigger>
-                  <TabsTrigger value="positive">Positive</TabsTrigger>
-                  <TabsTrigger value="negative">Negative</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="all">
-                  <div className="space-y-4">
-                    {recentPoints.slice(0, 5).map((point, i) => (
-                      <div key={i} className="flex items-center justify-between py-2 border-b last:border-0 last:pb-0 last:pt-2">
-                        <div className="flex items-center">
-                          <div className={`p-2 rounded-full mr-3 ${point.points > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                            {point.points > 0 ? (
-                              <Star className="h-4 w-4" />
-                            ) : (
-                              <XCircle className="h-4 w-4" />
-                            )}
-                          </div>
-                          <div>
-                            <div className="font-medium">
-                              {point.student 
-                                ? `${point.student.firstName} ${point.student.lastName}` 
-                                : `Student ${point.studentId}`}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {point.category?.name || point.notes?.split(' - ')[0] || 'Behavior record'}:
-                              {point.points > 0 ? (
-                                <span className="text-emerald-600 ml-1">+{point.points}</span>
-                              ) : (
-                                <span className="text-rose-600 ml-1">{point.points}</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <Badge variant="outline" className="text-xs">
-                          {formatShortDate(point.timestamp)}
-                        </Badge>
+              <div className="space-y-4">
+                {recentPoints.slice(0, 5).map((point, i) => (
+                  <div key={i} className="flex items-center justify-between py-2 border-b last:border-0 last:pb-0 last:pt-2">
+                    <div className="flex items-center">
+                      <div className={`p-2 rounded-full mr-3 ${point.points > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                        {point.points > 0 ? (
+                          <Star className="h-4 w-4" />
+                        ) : (
+                          <XCircle className="h-4 w-4" />
+                        )}
                       </div>
-                    ))}
-                    {recentPoints.length === 0 && (
-                      <div className="text-center py-4 text-muted-foreground">
-                        No behavior points recorded recently
+                      <div>
+                        <div className="font-medium">
+                          {point.student 
+                            ? `${point.student.firstName} ${point.student.lastName}` 
+                            : `Student ${point.studentId}`}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {point.category?.name || point.notes?.split(' - ')[0] || 'Behavior record'}:
+                          {point.points > 0 ? (
+                            <span className="text-emerald-600 ml-1">+{point.points}</span>
+                          ) : (
+                            <span className="text-rose-600 ml-1">{point.points}</span>
+                          )}
+                        </div>
                       </div>
-                    )}
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      {formatShortDate(point.timestamp)}
+                    </Badge>
                   </div>
-                </TabsContent>
-                
-                <TabsContent value="positive">
-                  <div className="space-y-4">
-                    {recentPoints
-                      .filter(point => point.points > 0)
-                      .slice(0, 5)
-                      .map((point, i) => (
-                        <div key={i} className="flex items-center justify-between py-2 border-b last:border-0 last:pb-0 last:pt-2">
-                          <div className="flex items-center">
-                            <div className="p-2 rounded-full mr-3 bg-emerald-100 text-emerald-700">
-                              <Star className="h-4 w-4" />
-                            </div>
-                            <div>
-                              <div className="font-medium">
-                                {point.student 
-                                  ? `${point.student.firstName} ${point.student.lastName}` 
-                                  : `Student ${point.studentId}`}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {point.category?.name || point.notes?.split(' - ')[0] || 'Behavior record'}:
-                                <span className="text-emerald-600 ml-1">+{point.points}</span>
-                              </div>
-                            </div>
-                          </div>
-                          <Badge variant="outline" className="text-xs">
-                            {formatShortDate(point.timestamp)}
-                          </Badge>
-                        </div>
-                      ))}
-                      {recentPoints.filter(point => point.points > 0).length === 0 && (
-                        <div className="text-center py-4 text-muted-foreground">
-                          No positive points recorded recently
-                        </div>
-                      )}
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="negative">
-                  <div className="space-y-4">
-                    {recentPoints
-                      .filter(point => point.points < 0)
-                      .slice(0, 5)
-                      .map((point, i) => (
-                        <div key={i} className="flex items-center justify-between py-2 border-b last:border-0 last:pb-0 last:pt-2">
-                          <div className="flex items-center">
-                            <div className="p-2 rounded-full mr-3 bg-rose-100 text-rose-700">
-                              <XCircle className="h-4 w-4" />
-                            </div>
-                            <div>
-                              <div className="font-medium">
-                                {point.student 
-                                  ? `${point.student.firstName} ${point.student.lastName}` 
-                                  : `Student ${point.studentId}`}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {point.category?.name || point.notes?.split(' - ')[0] || 'Behavior record'}:
-                                <span className="text-rose-600 ml-1">{point.points}</span>
-                              </div>
-                            </div>
-                          </div>
-                          <Badge variant="outline" className="text-xs">
-                            {formatShortDate(point.timestamp)}
-                          </Badge>
-                        </div>
-                      ))}
-                      {recentPoints.filter(point => point.points < 0).length === 0 && (
-                        <div className="text-center py-4 text-muted-foreground">
-                          No negative points recorded recently
-                        </div>
-                      )}
-                  </div>
-                </TabsContent>
-              </Tabs>
+                ))}
+              </div>
             </CardContent>
             <CardFooter className="border-t px-6 py-4">
               <Button variant="ghost" size="sm" className="w-full" onClick={() => navigate('/reports')}>
