@@ -20,6 +20,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
 
 interface StudentGridProps {
   onSelectStudent: (studentId: number) => void;
@@ -92,16 +93,16 @@ export default function StudentGrid({ onSelectStudent, selectedDate, teacherFilt
     }
   };
 
-  // Create a direct batch points mutation
-  const batchAssignMutation = useMutation({
-    mutationFn: async (pointsArray: any[]) => {
-      console.log('Direct Batch Points Request:', { points: pointsArray });
+  // Use individual point assignments instead of batch
+  const singlePointMutation = useMutation({
+    mutationFn: async (pointData: any) => {
+      console.log('Individual Point Request:', pointData);
       
       try {
-        const res = await fetch('/api/behavior-points/batch', {
+        const res = await fetch('/api/behavior-points', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ points: pointsArray }),
+          body: JSON.stringify(pointData),
           credentials: 'include',
         });
         
@@ -112,38 +113,24 @@ export default function StudentGrid({ onSelectStudent, selectedDate, teacherFilt
         
         return await res.json();
       } catch (error) {
-        console.error('Batch points error:', error);
+        console.error('Point assignment error:', error);
         throw error;
       }
     },
     onSuccess: () => {
-      toast({
-        title: "Success!",
-        description: `Points assigned to ${selectedStudentIds.length} students.`,
-      });
-      
-      // Reset dialog state and selection
-      setBatchDialogOpen(false);
-      setSelectedCategory(null);
-      setPointsMultiplier(1);
-      setNotes('');
-      
-      // Refresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/behavior-points/recent'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/behavior-points/teacher'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/houses'] });
+      // We'll handle this in the batch function
     },
     onError: (error: any) => {
-      toast({
-        title: "Error assigning points",
-        description: error.message || "An unknown error occurred",
-        variant: "destructive",
-      });
+      // We'll handle this in the batch function
     }
   });
   
-  // Handle the batch points assignment
-  const handleBatchAssign = () => {
+  // Process multiple individual assignments
+  const [processing, setProcessing] = useState(false);
+  const [progress, setProgress] = useState(0);
+  
+  // Handle the batch points assignment using individual calls
+  const handleBatchAssign = async () => {
     if (!selectedCategory) {
       toast({
         title: "No category selected",
@@ -167,7 +154,8 @@ export default function StudentGrid({ onSelectStudent, selectedDate, teacherFilt
     
     const pointValue = category.pointValue * pointsMultiplier;
     
-    const pointsArray = selectedStudentIds.map(studentId => ({
+    // Create an array of point assignments
+    const assignments = selectedStudentIds.map(studentId => ({
       studentId,
       categoryId: selectedCategory,
       points: pointValue,
@@ -175,7 +163,55 @@ export default function StudentGrid({ onSelectStudent, selectedDate, teacherFilt
       notes: notes || undefined
     }));
     
-    batchAssignMutation.mutate(pointsArray);
+    setProcessing(true);
+    setProgress(0);
+    
+    // Track successes and failures
+    let successCount = 0;
+    let errorCount = 0;
+    
+    try {
+      // Process each assignment individually
+      for (let i = 0; i < assignments.length; i++) {
+        try {
+          await singlePointMutation.mutateAsync(assignments[i]);
+          successCount++;
+        } catch (error) {
+          console.error(`Error assigning points to student ${assignments[i].studentId}:`, error);
+          errorCount++;
+        }
+        setProgress(Math.round(((i + 1) / assignments.length) * 100));
+      }
+      
+      // Show success message
+      toast({
+        title: "Points Assignment Complete",
+        description: `Successfully assigned points to ${successCount} students.${
+          errorCount > 0 ? ` Failed for ${errorCount} students.` : ''
+        }`,
+        variant: errorCount > 0 ? "default" : "default",
+      });
+      
+      // Reset dialog state and selection
+      setBatchDialogOpen(false);
+      setSelectedCategory(null);
+      setPointsMultiplier(1);
+      setNotes('');
+      setSelectedStudentIds([]);
+      
+      // Refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/behavior-points/recent'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/behavior-points/teacher'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/houses'] });
+    } catch (error) {
+      toast({
+        title: "Error assigning points",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessing(false);
+    }
   };
   
   // Show loading indicator while students are loading
@@ -357,6 +393,16 @@ export default function StudentGrid({ onSelectStudent, selectedDate, teacherFilt
                 onChange={(e) => setNotes(e.target.value)}
               />
             </div>
+            
+            {processing && (
+              <div className="grid gap-2">
+                <Label>Processing Progress</Label>
+                <Progress value={progress} className="h-2 w-full" />
+                <div className="text-xs text-center text-muted-foreground">
+                  {progress}% Complete
+                </div>
+              </div>
+            )}
           </div>
           
           <DialogFooter className="sm:justify-between">
@@ -370,10 +416,10 @@ export default function StudentGrid({ onSelectStudent, selectedDate, teacherFilt
             <Button
               type="button"
               onClick={handleBatchAssign}
-              disabled={!selectedCategory || batchAssignMutation.isPending}
+              disabled={!selectedCategory || processing}
               className="gap-1"
             >
-              {batchAssignMutation.isPending ? (
+              {processing ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Award className="h-4 w-4" />
