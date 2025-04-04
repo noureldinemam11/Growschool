@@ -12,6 +12,7 @@ import AdminPage from "@/pages/admin-page";
 import PointsPage from "@/pages/points-page";
 import ProfilePage from "@/pages/profile-page";
 import ChangePasswordPage from "@/pages/change-password-page";
+import DebugPage from "@/pages/debug-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
 import { CelebrationProvider } from "./hooks/use-celebration";
@@ -100,6 +101,11 @@ function Router() {
       <ProtectedRoute 
         path="/change-password" 
         component={ChangePasswordPage}
+      />
+      <ProtectedRoute 
+        path="/debug" 
+        component={DebugPage}
+        allowedRoles={["admin"]}
       />
       <Route component={NotFound} />
     </Switch>
