@@ -444,27 +444,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const students = await storage.getStudentsByHouseId(house.id);
           let topStudent = null;
           let maxPoints = 0;
+          let houseTotal = 0;
           
+          // Calculate the total points for all students in this house
           for (const student of students) {
             const points = await storage.getBehaviorPointsByStudentId(student.id);
-            const totalPoints = points.reduce((sum, point) => sum + point.points, 0);
+            const studentTotal = points.reduce((sum, point) => sum + point.points, 0);
+            houseTotal += studentTotal;
             
-            if (totalPoints > maxPoints) {
-              maxPoints = totalPoints;
+            if (studentTotal > maxPoints) {
+              maxPoints = studentTotal;
               topStudent = {
                 id: student.id,
                 firstName: student.firstName,
                 lastName: student.lastName,
-                totalPoints: totalPoints
+                totalPoints: studentTotal
               };
             }
+          }
+          
+          // Ensure house points match the total calculated from all students
+          if (house.points !== houseTotal) {
+            console.log(`Correcting house points for ${house.name}: DB=${house.points}, Calculated=${houseTotal}`);
+            await storage.updateHouse(house.id, { points: houseTotal });
+            house.points = houseTotal;
           }
           
           return {
             houseId: house.id,
             houseName: house.name,
             houseColor: house.color,
-            housePoints: house.points,
+            housePoints: houseTotal, // Use our calculated total
             topStudent: topStudent
           };
         })

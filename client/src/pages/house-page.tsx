@@ -344,9 +344,7 @@ export default function HousePage() {
                             <div className={`text-blue-900 font-medium ${isFullscreen ? 'text-xl' : ''}`}>
                               {house.name}
                             </div>
-                            <div className={`text-blue-900/70 text-xs ${isFullscreen ? 'text-sm' : ''} mt-0.5`}>
-                              Total from all students
-                            </div>
+
                             {/* Show top student if available */}
                             {topStudentsByHouse && topStudentsByHouse.length > 0 && (
                               <>
@@ -375,11 +373,6 @@ export default function HousePage() {
                                             </span>
                                             <span className={`${isFullscreen ? 'text-sm' : 'text-xs'} font-semibold text-blue-900`}>
                                               {houseData.topStudent.totalPoints} points
-                                              {houseData.housePoints > 0 && (
-                                                <span className="ml-1 text-blue-900/60">
-                                                  ({Math.round((houseData.topStudent.totalPoints / houseData.housePoints) * 100)}% of total)
-                                                </span>
-                                              )}
                                             </span>
                                           </div>
                                         </div>
