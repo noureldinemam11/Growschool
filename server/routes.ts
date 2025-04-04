@@ -300,6 +300,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to create behavior point" });
     }
   });
+  
+  // New endpoint for batch behavior points submission
+  app.post("/api/behavior-points/batch", async (req, res) => {
+    if (!req.isAuthenticated() || !["admin", "teacher"].includes(req.user.role)) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const { points } = req.body;
+      
+      if (!Array.isArray(points) || points.length === 0) {
+        return res.status(400).json({ error: "Invalid request: points must be a non-empty array" });
+      }
+      
+      const createdPoints = [];
+      
+      // Create each behavior point in sequence
+      for (const pointData of points) {
+        try {
+          const validatedData = insertBehaviorPointSchema.parse(pointData);
+          const behaviorPoint = await storage.createBehaviorPoint(validatedData);
+          createdPoints.push(behaviorPoint);
+        } catch (error) {
+          // Log error but continue processing remaining points
+          console.error("Error creating behavior point:", error);
+        }
+      }
+      
+      // If no points were created, return an error
+      if (createdPoints.length === 0) {
+        return res.status(400).json({ error: "Failed to create any behavior points" });
+      }
+      
+      res.status(201).json({ 
+        success: true, 
+        count: createdPoints.length,
+        points: createdPoints 
+      });
+    } catch (error) {
+      console.error("Error in batch behavior points submission:", error);
+      res.status(500).json({ error: "Failed to process batch behavior points" });
+    }
+  });
 
   app.get("/api/behavior-points/student/:studentId", async (req, res) => {
     try {
