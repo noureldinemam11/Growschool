@@ -23,6 +23,7 @@ export default function DeductPointsModal({ onClose }: DeductPointsModalProps) {
   const [categoryId, setCategoryId] = useState<string>('');
   const [points, setPoints] = useState<number>(1);
   const [notes, setNotes] = useState<string>('');
+  const [selectedCategoryRef, setSelectedCategoryRef] = useState<BehaviorCategory | null>(null);
 
   const { data: students, isLoading: isLoadingStudents } = useQuery<Partial<User>[]>({
     queryKey: ['/api/users/role/student'],
@@ -44,7 +45,7 @@ export default function DeductPointsModal({ onClose }: DeductPointsModalProps) {
     onSuccess: () => {
       toast({
         title: "Points deducted successfully",
-        description: `${points} points have been deducted from the student.`
+        description: `${Math.abs(selectedCategoryRef?.pointValue || 0)} points have been deducted from the student.`
       });
       // Invalidate all affected queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/behavior-points/recent'] });
@@ -76,10 +77,26 @@ export default function DeductPointsModal({ onClose }: DeductPointsModalProps) {
       return;
     }
 
+    // Get the selected category to use its point value
+    const selectedCategory = negativeCategories.find(cat => cat.id.toString() === categoryId);
+    if (!selectedCategory) {
+      toast({
+        title: "Category Error",
+        description: "Could not find the selected category",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Save the selected category for reference in the success message
+    setSelectedCategoryRef(selectedCategory);
+
+    // Use the actual point value from the category with proper sign
+    // For negative categories, the pointValue should already be negative in the database
     deductPointsMutation.mutate({
       studentId: parseInt(studentId, 10),
       categoryId: parseInt(categoryId, 10),
-      points: -points, // Negative value for deduction
+      points: selectedCategory.pointValue, 
       teacherId: user!.id,
       notes
     });
