@@ -19,7 +19,7 @@ import PointsModal from '../points/PointsModal';
 import { useAuth } from '@/hooks/use-auth';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { BehaviorPoint, House } from '@shared/schema';
 
@@ -230,32 +230,85 @@ export default function DashboardItems() {
         transition={{ duration: 0.5, delay: 0.4 }}
       >
         <h2 className="text-2xl font-bold text-gray-800 mb-6">Recent Activity</h2>
-        <Card>
-          <CardContent className="p-6">
-            {recentPoints && recentPoints.length > 0 ? (
-              <div className="space-y-4">
-                {recentPoints.slice(0, 5).map((point: BehaviorPoint, index: number) => (
-                  <div key={point.id} className="flex items-center justify-between border-b border-gray-100 pb-4 last:border-0 last:pb-0">
-                    <div className="flex items-center">
-                      <div className="bg-primary/10 p-2 rounded-full mr-4">
-                        <Star className="h-5 w-5 text-primary" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Positive Points */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center">
+                <span className="mr-2 p-1 rounded-full bg-success/10">
+                  <Award className="h-4 w-4 text-success" />
+                </span>
+                Positive Behavior
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              {recentPoints && recentPoints.filter(point => point.points > 0).length > 0 ? (
+                <div className="space-y-4">
+                  {recentPoints
+                    .filter(point => point.points > 0)
+                    .slice(0, 3)
+                    .map((point: BehaviorPoint, index: number) => (
+                      <div key={point.id} className="flex items-center justify-between border-b border-gray-100 pb-4 last:border-0 last:pb-0">
+                        <div className="flex items-center">
+                          <div className="bg-success/10 p-2 rounded-full mr-4">
+                            <Star className="h-5 w-5 text-success" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">Student {point.studentId}</p>
+                            <p className="text-sm text-gray-500">Received +{point.points} points</p>
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="text-xs">
+                          {new Date(point.timestamp).toLocaleDateString()}
+                        </Badge>
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-900">Student {point.studentId}</p>
-                        <p className="text-sm text-gray-500">Received {point.points} points</p>
+                    ))}
+                </div>
+              ) : (
+                <p className="text-center text-gray-500 py-4">No recent positive activities</p>
+              )}
+            </CardContent>
+          </Card>
+          
+          {/* Negative Points */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center">
+                <span className="mr-2 p-1 rounded-full bg-error/10">
+                  <Award className="h-4 w-4 text-error" />
+                </span>
+                Behavior Concerns
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              {recentPoints && recentPoints.filter(point => point.points < 0).length > 0 ? (
+                <div className="space-y-4">
+                  {recentPoints
+                    .filter(point => point.points < 0)
+                    .slice(0, 3)
+                    .map((point: BehaviorPoint, index: number) => (
+                      <div key={point.id} className="flex items-center justify-between border-b border-gray-100 pb-4 last:border-0 last:pb-0">
+                        <div className="flex items-center">
+                          <div className="bg-error/10 p-2 rounded-full mr-4">
+                            <Star className="h-5 w-5 text-error" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">Student {point.studentId}</p>
+                            <p className="text-sm text-gray-500">Received {point.points} points</p>
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="text-xs">
+                          {new Date(point.timestamp).toLocaleDateString()}
+                        </Badge>
                       </div>
-                    </div>
-                    <Badge variant="outline" className="text-xs">
-                      {new Date(point.timestamp).toLocaleDateString()}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-center text-gray-500 py-4">No recent activity</p>
-            )}
-          </CardContent>
-        </Card>
+                    ))}
+                </div>
+              ) : (
+                <p className="text-center text-gray-500 py-4">No recent behavior concerns</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </motion.div>
 
       <PointsModal 

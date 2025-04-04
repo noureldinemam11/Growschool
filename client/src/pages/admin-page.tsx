@@ -12,7 +12,7 @@ import RosterManagement from '@/components/admin/RosterManagement';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Trash2 } from 'lucide-react';
+import { AlertCircle, Trash2, Award, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -26,6 +26,87 @@ import {
   DialogTrigger
 } from '@/components/ui/dialog';
 import { useQuery, useMutation } from '@tanstack/react-query';
+
+// RecentPointsList component to display recent behavior points
+interface RecentPointsListProps {
+  type: 'positive' | 'negative';
+  limit?: number;
+}
+
+function RecentPointsList({ type, limit = 5 }: RecentPointsListProps) {
+  // Define a BehaviorPoint type interface
+  interface BehaviorPoint {
+    id: number;
+    studentId: number;
+    teacherId: number;
+    categoryId: number;
+    points: number;
+    notes: string;
+    timestamp: string;
+    student?: {
+      firstName: string;
+      lastName: string;
+      gradeLevel?: string;
+      section?: string;
+    };
+    teacher?: {
+      firstName: string;
+      lastName: string;
+    };
+    category?: {
+      name: string;
+    };
+  }
+
+  // Fetch recent points
+  const { data: recentPoints = [], isLoading } = useQuery<BehaviorPoint[]>({
+    queryKey: ['/api/behavior-points/recent'],
+  });
+
+  // Filter points based on type
+  const filteredPoints = recentPoints
+    .filter(point => type === 'positive' ? point.points > 0 : point.points < 0)
+    .slice(0, limit);
+
+  if (isLoading) {
+    return <div className="text-center py-2">Loading...</div>;
+  }
+
+  if (filteredPoints.length === 0) {
+    return (
+      <div className="text-center py-4 text-neutral-dark text-sm">
+        No {type === 'positive' ? 'positive' : 'negative'} points recorded recently.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {filteredPoints.map(point => (
+        <div key={point.id} className="flex items-center justify-between border-b border-gray-100 pb-3 last:border-0 last:pb-0">
+          <div className="flex items-center">
+            <div className={`p-2 rounded-full ${type === 'positive' ? 'bg-success/10' : 'bg-error/10'} mr-3`}>
+              <Star className={`h-4 w-4 ${type === 'positive' ? 'text-success' : 'text-error'}`} />
+            </div>
+            <div>
+              <p className="font-medium text-sm">
+                {point.student 
+                  ? `${point.student.firstName} ${point.student.lastName}`
+                  : `Student ${point.studentId}`}
+              </p>
+              <p className="text-xs text-neutral-dark">
+                {point.category?.name || 'Unknown category'}: {type === 'positive' ? '+' : ''}{point.points} points
+              </p>
+            </div>
+          </div>
+          <div className="text-xs text-neutral-dark">
+            {new Date(point.timestamp).toLocaleDateString()}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 // PointsResetSection component for handling points reset functionality
 function PointsResetSection() {
@@ -330,7 +411,29 @@ export default function AdminPage() {
                     <CardTitle>Recent System Activity</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-neutral-dark">System activity log will be displayed here.</p>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Positive Points */}
+                      <div className="space-y-3">
+                        <h3 className="text-lg font-semibold flex items-center text-success">
+                          <Award className="h-5 w-5 mr-2" />
+                          Positive Behaviors
+                        </h3>
+                        <div className="border rounded-md p-4">
+                          <RecentPointsList type="positive" limit={5} />
+                        </div>
+                      </div>
+
+                      {/* Negative Points */}
+                      <div className="space-y-3">
+                        <h3 className="text-lg font-semibold flex items-center text-error">
+                          <Award className="h-5 w-5 mr-2" />
+                          Behavior Concerns
+                        </h3>
+                        <div className="border rounded-md p-4">
+                          <RecentPointsList type="negative" limit={5} />
+                        </div>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
                 
