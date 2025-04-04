@@ -84,9 +84,28 @@ export default function BatchPointsAssignment({
   // Batch assignment mutation
   const batchAssignMutation = useMutation({
     mutationFn: async (pointsArray: any[]) => {
-      console.log('Sending batch points request:', { points: pointsArray });
+      console.log('============ CLIENT BATCH POINTS REQUEST ============');
+      console.log('Sending batch points request:', JSON.stringify({ points: pointsArray }, null, 2));
+      
+      // Validate the data before sending
+      if (!Array.isArray(pointsArray) || pointsArray.length === 0) {
+        console.error('Client validation failed: pointsArray is empty or not an array', pointsArray);
+        throw new Error('Client validation failed: No valid points to assign');
+      }
+      
+      // Make sure all required fields are present in each entry
+      const requiredFields = ['studentId', 'categoryId', 'points', 'teacherId'];
+      const missingFields = pointsArray.some(point => 
+        requiredFields.some(field => point[field] === undefined || point[field] === null)
+      );
+      
+      if (missingFields) {
+        console.error('Client validation failed: Missing required fields in points data', pointsArray);
+        throw new Error('Client validation failed: Missing required fields in points data');
+      }
       
       try {
+        console.log('Sending request to /api/behavior-points/batch');
         const res = await fetch('/api/behavior-points/batch', {
           method: 'POST',
           headers: {
@@ -99,9 +118,17 @@ export default function BatchPointsAssignment({
         console.log('Batch points response status:', res.status);
         
         if (!res.ok) {
-          const errorText = await res.text();
-          console.error('Batch points error response:', errorText);
-          throw new Error(`Error assigning batch points: ${errorText}`);
+          let errorMessage = 'Unknown server error';
+          try {
+            const errorData = await res.json();
+            errorMessage = errorData.error || errorMessage;
+          } catch (e) {
+            const errorText = await res.text();
+            errorMessage = errorText || errorMessage;
+          }
+          
+          console.error('Batch points error response:', errorMessage);
+          throw new Error(`Error assigning batch points: ${errorMessage}`);
         }
         
         const result = await res.json();
@@ -174,7 +201,24 @@ export default function BatchPointsAssignment({
       description: `Assigning ${pointValue} points to ${selectedStudentIds.length} students...`,
     });
     
-    // Create batch points array
+    // Create batch points array with detailed logging
+    console.log('Creating batch points array with:', {
+      selectedStudentIds,
+      selectedCategory,
+      pointValue,
+      teacherId: user.id
+    });
+    
+    if (!Array.isArray(selectedStudentIds) || selectedStudentIds.length === 0) {
+      console.error('Invalid selectedStudentIds:', selectedStudentIds);
+      toast({
+        title: "Error",
+        description: "No students selected for batch assignment",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     const pointsArray = selectedStudentIds.map(studentId => ({
       studentId,
       categoryId: selectedCategory,

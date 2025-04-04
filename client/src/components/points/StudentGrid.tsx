@@ -169,8 +169,18 @@ export default function StudentGrid({ onSelectStudent, selectedDate, teacherFilt
         </div>
       </div>
       
+      {/* Debug selectedStudentIds */}
+      {selectedStudentIds.length > 0 && (
+        <div className="mt-4 p-2 bg-muted/20 rounded-md text-sm">
+          <div className="font-medium">Selected Students: {selectedStudentIds.length}</div>
+          <div className="text-xs text-muted-foreground overflow-hidden text-ellipsis">
+            IDs: {selectedStudentIds.join(', ')}
+          </div>
+        </div>
+      )}
+      
       {/* Batch Points Assignment Modal */}
-      {isBatchModalOpen && (
+      {isBatchModalOpen && selectedStudentIds.length > 0 && (
         <BatchPointsAssignment 
           isOpen={isBatchModalOpen}
           onClose={() => setIsBatchModalOpen(false)}

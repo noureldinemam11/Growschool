@@ -303,13 +303,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // New endpoint for batch behavior points submission
   app.post("/api/behavior-points/batch", async (req, res) => {
-    console.log("Batch points request received");
-    console.log("Request body:", JSON.stringify(req.body));
+    console.log("============ BATCH POINTS REQUEST ============");
+    console.log("Request body:", JSON.stringify(req.body, null, 2));
     console.log("Authenticated:", req.isAuthenticated());
+    
+    // Detailed input validation
+    if (!req.body || !req.body.points) {
+      console.error("Invalid request body structure - missing 'points' array");
+      return res.status(400).json({ error: "Invalid request: points array is required" });
+    }
+    
+    if (!Array.isArray(req.body.points)) {
+      console.error("Invalid points data - not an array:", typeof req.body.points);
+      return res.status(400).json({ error: "Invalid request: points must be an array" });
+    }
+    
+    if (req.body.points.length === 0) {
+      console.error("Empty points array");
+      return res.status(400).json({ error: "Invalid request: points array is empty" });
+    }
+    
+    // Log user auth status
     if (req.isAuthenticated()) {
-      console.log("User role:", req.user.role);
+      console.log("User authenticated:", req.user.id, "Role:", req.user.role);
     } else {
-      console.log("User is not authenticated");
+      console.error("User is not authenticated");
     }
     
     if (!req.isAuthenticated() || !["admin", "teacher"].includes(req.user.role)) {
