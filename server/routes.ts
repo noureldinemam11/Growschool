@@ -304,9 +304,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // New endpoint for batch behavior points submission
   app.post("/api/behavior-points/batch", async (req, res) => {
     console.log("Batch points request received");
+    console.log("Request body:", JSON.stringify(req.body));
     console.log("Authenticated:", req.isAuthenticated());
     if (req.isAuthenticated()) {
       console.log("User role:", req.user.role);
+    } else {
+      console.log("User is not authenticated");
     }
     
     if (!req.isAuthenticated() || !["admin", "teacher"].includes(req.user.role)) {

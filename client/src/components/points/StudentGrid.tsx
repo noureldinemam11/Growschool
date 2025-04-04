@@ -15,7 +15,7 @@ interface StudentGridProps {
 }
 
 export default function StudentGrid({ onSelectStudent, selectedDate, teacherFilter }: StudentGridProps) {
-  const [selectedStudents, setSelectedStudents] = useState<number[]>([]);
+  const [selectedStudentIds, setSelectedStudentIds] = useState<number[]>([]);
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [teacherFilterType, setTeacherFilterType] = useState<string>('all');
   const [isBatchModalOpen, setIsBatchModalOpen] = useState<boolean>(false);
@@ -26,34 +26,34 @@ export default function StudentGrid({ onSelectStudent, selectedDate, teacherFilt
   });
 
   const toggleStudentSelection = (studentId: number) => {
-    if (selectedStudents.includes(studentId)) {
-      setSelectedStudents(selectedStudents.filter(id => id !== studentId));
+    if (selectedStudentIds.includes(studentId)) {
+      setSelectedStudentIds(selectedStudentIds.filter(id => id !== studentId));
     } else {
-      setSelectedStudents([...selectedStudents, studentId]);
+      setSelectedStudentIds([...selectedStudentIds, studentId]);
     }
   };
 
   const selectAll = () => {
     if (students) {
-      setSelectedStudents(students.map(s => s.id));
+      setSelectedStudentIds(students.map(s => s.id));
     }
   };
 
   const deselectAll = () => {
-    setSelectedStudents([]);
+    setSelectedStudentIds([]);
   };
 
   const selectRandom = () => {
     if (students && students.length > 0) {
       const randomIndex = Math.floor(Math.random() * students.length);
-      setSelectedStudents([students[randomIndex].id]);
+      setSelectedStudentIds([students[randomIndex].id]);
     }
   };
 
   const handleContinue = () => {
-    if (selectedStudents.length === 1) {
-      onSelectStudent(selectedStudents[0]);
-    } else if (selectedStudents.length > 1) {
+    if (selectedStudentIds.length === 1) {
+      onSelectStudent(selectedStudentIds[0]);
+    } else if (selectedStudentIds.length > 1) {
       // Open batch assignment modal
       setIsBatchModalOpen(true);
     }
@@ -100,7 +100,7 @@ export default function StudentGrid({ onSelectStudent, selectedDate, teacherFilt
             key={student.id}
             className={cn(
               "cursor-pointer transition-all border-2",
-              selectedStudents.includes(student.id) 
+              selectedStudentIds.includes(student.id) 
                 ? "border-primary bg-primary/5" 
                 : "hover:border-gray-400"
             )}
@@ -161,7 +161,7 @@ export default function StudentGrid({ onSelectStudent, selectedDate, teacherFilt
             size="sm"
             className="rounded-full flex items-center gap-1 ml-2 bg-primary hover:bg-primary/90"
             onClick={handleContinue}
-            disabled={selectedStudents.length === 0}
+            disabled={selectedStudentIds.length === 0}
           >
             <ArrowRight className="h-4 w-4" />
             <span>Continue</span>
@@ -174,7 +174,7 @@ export default function StudentGrid({ onSelectStudent, selectedDate, teacherFilt
         <BatchPointsAssignment 
           isOpen={isBatchModalOpen}
           onClose={() => setIsBatchModalOpen(false)}
-          selectedStudentIds={selectedStudents.map(student => student.id)}
+          selectedStudentIds={selectedStudentIds}
         />
       )}
     </div>

@@ -84,21 +84,33 @@ export default function BatchPointsAssignment({
   // Batch assignment mutation
   const batchAssignMutation = useMutation({
     mutationFn: async (pointsArray: any[]) => {
-      const res = await fetch('/api/behavior-points/batch', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ points: pointsArray }),
-        credentials: 'include',
-      });
+      console.log('Sending batch points request:', { points: pointsArray });
       
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`Error assigning batch points: ${errorText}`);
+      try {
+        const res = await fetch('/api/behavior-points/batch', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ points: pointsArray }),
+          credentials: 'include',
+        });
+        
+        console.log('Batch points response status:', res.status);
+        
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error('Batch points error response:', errorText);
+          throw new Error(`Error assigning batch points: ${errorText}`);
+        }
+        
+        const result = await res.json();
+        console.log('Batch points success response:', result);
+        return result;
+      } catch (error) {
+        console.error('Batch points fetch error:', error);
+        throw error;
       }
-      
-      return res.json();
     },
     onSuccess: () => {
       // Show success message
