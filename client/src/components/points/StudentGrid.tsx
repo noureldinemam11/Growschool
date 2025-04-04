@@ -102,6 +102,7 @@ export default function StudentGrid({ onSelectStudent, selectedDate, teacherFilt
       queryClient.invalidateQueries({ queryKey: ['/api/behavior-points/recent'] });
       queryClient.invalidateQueries({ queryKey: ['/api/behavior-points/teacher'] });
       queryClient.invalidateQueries({ queryKey: ['/api/houses'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/houses-top-students'] });
     },
     onError: (error) => {
       toast({

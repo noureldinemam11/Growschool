@@ -314,18 +314,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid request: points must be a non-empty array" });
       }
       
+      // Group points by houseId to update house points more efficiently
+      const housePointsMap = new Map<number, number>();
       const createdPoints = [];
       
-      // Create each behavior point in sequence
-      for (const pointData of points) {
-        try {
-          const validatedData = insertBehaviorPointSchema.parse(pointData);
-          const behaviorPoint = await storage.createBehaviorPoint(validatedData);
-          createdPoints.push(behaviorPoint);
-        } catch (error) {
-          // Log error but continue processing remaining points
-          console.error("Error creating behavior point:", error);
+      // First, fetch all student data to get house IDs
+      const studentIdsSet = new Set(points.map(p => p.studentId));
+      const studentIds = Array.from(studentIdsSet);
+      const students = await Promise.all(
+        studentIds.map(async (id) => await storage.getUser(id))
+      );
+      
+      // Create a map of studentId -> houseId for quick lookup
+      const studentHouseMap = new Map<number, number>();
+      students.forEach(student => {
+        if (student && student.houseId) {
+          studentHouseMap.set(student.id, student.houseId);
         }
+      });
+      
+      // Begin a transaction - manual handling since we want to process everything together
+      // to ensure house points reflect ALL student points accurately
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        
+        // Create each behavior point in sequence
+        for (const pointData of points) {
+          try {
+            const validatedData = insertBehaviorPointSchema.parse(pointData);
+            
+            // Insert the behavior point
+            const result = await client.query(
+              'INSERT INTO behavior_points (student_id, teacher_id, category_id, points, notes, timestamp) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+              [
+                validatedData.studentId,
+                validatedData.teacherId,
+                validatedData.categoryId,
+                validatedData.points,
+                validatedData.notes || null,
+                new Date()
+              ]
+            );
+            
+            const behaviorPoint = result.rows[0];
+            createdPoints.push(behaviorPoint);
+            
+            // Accumulate points for each house
+            const houseId = studentHouseMap.get(validatedData.studentId);
+            if (houseId) {
+              housePointsMap.set(
+                houseId, 
+                (housePointsMap.get(houseId) || 0) + validatedData.points
+              );
+            }
+          } catch (error) {
+            // Log error but continue processing remaining points
+            console.error("Error creating behavior point:", error);
+          }
+        }
+        
+        // Update house points all at once for each house
+        for (const [houseId, pointsToAdd] of Array.from(housePointsMap.entries())) {
+          // Get current house points
+          const houseResult = await client.query(
+            'SELECT points FROM houses WHERE id = $1',
+            [houseId]
+          );
+          
+          if (houseResult.rows.length > 0) {
+            const currentPoints = houseResult.rows[0].points || 0;
+            const newPoints = currentPoints + pointsToAdd;
+            
+            // Update house points
+            await client.query(
+              'UPDATE houses SET points = $1 WHERE id = $2',
+              [newPoints, houseId]
+            );
+            
+            console.log(`Batch update: House ${houseId} points updated from ${currentPoints} to ${newPoints}`);
+          }
+        }
+        
+        // Commit transaction
+        await client.query('COMMIT');
+      } catch (error) {
+        // Rollback in case of error
+        await client.query('ROLLBACK');
+        throw error;
+      } finally {
+        client.release();
       }
       
       // If no points were created, return an error
@@ -336,7 +414,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json({ 
         success: true, 
         count: createdPoints.length,
-        points: createdPoints 
+        points: createdPoints,
+        housesUpdated: Array.from(housePointsMap.keys())
       });
     } catch (error) {
       console.error("Error in batch behavior points submission:", error);
