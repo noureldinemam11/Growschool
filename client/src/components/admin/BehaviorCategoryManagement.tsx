@@ -245,7 +245,11 @@ export default function BehaviorCategoryManagement() {
           </TabsList>
           
           <TabsContent value="view" className="space-y-4">
-            <div className="flex justify-end">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h3 className="text-lg font-medium">Behavior Categories</h3>
+                <p className="text-sm text-neutral-dark">Manage the categories used for awarding or deducting points</p>
+              </div>
               <Button onClick={() => {
                 resetForm();
                 setActiveTab('create');
@@ -260,101 +264,204 @@ export default function BehaviorCategoryManagement() {
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : categories && categories.length > 0 ? (
-              <div className="border rounded-md">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Point Value</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {categories.map(category => (
-                      <TableRow key={category.id}>
-                        <TableCell className="font-medium">{category.name}</TableCell>
-                        <TableCell>{category.description || '-'}</TableCell>
-                        <TableCell>
-                          <Badge className={category.isPositive ? 'bg-success' : 'bg-error'}>
-                            {category.isPositive ? 'Positive' : 'Negative'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <span className={`font-mono font-semibold ${category.isPositive ? 'text-success' : 'text-error'}`}>
-                            {category.isPositive ? '+' : '-'}{category.pointValue}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" onClick={() => startEditing(category)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => confirmDelete(category)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+              <div>
+                <div className="mb-4">
+                  <h4 className="text-md font-semibold mb-2">Positive Behavior Categories</h4>
+                  <div className="border rounded-md mb-6">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Point Value</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {categories
+                          .filter(category => category.isPositive)
+                          .map(category => (
+                            <TableRow key={category.id}>
+                              <TableCell className="font-medium">{category.name}</TableCell>
+                              <TableCell>{category.description || '-'}</TableCell>
+                              <TableCell>
+                                <Badge className="bg-success">+{category.pointValue}</Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button variant="ghost" size="icon" onClick={() => startEditing(category)} title="Edit category">
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => confirmDelete(category)} title="Delete category">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        {categories.filter(category => category.isPositive).length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center py-4 text-neutral-dark">
+                              No positive behavior categories found
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  
+                  <h4 className="text-md font-semibold mb-2">Negative Behavior Categories</h4>
+                  <div className="border rounded-md">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Point Value</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {categories
+                          .filter(category => !category.isPositive)
+                          .map(category => (
+                            <TableRow key={category.id}>
+                              <TableCell className="font-medium">{category.name}</TableCell>
+                              <TableCell>{category.description || '-'}</TableCell>
+                              <TableCell>
+                                <Badge className="bg-error">{category.pointValue}</Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button variant="ghost" size="icon" onClick={() => startEditing(category)} title="Edit category">
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => confirmDelete(category)} title="Delete category">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        {categories.filter(category => !category.isPositive).length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center py-4 text-neutral-dark">
+                              No negative behavior categories found
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
               </div>
             ) : (
-              <div className="flex items-center justify-center h-64 border rounded-md">
-                <p className="text-neutral-dark">No behavior categories found</p>
+              <div className="flex flex-col items-center justify-center h-64 border rounded-md">
+                <p className="text-neutral-dark mb-4">No behavior categories found</p>
+                <Button onClick={() => setActiveTab('create')}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Your First Category
+                </Button>
               </div>
             )}
           </TabsContent>
           
           <TabsContent value="create">
+            <div className="mb-4">
+              <h3 className="text-lg font-medium">{editingCategory ? 'Edit' : 'Create New'} Behavior Category</h3>
+              <p className="text-sm text-neutral-dark">
+                {editingCategory 
+                  ? `Modify the details for "${editingCategory.name}"`
+                  : 'Define a new category for awarding or deducting student behavior points'}
+              </p>
+            </div>
+            
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Category Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter category name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                  <div className="flex items-center mb-4">
+                    <div className="w-10 h-10 rounded-full bg-primary mr-4 flex items-center justify-center">
+                      {form.getValues().isPositive ? (
+                        <Check className="h-6 w-6 text-white" />
+                      ) : (
+                        <X className="h-6 w-6 text-white" />
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="font-medium">
+                        {form.getValues().isPositive ? 'Positive Behavior' : 'Negative Behavior'}
+                      </h4>
+                      <p className="text-sm text-neutral-dark">
+                        {form.getValues().isPositive 
+                          ? 'Points will be added to student totals'
+                          : 'Points will be deducted from student totals'}
+                      </p>
+                    </div>
+                  </div>
                 
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea placeholder="Enter a description of this behavior category" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="isPositive"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Category Type</FormLabel>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center justify-between border p-3 rounded-md bg-white">
+                          <FormLabel className="text-sm flex-1">
+                            <span className="font-medium">Category Type:</span> {' '}
+                            {field.value ? (
+                              <span className="text-success font-medium">Positive (adds points)</span>
+                            ) : (
+                              <span className="text-error font-medium">Negative (deducts points)</span>
+                            )}
+                          </FormLabel>
                           <FormControl>
                             <Switch 
                               checked={field.value} 
                               onCheckedChange={field.onChange}
                             />
                           </FormControl>
-                          <FormLabel className="text-sm text-neutral-dark">
-                            <span className="font-medium text-success">Positive</span> / <span className="text-error">Negative</span>
-                          </FormLabel>
                         </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Category Name</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder={form.getValues().isPositive 
+                              ? "e.g., Academic Excellence, Leadership" 
+                              : "e.g., Disruption, Missing Homework"} 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormDescription className="text-xs">
+                          Choose a clear, descriptive name for this behavior category
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description (Optional)</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder={form.getValues().isPositive 
+                              ? "e.g., Awarded for outstanding academic performance or significant improvement" 
+                              : "e.g., Given when student disrupts class or fails to complete assignments"} 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormDescription className="text-xs">
+                          Provide details about when this category should be used
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -366,19 +473,38 @@ export default function BehaviorCategoryManagement() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Point Value</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            min={form.getValues().isPositive ? "1" : "-10"}
-                            max={form.getValues().isPositive ? "10" : "-1"} 
-                            placeholder="Enter point value"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormDescription className="text-xs">
-                          {form.getValues().isPositive 
-                            ? "Value from 1-10 for positive categories."
-                            : "Value from -10 to -1 for negative categories."}
+                        <div className="relative">
+                          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-dark">
+                            {form.getValues().isPositive ? '+' : '-'}
+                          </div>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              min={form.getValues().isPositive ? "1" : "1"}
+                              max={form.getValues().isPositive ? "10" : "10"} 
+                              placeholder="1-10"
+                              className="pl-8"
+                              {...field} 
+                              value={Math.abs(field.value)}
+                              onChange={(e) => {
+                                const value = parseInt(e.target.value);
+                                if (!isNaN(value)) {
+                                  // Always store the value as positive for display, actual value will be negative for negative categories
+                                  field.onChange(form.getValues().isPositive ? value : -value);
+                                }
+                              }}
+                            />
+                          </FormControl>
+                        </div>
+                        <FormDescription className="text-xs flex justify-between">
+                          <span>
+                            {form.getValues().isPositive 
+                              ? "Value from 1-10 for positive categories." 
+                              : "Value from 1-10 for negative categories (will be stored as negative)."}
+                          </span>
+                          <span className={`font-medium ${form.getValues().isPositive ? 'text-success' : 'text-error'}`}>
+                            {form.getValues().isPositive ? `+${Math.abs(field.value)}` : `-${Math.abs(field.value)}`} points
+                          </span>
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -386,7 +512,7 @@ export default function BehaviorCategoryManagement() {
                   />
                 </div>
                 
-                <div className="flex justify-end space-x-2 pt-4">
+                <div className="flex justify-end space-x-2 pt-6">
                   <Button 
                     type="button" 
                     variant="outline" 
@@ -405,7 +531,19 @@ export default function BehaviorCategoryManagement() {
                         {editingCategory ? 'Updating...' : 'Creating...'}
                       </>
                     ) : (
-                      editingCategory ? 'Update Category' : 'Create Category'
+                      <>
+                        {editingCategory ? (
+                          <>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Update Category
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Create Category
+                          </>
+                        )}
+                      </>
                     )}
                   </Button>
                 </div>
