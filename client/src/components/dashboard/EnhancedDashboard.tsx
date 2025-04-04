@@ -794,7 +794,7 @@ function TeacherDashboard() {
             <QuickActionButton
               icon={<List className="h-6 w-6" />}
               label="Student List"
-              onClick={() => {}}
+              onClick={() => navigate('/students')}
             />
           </div>
         </CardContent>
@@ -877,7 +877,11 @@ function TeacherDashboard() {
                             {student.count} incidents, {student.points} points
                           </div>
                         </div>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => navigate(`/students?id=${student.id}`)}
+                        >
                           View
                         </Button>
                       </div>
@@ -986,7 +990,7 @@ function TeacherDashboard() {
               </div>
             </CardContent>
             <CardFooter className="border-t px-6 py-4">
-              <Button variant="ghost" size="sm" className="w-full">
+              <Button variant="ghost" size="sm" className="w-full" onClick={() => navigate('/reports')}>
                 <Activity className="h-4 w-4 mr-2" />
                 View All Activity
               </Button>
