@@ -24,6 +24,7 @@ import {
   List,
   XCircle,
   AlertTriangle,
+  AlertCircle,
   Smile,
   Activity,
   FileText,
@@ -442,13 +443,13 @@ function AdminDashboard() {
                 <CardDescription>Recent positive behavior records</CardDescription>
               </div>
               <Badge variant="secondary" className="px-3 font-normal">
-                {recentPoints.filter(p => p.points > 0).length} Records
+                {allBehaviorPoints.filter(p => p.points > 0).length} Records
               </Badge>
             </div>
           </CardHeader>
           <CardContent className="px-6">
             <div className="space-y-4 max-h-[350px] overflow-y-auto">
-              {recentPoints
+              {allBehaviorPoints
                 .filter(p => p.points > 0)
                 .slice(0, 8)
                 .map((point, i) => (
@@ -480,7 +481,7 @@ function AdminDashboard() {
                   </div>
                 ))}
               
-              {recentPoints.filter(p => p.points > 0).length === 0 && (
+              {allBehaviorPoints.filter(p => p.points > 0).length === 0 && (
                 <div className="text-center py-8">
                   <Star className="h-8 w-8 text-muted-foreground mb-2 mx-auto opacity-40" />
                   <p className="text-sm text-muted-foreground">No positive behavior records found.</p>
@@ -508,13 +509,13 @@ function AdminDashboard() {
                 <CardDescription>Recent behavior concerns</CardDescription>
               </div>
               <Badge variant="secondary" className="px-3 font-normal">
-                {recentPoints.filter(p => p.points < 0).length} Records
+                {allBehaviorPoints.filter(p => p.points < 0).length} Records
               </Badge>
             </div>
           </CardHeader>
           <CardContent className="px-6">
             <div className="space-y-4 max-h-[350px] overflow-y-auto">
-              {recentPoints
+              {allBehaviorPoints
                 .filter(p => p.points < 0)
                 .slice(0, 8)
                 .map((point, i) => (
@@ -546,7 +547,7 @@ function AdminDashboard() {
                   </div>
                 ))}
               
-              {recentPoints.filter(p => p.points < 0).length === 0 && (
+              {allBehaviorPoints.filter(p => p.points < 0).length === 0 && (
                 <div className="text-center py-8">
                   <Smile className="h-8 w-8 text-muted-foreground mb-2 mx-auto opacity-40" />
                   <p className="text-sm text-muted-foreground">No behavior concerns recorded yet.</p>
