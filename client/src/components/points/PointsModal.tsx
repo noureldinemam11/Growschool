@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -21,7 +21,15 @@ import { insertBehaviorPointSchema, User, BehaviorCategory } from '@shared/schem
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Plus, Minus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useCelebration } from '@/hooks/use-celebration';
 import { apiRequest } from '@/lib/queryClient';
+import { 
+  checkStudentPointMilestone, 
+  checkTeacherAwardMilestone,
+  checkPositiveStreak,
+  calculatePositiveStreak,
+  initMilestoneTracking 
+} from '@/lib/milestone-tracker';
 
 interface PointsModalProps {
   isOpen: boolean;
@@ -31,11 +39,17 @@ interface PointsModalProps {
 export default function PointsModal({ isOpen, onClose }: PointsModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { triggerCelebration } = useCelebration();
   const [selectedStudent, setSelectedStudent] = useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [points, setPoints] = useState<number>(1);
   const [notes, setNotes] = useState<string>("");
   
+  // Fetch current user (teacher)
+  const { data: currentUser } = useQuery<User>({
+    queryKey: ['/api/user'],
+  });
+
   // Fetch students
   const { data: students, isLoading: loadingStudents } = useQuery<User[]>({
     queryKey: ['/api/users/role/student'],
@@ -45,17 +59,42 @@ export default function PointsModal({ isOpen, onClose }: PointsModalProps) {
   const { data: categories, isLoading: loadingCategories } = useQuery<BehaviorCategory[]>({
     queryKey: ['/api/behavior-categories'],
   });
+  
+  // Fetch teacher's awarded points to track milestones
+  const { data: teacherPoints } = useQuery<any[]>({
+    queryKey: ['/api/behavior-points/teacher', currentUser?.id],
+    enabled: !!currentUser,
+  });
+  
+  // Initialize milestone tracking
+  useEffect(() => {
+    if (currentUser) {
+      initMilestoneTracking(currentUser.id.toString(), 'teacher');
+    }
+    
+    if (students) {
+      students.forEach(student => {
+        initMilestoneTracking(student.id.toString(), 'student');
+      });
+    }
+  }, [currentUser, students]);
 
   const assignPointMutation = useMutation({
     mutationFn: async (data: any) => {
       const res = await apiRequest('POST', '/api/behavior-points', data);
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (newPoint, variables) => {
+      // Basic toast notification
       toast({
         title: "Points assigned",
         description: `${points} points have been awarded to the student.`,
       });
+      
+      // Check for milestones after points are assigned
+      setTimeout(() => {
+        checkMilestones(variables.studentId, variables.points);
+      }, 500);
       
       // Reset form
       setSelectedStudent(null);
@@ -68,6 +107,7 @@ export default function PointsModal({ isOpen, onClose }: PointsModalProps) {
       
       // Invalidate queries
       queryClient.invalidateQueries({ queryKey: ['/api/behavior-points/recent'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/behavior-points/teacher'] });
       queryClient.invalidateQueries({ queryKey: ['/api/houses'] });
     },
     onError: (error) => {
@@ -78,6 +118,60 @@ export default function PointsModal({ isOpen, onClose }: PointsModalProps) {
       });
     }
   });
+  
+  // Function to check for various milestones after points are assigned
+  const checkMilestones = async (studentId: number, pointsAwarded: number) => {
+    try {
+      // Get updated student data to calculate total points
+      const studentDataRes = await fetch(`/api/behavior-points/student/${studentId}`);
+      const studentPoints = await studentDataRes.json();
+      
+      // Calculate total student points
+      const totalPoints = studentPoints.reduce((sum: number, point: any) => sum + point.points, 0);
+      
+      // Check for student point milestone
+      const studentMilestone = checkStudentPointMilestone(studentId, totalPoints);
+      if (studentMilestone?.shouldCelebrate) {
+        triggerCelebration(
+          studentMilestone.type,
+          studentMilestone.message
+        );
+        return; // Only show one celebration at a time
+      }
+      
+      // Check for teacher award milestone if we have a current user (teacher)
+      if (currentUser && teacherPoints) {
+        const teacherAwardCount = teacherPoints.length + 1; // Include the just-added point
+        const teacherMilestone = checkTeacherAwardMilestone(currentUser.id, teacherAwardCount);
+        
+        if (teacherMilestone?.shouldCelebrate) {
+          triggerCelebration(
+            teacherMilestone.type,
+            teacherMilestone.message
+          );
+          return;
+        }
+      }
+      
+      // Check for positive streak if the awarded points are positive
+      if (pointsAwarded > 0) {
+        const recentPointsRes = await fetch(`/api/behavior-points/student/${studentId}`);
+        const recentPoints = await recentPointsRes.json();
+        
+        const positiveStreak = calculatePositiveStreak(recentPoints);
+        const streakMilestone = checkPositiveStreak(studentId, recentPoints, positiveStreak);
+        
+        if (streakMilestone?.shouldCelebrate) {
+          triggerCelebration(
+            streakMilestone.type,
+            streakMilestone.message
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Error checking milestones:", error);
+    }
+  };
 
   const handleSubmit = () => {
     if (!selectedStudent || !selectedCategory) {

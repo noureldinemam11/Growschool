@@ -14,6 +14,7 @@ import ProfilePage from "@/pages/profile-page";
 import ChangePasswordPage from "@/pages/change-password-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
+import { CelebrationProvider } from "./hooks/use-celebration";
 import AppHeader from "@/components/ui/AppHeader";
 
 // Redirect component for simple routes
@@ -111,13 +112,15 @@ function App() {
   
   return (
     <AuthProvider>
-      <div className="app-container">
-        {!hideGlobalHeader && <AppHeader />}
-        <div className="app-content">
-          <Router />
+      <CelebrationProvider>
+        <div className="app-container">
+          {!hideGlobalHeader && <AppHeader />}
+          <div className="app-content">
+            <Router />
+          </div>
+          <Toaster />
         </div>
-        <Toaster />
-      </div>
+      </CelebrationProvider>
     </AuthProvider>
   );
 }
