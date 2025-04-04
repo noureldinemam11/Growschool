@@ -376,7 +376,7 @@ function AdminDashboard() {
           <CardDescription>Quick access to administrative functions</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <QuickActionButton
               icon={<UserPlus className="h-6 w-6" />}
               label="Manage Users"
@@ -387,6 +387,12 @@ function AdminDashboard() {
               icon={<Settings className="h-6 w-6" />}
               label="Behavior Categories"
               onClick={() => navigate('/admin')}
+            />
+            <QuickActionButton
+              icon={<PlusCircle className="h-6 w-6" />}
+              label="Award Points"
+              onClick={() => navigate('/points')}
+              highlight={true}
             />
             <QuickActionButton
               icon={<FileText className="h-6 w-6" />}
