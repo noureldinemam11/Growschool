@@ -128,6 +128,12 @@ function PointsResetSection() {
     queryKey: ['/api/users/role/student'],
     staleTime: 60000,
   });
+  
+  // Fetch recent behavior points to check if any exist
+  const { data: behaviorPoints = [] } = useQuery<any[]>({
+    queryKey: ['/api/behavior-points/recent'],
+    staleTime: 30000,
+  });
 
   // Mutation for resetting all points
   const resetAllPointsMutation = useMutation({
@@ -241,82 +247,85 @@ function PointsResetSection() {
         </Dialog>
       </Card>
       
-      <Card className="p-4">
-        <h4 className="text-md font-medium mb-2">Reset Student Points</h4>
-        <p className="text-sm text-neutral-dark mb-4">
-          Select a student to reset only their behavior points. This action cannot be undone.
-        </p>
-        
-        <div className="space-y-4">
-          {students && students.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {students.slice(0, 6).map((student: Student) => (
-                <Button 
-                  key={student.id}
-                  variant="outline"
-                  className="justify-start"
-                  onClick={() => {
-                    setSelectedStudent({
-                      id: student.id,
-                      name: `${student.firstName} ${student.lastName}`
-                    });
-                    setIsStudentDialogOpen(true);
-                  }}
-                >
-                  <Trash2 className="h-3.5 w-3.5 mr-2 text-destructive" />
-                  {student.firstName} {student.lastName}
-                </Button>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-neutral-dark">No students found.</p>
-          )}
+      {/* Only show the Reset Student Points section if there are behavior points */}
+      {behaviorPoints && behaviorPoints.length > 0 && (
+        <Card className="p-4">
+          <h4 className="text-md font-medium mb-2">Reset Student Points</h4>
+          <p className="text-sm text-neutral-dark mb-4">
+            Select a student to reset only their behavior points. This action cannot be undone.
+          </p>
           
-          {students && students.length > 6 && (
-            <p className="text-xs text-neutral-dark">
-              {students.length - 6} more students available. Use student roster for more.
-            </p>
-          )}
-        </div>
-        
-        <Dialog open={isStudentDialogOpen} onOpenChange={setIsStudentDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Reset Points for Student</DialogTitle>
-              <DialogDescription>
-                {selectedStudent ? (
-                  <>
-                    This action will delete ALL behavior points for <span className="font-semibold">{selectedStudent.name}</span>.
-                    <div className="mt-2 font-semibold">This action cannot be undone.</div>
-                  </>
-                ) : (
-                  "Please select a student first."
-                )}
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter className="mt-4">
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setIsStudentDialogOpen(false);
-                  setSelectedStudent(null);
-                }}
-              >
-                Cancel
-              </Button>
-              {selectedStudent && (
-                <Button 
-                  variant="destructive"
-                  onClick={() => resetStudentPointsMutation.mutate(selectedStudent.id)}
-                  disabled={resetStudentPointsMutation.isPending}
-                >
-                  {resetStudentPointsMutation.isPending ? "Resetting..." : "Reset Points"}
-                </Button>
+          <div className="space-y-4">
+            {students && students.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {students.slice(0, 6).map((student: Student) => (
+                  <Button 
+                    key={student.id}
+                    variant="outline"
+                    className="justify-start"
+                    onClick={() => {
+                      setSelectedStudent({
+                        id: student.id,
+                        name: `${student.firstName} ${student.lastName}`
+                      });
+                      setIsStudentDialogOpen(true);
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5 mr-2 text-destructive" />
+                    {student.firstName} {student.lastName}
+                  </Button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-neutral-dark">No students found.</p>
+            )}
+            
+            {students && students.length > 6 && (
+              <p className="text-xs text-neutral-dark">
+                {students.length - 6} more students available. Use student roster for more.
+              </p>
+            )}
+          </div>
+        </Card>
+      )}
+      
+      <Dialog open={isStudentDialogOpen} onOpenChange={setIsStudentDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset Points for Student</DialogTitle>
+            <DialogDescription>
+              {selectedStudent ? (
+                <>
+                  This action will delete ALL behavior points for <span className="font-semibold">{selectedStudent.name}</span>.
+                  <div className="mt-2 font-semibold">This action cannot be undone.</div>
+                </>
+              ) : (
+                "Please select a student first."
               )}
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </Card>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsStudentDialogOpen(false);
+                setSelectedStudent(null);
+              }}
+            >
+              Cancel
+            </Button>
+            {selectedStudent && (
+              <Button 
+                variant="destructive"
+                onClick={() => resetStudentPointsMutation.mutate(selectedStudent.id)}
+                disabled={resetStudentPointsMutation.isPending}
+              >
+                {resetStudentPointsMutation.isPending ? "Resetting..." : "Reset Points"}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
