@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useQuery } from '@tanstack/react-query';
 import Navbar from '@/components/layout/Navbar';
@@ -14,6 +14,15 @@ import { Loader2, Gift, UserCircle, FileText, Award } from 'lucide-react';
 export default function StudentPage() {
   const { user } = useAuth();
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
+  
+  // Parse the student ID from the URL query parameter
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const studentId = params.get('id');
+    if (studentId) {
+      setSelectedStudentId(Number(studentId));
+    }
+  }, []);
 
   const { data: students, isLoading: isLoadingStudents } = useQuery<Partial<UserType>[]>({
     queryKey: ['/api/users/role/student'],

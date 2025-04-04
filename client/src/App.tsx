@@ -37,6 +37,11 @@ function Router() {
         allowedRoles={["admin", "teacher"]}
       />
       <ProtectedRoute 
+        path="/student" 
+        component={StudentPage} 
+        allowedRoles={["admin", "teacher"]}
+      />
+      <ProtectedRoute 
         path="/houses" 
         component={HousePage} 
       />

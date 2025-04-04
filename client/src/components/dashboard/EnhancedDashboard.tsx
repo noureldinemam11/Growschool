@@ -1042,7 +1042,7 @@ function TeacherDashboard() {
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          onClick={() => navigate(`/students?id=${student.id}`)}
+                          onClick={() => navigate(`/student?id=${student.id}`)}
                         >
                           View
                         </Button>
