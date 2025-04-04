@@ -24,8 +24,21 @@ const categorySchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
   isPositive: z.boolean(),
-  pointValue: z.coerce.number().min(1).max(10)
-});
+  pointValue: z.coerce.number()
+})
+.refine(
+  (data) => {
+    if (data.isPositive) {
+      return data.pointValue >= 1 && data.pointValue <= 10;
+    } else {
+      return data.pointValue <= -1 && data.pointValue >= -10;
+    }
+  },
+  {
+    message: "Point value must be 1-10 for positive categories or -10 to -1 for negative categories",
+    path: ["pointValue"] // This targets the error to the pointValue field
+  }
+);
 
 type CategoryFormValues = z.infer<typeof categorySchema>;
 
@@ -52,6 +65,27 @@ export default function BehaviorCategoryManagement() {
       pointValue: 1
     }
   });
+  
+  // Update the point value when the isPositive value changes
+  React.useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === 'isPositive') {
+        const isPositive = value.isPositive;
+        const currentValue = form.getValues().pointValue;
+        
+        // If switching from positive to negative and current value is positive
+        if (!isPositive && currentValue > 0) {
+          form.setValue('pointValue', -1); // Default to -1 for negative
+        } 
+        // If switching from negative to positive and current value is negative
+        else if (isPositive && currentValue < 0) {
+          form.setValue('pointValue', 1); // Default to 1 for positive
+        }
+      }
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [form]);
 
   // Reset form when switching tabs or when edit is cancelled
   const resetForm = () => {
@@ -335,14 +369,16 @@ export default function BehaviorCategoryManagement() {
                         <FormControl>
                           <Input 
                             type="number" 
-                            min="1" 
-                            max="10" 
+                            min={form.getValues().isPositive ? "1" : "-10"}
+                            max={form.getValues().isPositive ? "10" : "-1"} 
                             placeholder="Enter point value"
                             {...field} 
                           />
                         </FormControl>
                         <FormDescription className="text-xs">
-                          Value from 1-10. Points will be awarded or deducted based on category type.
+                          {form.getValues().isPositive 
+                            ? "Value from 1-10 for positive categories."
+                            : "Value from -10 to -1 for negative categories."}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
