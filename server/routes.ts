@@ -314,22 +314,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid request: points must be a non-empty array" });
       }
       
+      console.log(`Processing batch points for ${points.length} students`);
+      
       // Group points by houseId to update house points more efficiently
       const housePointsMap = new Map<number, number>();
       const createdPoints = [];
       
-      // First, fetch all student data to get house IDs
+      // First, fetch all student data including names and house IDs
       const studentIdsSet = new Set(points.map(p => p.studentId));
       const studentIds = Array.from(studentIdsSet);
+      
+      // Fetch all students at once
+      console.log(`Fetching data for ${studentIds.length} students`);
       const students = await Promise.all(
         studentIds.map(async (id) => await storage.getUser(id))
       );
       
-      // Create a map of studentId -> houseId for quick lookup
+      // Create a map of studentId -> student object for quick lookup
+      const studentMap = new Map<number, any>();
       const studentHouseMap = new Map<number, number>();
+      
       students.forEach(student => {
-        if (student && student.houseId) {
-          studentHouseMap.set(student.id, student.houseId);
+        if (student) {
+          studentMap.set(student.id, student);
+          if (student.houseId) {
+            studentHouseMap.set(student.id, student.houseId);
+          }
         }
       });
       
@@ -343,6 +353,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const pointData of points) {
           try {
             const validatedData = insertBehaviorPointSchema.parse(pointData);
+            
+            // Log the student ID being processed
+            console.log(`Processing points for student ID: ${validatedData.studentId}`);
             
             // Insert the behavior point
             const result = await client.query(
@@ -412,8 +425,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Enrich the created points with student and category info
+      // Use the studentMap to avoid redundant database queries
       const enrichedPoints = await Promise.all(createdPoints.map(async (point) => {
-        const student = await storage.getUser(point.student_id);
+        // Get student from our pre-fetched map
+        const student = studentMap.get(point.student_id);
         const category = await storage.getBehaviorCategory(point.category_id);
         const teacher = await storage.getUser(point.teacher_id);
         
@@ -436,6 +451,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } : null
         };
       }));
+      
+      // Log successful assignment
+      console.log(`Successfully assigned points to ${enrichedPoints.length} students`);
       
       res.status(201).json({ 
         success: true, 
