@@ -301,193 +301,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // New endpoint for batch behavior points submission
-  app.post("/api/behavior-points/batch", async (req, res) => {
-    console.log("============ BATCH POINTS REQUEST ============");
+  // SUPER SIMPLIFIED endpoint for batch behavior points submission
+  app.post("/api/behavior-points/batch", async (req: Request, res: Response) => {
+    console.log("============ SUPER SIMPLIFIED BATCH POINTS REQUEST ============");
     console.log("Request body:", JSON.stringify(req.body, null, 2));
     console.log("Authenticated:", req.isAuthenticated());
     
-    // Detailed input validation
-    if (!req.body || !req.body.points) {
-      console.error("Invalid request body structure - missing 'points' array");
-      return res.status(400).json({ error: "Invalid request: points array is required" });
+    // Basic input validation
+    if (!req.body || !req.body.points || !Array.isArray(req.body.points) || req.body.points.length === 0) {
+      console.error("Invalid request structure:", req.body);
+      return res.status(400).json({ error: "Invalid request: proper points array is required" });
     }
     
-    if (!Array.isArray(req.body.points)) {
-      console.error("Invalid points data - not an array:", typeof req.body.points);
-      return res.status(400).json({ error: "Invalid request: points must be an array" });
-    }
-    
-    if (req.body.points.length === 0) {
-      console.error("Empty points array");
-      return res.status(400).json({ error: "Invalid request: points array is empty" });
-    }
-    
-    // Log user auth status
-    if (req.isAuthenticated()) {
-      console.log("User authenticated:", req.user.id, "Role:", req.user.role);
-    } else {
-      console.error("User is not authenticated");
-    }
-    
+    // Auth check
     if (!req.isAuthenticated() || !["admin", "teacher"].includes(req.user.role)) {
-      console.log("Unauthorized attempt to batch assign points");
+      console.error("Unauthorized access attempt");
       return res.status(403).json({ error: "Unauthorized" });
     }
-
+    
     try {
       const { points } = req.body;
-      
-      if (!Array.isArray(points) || points.length === 0) {
-        return res.status(400).json({ error: "Invalid request: points must be a non-empty array" });
-      }
-      
-      console.log(`Processing batch points for ${points.length} students`);
-      
-      // Group points by houseId to update house points more efficiently
-      const housePointsMap = new Map<number, number>();
       const createdPoints = [];
       
-      // First, fetch all student data including names and house IDs
-      const studentIdsSet = new Set(points.map(p => p.studentId));
-      const studentIds = Array.from(studentIdsSet);
+      console.log(`Processing ${points.length} behavior points in batch.`);
       
-      // Fetch all students at once
-      console.log(`Fetching data for ${studentIds.length} students`);
-      const students = await Promise.all(
-        studentIds.map(async (id) => await storage.getUser(id))
-      );
-      
-      // Create a map of studentId -> student object for quick lookup
-      const studentMap = new Map<number, any>();
-      const studentHouseMap = new Map<number, number>();
-      
-      students.forEach(student => {
-        if (student) {
-          studentMap.set(student.id, student);
-          if (student.houseId) {
-            studentHouseMap.set(student.id, student.houseId);
-          }
+      // Simply loop through and create each point directly using storage interface
+      for (const pointData of points) {
+        try {
+          console.log("Processing point:", pointData);
+          const point = await storage.createBehaviorPoint(pointData);
+          createdPoints.push(point);
+        } catch (error) {
+          console.error("Error creating individual point:", error);
+          // Continue processing remaining points
         }
-      });
-      
-      // Begin a transaction - manual handling since we want to process everything together
-      // to ensure house points reflect ALL student points accurately
-      const client = await pool.connect();
-      try {
-        await client.query('BEGIN');
-        
-        // Create each behavior point in sequence
-        for (const pointData of points) {
-          try {
-            const validatedData = insertBehaviorPointSchema.parse(pointData);
-            
-            // Log the student ID being processed
-            console.log(`Processing points for student ID: ${validatedData.studentId}`);
-            
-            // Insert the behavior point
-            const result = await client.query(
-              'INSERT INTO behavior_points (student_id, teacher_id, category_id, points, notes, timestamp) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-              [
-                validatedData.studentId,
-                validatedData.teacherId,
-                validatedData.categoryId,
-                validatedData.points,
-                validatedData.notes || null,
-                new Date()
-              ]
-            );
-            
-            const behaviorPoint = result.rows[0];
-            createdPoints.push(behaviorPoint);
-            
-            // Accumulate points for each house
-            const houseId = studentHouseMap.get(validatedData.studentId);
-            if (houseId) {
-              housePointsMap.set(
-                houseId, 
-                (housePointsMap.get(houseId) || 0) + validatedData.points
-              );
-            }
-          } catch (error) {
-            // Log error but continue processing remaining points
-            console.error("Error creating behavior point:", error);
-          }
-        }
-        
-        // Update house points all at once for each house
-        for (const [houseId, pointsToAdd] of Array.from(housePointsMap.entries())) {
-          // Get current house points
-          const houseResult = await client.query(
-            'SELECT points FROM houses WHERE id = $1',
-            [houseId]
-          );
-          
-          if (houseResult.rows.length > 0) {
-            const currentPoints = houseResult.rows[0].points || 0;
-            const newPoints = currentPoints + pointsToAdd;
-            
-            // Update house points
-            await client.query(
-              'UPDATE houses SET points = $1 WHERE id = $2',
-              [newPoints, houseId]
-            );
-            
-            console.log(`Batch update: House ${houseId} points updated from ${currentPoints} to ${newPoints}`);
-          }
-        }
-        
-        // Commit transaction
-        await client.query('COMMIT');
-      } catch (error) {
-        // Rollback in case of error
-        await client.query('ROLLBACK');
-        throw error;
-      } finally {
-        client.release();
       }
       
-      // If no points were created, return an error
       if (createdPoints.length === 0) {
-        return res.status(400).json({ error: "Failed to create any behavior points" });
+        return res.status(400).json({ error: "No behavior points were created" });
       }
       
-      // Enrich the created points with student and category info
-      // Use the studentMap to avoid redundant database queries
-      const enrichedPoints = await Promise.all(createdPoints.map(async (point) => {
-        // Get student from our pre-fetched map
-        const student = studentMap.get(point.student_id);
-        const category = await storage.getBehaviorCategory(point.category_id);
-        const teacher = await storage.getUser(point.teacher_id);
-        
-        return {
-          ...point,
-          // Convert snake_case to camelCase for consistency
-          studentId: point.student_id,
-          teacherId: point.teacher_id,
-          categoryId: point.category_id,
-          student: student ? {
-            id: student.id,
-            firstName: student.firstName,
-            lastName: student.lastName
-          } : null,
-          category: category,
-          teacher: teacher ? {
-            id: teacher.id,
-            firstName: teacher.firstName,
-            lastName: teacher.lastName
-          } : null
-        };
-      }));
+      console.log(`Successfully created ${createdPoints.length} behavior points`);
       
-      // Log successful assignment
-      console.log(`Successfully assigned points to ${enrichedPoints.length} students`);
-      
-      res.status(201).json({ 
-        success: true, 
+      // Return success
+      res.status(201).json({
+        success: true,
         count: createdPoints.length,
-        points: enrichedPoints,
-        housesUpdated: Array.from(housePointsMap.keys())
+        points: createdPoints
       });
     } catch (error) {
       console.error("Error in batch behavior points submission:", error);
