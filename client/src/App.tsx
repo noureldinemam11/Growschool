@@ -10,6 +10,8 @@ import RewardsPage from "@/pages/rewards-page";
 import ReportsPage from "@/pages/reports-page";
 import AdminPage from "@/pages/admin-page";
 import PointsPage from "@/pages/points-page";
+import AwardPointsPage from "@/pages/award-points-page";
+import DeductPointsPage from "@/pages/deduct-points-page";
 import ProfilePage from "@/pages/profile-page";
 import ChangePasswordPage from "@/pages/change-password-page";
 import { ProtectedRoute } from "./lib/protected-route";
@@ -86,6 +88,16 @@ function Router() {
       <ProtectedRoute 
         path="/points/categories" 
         component={PointsPage}
+        allowedRoles={["admin", "teacher"]}
+      />
+      <ProtectedRoute 
+        path="/points/award" 
+        component={AwardPointsPage}
+        allowedRoles={["admin", "teacher"]}
+      />
+      <ProtectedRoute 
+        path="/points/deduct" 
+        component={DeductPointsPage}
         allowedRoles={["admin", "teacher"]}
       />
       <ProtectedRoute 
