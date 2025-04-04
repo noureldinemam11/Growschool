@@ -338,6 +338,37 @@ function AdminDashboard() {
       .slice(0, 5);
   }, [allBehaviorPoints, students]);
   
+  // Get students who need attention (most negative points recently)
+  const studentsNeedingAttention = useMemo(() => {
+    const lastWeek = new Date();
+    lastWeek.setDate(lastWeek.getDate() - 7);
+    
+    const recentNegativePoints = allBehaviorPoints
+      .filter(p => p.points < 0 && new Date(p.timestamp) >= lastWeek)
+      .reduce((acc, point) => {
+        const studentId = point.studentId;
+        if (!acc[studentId]) {
+          acc[studentId] = { count: 0, points: 0 };
+        }
+        acc[studentId].count += 1;
+        acc[studentId].points += point.points;
+        return acc;
+      }, {} as Record<number, { count: number, points: number }>);
+    
+    return Object.entries(recentNegativePoints)
+      .map(([studentId, data]) => {
+        const student = students.find(s => s.id === parseInt(studentId));
+        return {
+          id: parseInt(studentId),
+          name: student ? `${student.firstName} ${student.lastName}` : `Student ${studentId}`,
+          count: data.count,
+          points: data.points
+        };
+      })
+      .sort((a, b) => a.points - b.points) // Sort by most negative points
+      .slice(0, 4);
+  }, [allBehaviorPoints, students]);
+  
   return (
     <div className="space-y-8">
       {/* Executive Overview */}
@@ -428,6 +459,93 @@ function AdminDashboard() {
           </div>
         </CardContent>
       </Card>
+      
+      {/* Students Needing Attention */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* Left column - Students that need attention */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle>Students Needing Attention</CardTitle>
+            <CardDescription>Based on recent behavior concerns</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {studentsNeedingAttention.length > 0 ? (
+              <div className="space-y-4">
+                {studentsNeedingAttention.map((student, i) => (
+                  <div key={i} className="flex items-center space-x-3 pb-3 border-b last:border-0 last:pb-0">
+                    <div className="bg-amber-100 text-amber-700 w-8 h-8 rounded-full flex items-center justify-center">
+                      <AlertTriangle className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium">{student.name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {student.count} incidents, {student.points} points
+                      </div>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => navigate(`/student?id=${student.id}`)}
+                    >
+                      View
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <Smile className="h-10 w-10 text-emerald-500 mb-2" />
+                <h3 className="text-lg font-medium">No concerns detected</h3>
+                <p className="text-sm text-muted-foreground mt-1 max-w-xs">
+                  All students appear to be doing well! No significant behavior concerns in the past week.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        
+        {/* Right column - Top performing students */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle>Top Performing Students</CardTitle>
+            <CardDescription>Highest point earners</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {topStudents.length > 0 ? (
+              <div className="space-y-4">
+                {topStudents.map((student, i) => (
+                  <div key={i} className="flex items-center space-x-3 pb-3 border-b last:border-0 last:pb-0">
+                    <div className="bg-emerald-100 text-emerald-700 w-8 h-8 rounded-full flex items-center justify-center">
+                      <Award className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium">{student.name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {student.points} total points earned
+                      </div>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => navigate(`/student?id=${student.id}`)}
+                    >
+                      View
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <Award className="h-10 w-10 text-muted-foreground mb-2 opacity-40" />
+                <h3 className="text-lg font-medium">No data available</h3>
+                <p className="text-sm text-muted-foreground mt-1 max-w-xs">
+                  Student performance data will appear here once points are assigned.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
       
       {/* Recent Activities - Split by Positive and Negative */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
