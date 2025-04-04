@@ -87,7 +87,7 @@ export default function DashboardItems() {
   });
   
   // Calculate stats
-  const totalPointsGiven = teacherPoints?.length || 0;
+  const totalPointsGiven = teacherPoints?.reduce((sum, point) => sum + Math.abs(point.points), 0) || 0;
   const totalHouses = houses?.length || 0;
   
   return (
