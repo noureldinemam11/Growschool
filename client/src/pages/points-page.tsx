@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { ChevronDown, Grid, Home, ChevronLeft } from 'lucide-react';
 import PointsModal from '@/components/points/PointsModal';
 import BehaviorCategoriesView from '@/components/points/BehaviorCategoriesView';
+import BatchPointsAssignment from '@/components/points/BatchPointsAssignment';
 import { useLocation } from 'wouter';
 import AppHeader from '@/components/ui/AppHeader';
 
@@ -19,6 +20,7 @@ export default function PointsPage() {
   const [filterHouse, setFilterHouse] = useState<string>('all');
   const [selectedStudentForPoints, setSelectedStudentForPoints] = useState<number | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<User | null>(null);
+  const [showBatchAssignment, setShowBatchAssignment] = useState<boolean>(false);
   
   // Determine view from URL
   const view = location.includes('/categories') ? 'categories' : 'students';
@@ -77,10 +79,16 @@ export default function PointsPage() {
 
   const handleContinue = () => {
     if (selectedStudents.length > 0) {
-      const studentId = selectedStudents[0];
-      const student = students?.find(s => s.id === studentId) || null;
-      setSelectedStudent(student);
-      setLocation('/points/categories');
+      if (selectedStudents.length === 1) {
+        // Single student - use the regular categories flow
+        const studentId = selectedStudents[0];
+        const student = students?.find(s => s.id === studentId) || null;
+        setSelectedStudent(student);
+        setLocation('/points/categories');
+      } else {
+        // Multiple students - show batch assignment UI
+        setShowBatchAssignment(true);
+      }
     }
   };
 
@@ -128,6 +136,42 @@ export default function PointsPage() {
     }
   }, [selectedStudent]);
 
+  // Close batch assignment view and go back to student selection
+  const handleCloseBatchAssignment = () => {
+    setShowBatchAssignment(false);
+  };
+
+  // Handle complete batch assignment and reset selection
+  const handleCompleteBatchAssignment = () => {
+    setShowBatchAssignment(false);
+    setSelectedStudents([]);
+  };
+
+  // Show batch points assignment view
+  if (showBatchAssignment) {
+    return (
+      <div className="flex flex-col h-screen">
+        <AppHeader 
+          showBackButton={true}
+          showHomeButton={true}
+          customBackAction={handleCloseBatchAssignment}
+          title={`Award Points to Multiple Students`}
+        />
+        
+        <main className="flex-1 bg-slate-50 p-4 overflow-auto">
+          <div className="container mx-auto py-4">
+            <BatchPointsAssignment 
+              studentIds={selectedStudents}
+              onBack={handleCloseBatchAssignment}
+              onComplete={handleCompleteBatchAssignment}
+            />
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Show single student categories view
   if (location.includes('/categories') && selectedStudent) {
     return (
       <div className="flex flex-col h-screen">
@@ -217,7 +261,7 @@ export default function PointsPage() {
       {/* Footer Toolbar */}
       <footer className="bg-white border-t py-3 px-4 sticky bottom-0">
         <div className="container mx-auto flex justify-center">
-          <div className="bg-white rounded-full shadow-md flex divide-x">
+          <div className="bg-white rounded-full shadow-md flex items-center divide-x">
             <Button 
               variant="ghost" 
               className="rounded-l-full" 
@@ -225,8 +269,16 @@ export default function PointsPage() {
             >
               {selectedStudents.length > 0 ? "Deselect All" : "Select All"}
             </Button>
+            
+            {selectedStudents.length > 0 && (
+              <span className="px-3 text-sm font-medium text-primary">
+                {selectedStudents.length} student{selectedStudents.length !== 1 ? 's' : ''} selected
+                {selectedStudents.length > 1 && " (batch mode)"}
+              </span>
+            )}
+            
             <Button 
-              variant="ghost" 
+              variant={selectedStudents.length > 0 ? "default" : "ghost"}
               className="rounded-r-full"
               onClick={handleContinue}
               disabled={selectedStudents.length === 0}
