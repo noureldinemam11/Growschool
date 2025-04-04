@@ -428,6 +428,141 @@ function AdminDashboard() {
         </CardContent>
       </Card>
       
+      {/* Recent Activities - Split by Positive and Negative */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        {/* Positive Behavior */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Star className="h-5 w-5 text-emerald-500" />
+                  <span>Positive Behavior</span>
+                </CardTitle>
+                <CardDescription>Recent positive behavior records</CardDescription>
+              </div>
+              <Badge variant="secondary" className="px-3 font-normal">
+                {recentPoints.filter(p => p.points > 0).length} Records
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="px-6">
+            <div className="space-y-4 max-h-[350px] overflow-y-auto">
+              {recentPoints
+                .filter(p => p.points > 0)
+                .slice(0, 8)
+                .map((point, i) => (
+                  <div key={i} className="flex items-center space-x-3 pb-3 border-b last:border-0 last:pb-0">
+                    <div className="bg-emerald-100 text-emerald-700 p-2 rounded-full">
+                      <Star className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">
+                        {point.student 
+                          ? `${point.student.firstName} ${point.student.lastName}` 
+                          : `Student ${point.studentId}`}
+                      </div>
+                      <div className="text-xs text-muted-foreground flex justify-between">
+                        <span className="truncate max-w-[150px]">
+                          {point.category?.name || point.notes?.split(' - ')[0] || 'Behavior record'}:
+                          <span className="text-emerald-600 ml-1">+{point.points}</span>
+                        </span>
+                        <span className="text-xs text-muted-foreground ml-2">
+                          {formatShortDate(point.timestamp)}
+                        </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        By: {point.teacher 
+                          ? `${point.teacher.firstName} ${point.teacher.lastName}` 
+                          : `Teacher ${point.teacherId}`}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              
+              {recentPoints.filter(p => p.points > 0).length === 0 && (
+                <div className="text-center py-8">
+                  <Star className="h-8 w-8 text-muted-foreground mb-2 mx-auto opacity-40" />
+                  <p className="text-sm text-muted-foreground">No positive behavior records found.</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+          <CardFooter className="border-t px-6 py-3">
+            <Button variant="ghost" size="sm" className="w-full" onClick={() => navigate('/reports')}>
+              <Activity className="h-4 w-4 mr-2" />
+              View All Positive Records
+            </Button>
+          </CardFooter>
+        </Card>
+        
+        {/* Negative Behavior */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-rose-500" />
+                  <span>Behavior Concerns</span>
+                </CardTitle>
+                <CardDescription>Recent behavior concerns</CardDescription>
+              </div>
+              <Badge variant="secondary" className="px-3 font-normal">
+                {recentPoints.filter(p => p.points < 0).length} Records
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="px-6">
+            <div className="space-y-4 max-h-[350px] overflow-y-auto">
+              {recentPoints
+                .filter(p => p.points < 0)
+                .slice(0, 8)
+                .map((point, i) => (
+                  <div key={i} className="flex items-center space-x-3 pb-3 border-b last:border-0 last:pb-0">
+                    <div className="bg-rose-100 text-rose-700 p-2 rounded-full">
+                      <AlertCircle className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">
+                        {point.student 
+                          ? `${point.student.firstName} ${point.student.lastName}` 
+                          : `Student ${point.studentId}`}
+                      </div>
+                      <div className="text-xs text-muted-foreground flex justify-between">
+                        <span className="truncate max-w-[150px]">
+                          {point.category?.name || point.notes?.split(' - ')[0] || 'Behavior record'}:
+                          <span className="text-rose-600 ml-1">{point.points}</span>
+                        </span>
+                        <span className="text-xs text-muted-foreground ml-2">
+                          {formatShortDate(point.timestamp)}
+                        </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        By: {point.teacher 
+                          ? `${point.teacher.firstName} ${point.teacher.lastName}` 
+                          : `Teacher ${point.teacherId}`}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              
+              {recentPoints.filter(p => p.points < 0).length === 0 && (
+                <div className="text-center py-8">
+                  <Smile className="h-8 w-8 text-muted-foreground mb-2 mx-auto opacity-40" />
+                  <p className="text-sm text-muted-foreground">No behavior concerns recorded yet.</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+          <CardFooter className="border-t px-6 py-3">
+            <Button variant="ghost" size="sm" className="w-full" onClick={() => navigate('/reports')}>
+              <Activity className="h-4 w-4 mr-2" />
+              View All Concerns
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+      
       {/* Main dashboard content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column - House & School Stats */}
