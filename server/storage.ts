@@ -44,6 +44,8 @@ export interface IStorage {
   getBehaviorPointsByStudentId(studentId: number): Promise<BehaviorPoint[]>;
   getBehaviorPointsByTeacherId(teacherId: number): Promise<BehaviorPoint[]>;
   getRecentBehaviorPoints(limit: number): Promise<BehaviorPoint[]>;
+  deleteAllBehaviorPoints(): Promise<void>;
+  deleteBehaviorPointsByStudentId(studentId: number): Promise<void>;
   
   // Rewards
   getReward(id: number): Promise<Reward | undefined>;
@@ -350,6 +352,46 @@ export class MemStorage implements IStorage {
     return Array.from(this.behaviorPoints.values())
       .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
       .slice(0, limit);
+  }
+  
+  async deleteAllBehaviorPoints(): Promise<void> {
+    // Clear behavior points map
+    this.behaviorPoints.clear();
+    
+    // Reset all house points to 0
+    const houses = Array.from(this.houses.values());
+    for (const house of houses) {
+      house.points = 0;
+      this.houses.set(house.id, house);
+    }
+  }
+  
+  async deleteBehaviorPointsByStudentId(studentId: number): Promise<void> {
+    // Get the student
+    const student = await this.getUser(studentId);
+    if (!student || !student.houseId) return;
+    
+    // Calculate total points from this student
+    const studentPoints = Array.from(this.behaviorPoints.values())
+      .filter(point => point.studentId === studentId);
+    
+    // Calculate the sum to subtract from house
+    const pointsToSubtract = studentPoints.reduce((sum, point) => sum + point.points, 0);
+    
+    // Update house points
+    const house = await this.getHouse(student.houseId);
+    if (house) {
+      house.points = Math.max(0, house.points - pointsToSubtract);
+      this.houses.set(house.id, house);
+    }
+    
+    // Delete all behavior points for this student
+    const pointEntries = Array.from(this.behaviorPoints.entries());
+    for (const [id, point] of pointEntries) {
+      if (point.studentId === studentId) {
+        this.behaviorPoints.delete(id);
+      }
+    }
   }
 
   // Rewards methods
@@ -839,6 +881,92 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(behaviorPoints.timestamp))
       .limit(limit);
     return result as BehaviorPoint[];
+  }
+  
+  async deleteAllBehaviorPoints(): Promise<void> {
+    try {
+      // Use a transaction to ensure data consistency
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        
+        // Delete all behavior points
+        await client.query('DELETE FROM behavior_points');
+        
+        // Reset all house points to 0
+        await client.query('UPDATE houses SET points = 0');
+        
+        await client.query('COMMIT');
+        console.log('Successfully deleted all behavior points and reset house points');
+      } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error deleting all behavior points:', error);
+        throw error;
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error('Error in deleteAllBehaviorPoints:', error);
+      throw error;
+    }
+  }
+  
+  async deleteBehaviorPointsByStudentId(studentId: number): Promise<void> {
+    try {
+      // Use a transaction to ensure data consistency
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        
+        // Get the student
+        const studentResult = await client.query(
+          'SELECT house_id FROM users WHERE id = $1 AND role = $2',
+          [studentId, 'student']
+        );
+        
+        if (studentResult.rows.length === 0 || !studentResult.rows[0].house_id) {
+          // No student found or no house assigned, so just end transaction
+          await client.query('COMMIT');
+          return;
+        }
+        
+        const houseId = studentResult.rows[0].house_id;
+        
+        // Calculate total points from this student
+        const pointsResult = await client.query(
+          'SELECT SUM(points) as total FROM behavior_points WHERE student_id = $1',
+          [studentId]
+        );
+        
+        const pointsToSubtract = Number(pointsResult.rows[0]?.total || 0);
+        
+        // Update house points
+        if (pointsToSubtract !== 0) {
+          await client.query(
+            'UPDATE houses SET points = GREATEST(0, points - $1) WHERE id = $2',
+            [pointsToSubtract, houseId]
+          );
+        }
+        
+        // Delete behavior points for this student
+        await client.query(
+          'DELETE FROM behavior_points WHERE student_id = $1',
+          [studentId]
+        );
+        
+        await client.query('COMMIT');
+        console.log(`Successfully deleted behavior points for student ${studentId}`);
+      } catch (error) {
+        await client.query('ROLLBACK');
+        console.error(`Error deleting behavior points for student ${studentId}:`, error);
+        throw error;
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error(`Error in deleteBehaviorPointsByStudentId for student ${studentId}:`, error);
+      throw error;
+    }
   }
   
   // Rewards

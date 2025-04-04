@@ -435,6 +435,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Delete all behavior points (admin only)
+  app.delete("/api/behavior-points/all", async (req, res) => {
+    try {
+      // Check if user is authenticated and is an admin
+      if (!req.isAuthenticated() || req.user.role !== "admin") {
+        return res.status(403).json({ error: "Only administrators can reset all points" });
+      }
+      
+      await storage.deleteAllBehaviorPoints();
+      res.status(200).json({ message: "All behavior points have been deleted and house points reset" });
+    } catch (error: any) {
+      console.error("Error deleting all behavior points:", error.message || 'Unknown error', error.stack);
+      res.status(500).json({ error: "Failed to delete all behavior points" });
+    }
+  });
+  
+  // Delete behavior points for a specific student (admin only)
+  app.delete("/api/behavior-points/student/:studentId", async (req, res) => {
+    try {
+      // Check if user is authenticated and is an admin
+      if (!req.isAuthenticated() || req.user.role !== "admin") {
+        return res.status(403).json({ error: "Only administrators can delete student points" });
+      }
+      
+      const studentId = Number(req.params.studentId);
+      if (isNaN(studentId)) {
+        return res.status(400).json({ error: "Invalid student ID" });
+      }
+      
+      // Check if student exists
+      const student = await storage.getUser(studentId);
+      if (!student) {
+        return res.status(404).json({ error: "Student not found" });
+      }
+      
+      await storage.deleteBehaviorPointsByStudentId(studentId);
+      res.status(200).json({ 
+        message: `All behavior points for student ${student.firstName} ${student.lastName} have been deleted` 
+      });
+    } catch (error: any) {
+      console.error(`Error deleting behavior points for student:`, error.message || 'Unknown error', error.stack);
+      res.status(500).json({ error: "Failed to delete student behavior points" });
+    }
+  });
+  
   // Top Students per House
   app.get("/api/houses-top-students", async (req, res) => {
     try {

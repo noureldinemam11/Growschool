@@ -12,7 +12,233 @@ import RosterManagement from '@/components/admin/RosterManagement';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog';
+import { useQuery, useMutation } from '@tanstack/react-query';
+
+// PointsResetSection component for handling points reset functionality
+function PointsResetSection() {
+  const { toast } = useToast();
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+  const [isStudentDialogOpen, setIsStudentDialogOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<{ id: number, name: string } | null>(null);
+  
+  // Define a Student type interface
+  interface Student {
+    id: number;
+    firstName: string;
+    lastName: string;
+    [key: string]: any; // Allow for other properties we might not explicitly use
+  }
+
+  // Fetch all students for the student reset dropdown
+  const { data: students = [] } = useQuery<Student[]>({
+    queryKey: ['/api/users/role/student'],
+    staleTime: 60000,
+  });
+
+  // Mutation for resetting all points
+  const resetAllPointsMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('DELETE', '/api/behavior-points/all');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to reset all points');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalidate relevant queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/behavior-points/recent'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/houses'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/houses-top-students'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/behavior-points/teacher'] });
+      
+      toast({
+        title: "Points Reset",
+        description: "All behavior points have been reset successfully.",
+      });
+      
+      setIsResetDialogOpen(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Mutation for resetting points for a specific student
+  const resetStudentPointsMutation = useMutation({
+    mutationFn: async (studentId: number) => {
+      const response = await apiRequest('DELETE', `/api/behavior-points/student/${studentId}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to reset student points');
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      // Invalidate relevant queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/behavior-points/recent'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/houses'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/houses-top-students'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/behavior-points/teacher'] });
+      
+      toast({
+        title: "Points Reset",
+        description: data.message || "Student's points have been reset successfully.",
+      });
+      
+      setIsStudentDialogOpen(false);
+      setSelectedStudent(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  return (
+    <>
+      <Card className="p-4">
+        <h4 className="text-md font-medium mb-2">Reset All Points</h4>
+        <p className="text-sm text-neutral-dark mb-4">
+          This will reset all behavior points for all students across all houses. This action cannot be undone.
+        </p>
+        
+        <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
+          <DialogTrigger asChild>
+            <Button 
+              variant="destructive" 
+              className="w-full"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Reset All Points
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reset All Points</DialogTitle>
+              <DialogDescription>
+                This action will delete ALL behavior points for ALL students and reset house points to zero.
+                <div className="mt-2 font-semibold">This action cannot be undone.</div>
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="mt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsResetDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive"
+                onClick={() => resetAllPointsMutation.mutate()}
+                disabled={resetAllPointsMutation.isPending}
+              >
+                {resetAllPointsMutation.isPending ? "Resetting..." : "Reset All Points"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </Card>
+      
+      <Card className="p-4">
+        <h4 className="text-md font-medium mb-2">Reset Student Points</h4>
+        <p className="text-sm text-neutral-dark mb-4">
+          Select a student to reset only their behavior points. This action cannot be undone.
+        </p>
+        
+        <div className="space-y-4">
+          {students && students.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {students.slice(0, 6).map((student: Student) => (
+                <Button 
+                  key={student.id}
+                  variant="outline"
+                  className="justify-start"
+                  onClick={() => {
+                    setSelectedStudent({
+                      id: student.id,
+                      name: `${student.firstName} ${student.lastName}`
+                    });
+                    setIsStudentDialogOpen(true);
+                  }}
+                >
+                  <Trash2 className="h-3.5 w-3.5 mr-2 text-destructive" />
+                  {student.firstName} {student.lastName}
+                </Button>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-neutral-dark">No students found.</p>
+          )}
+          
+          {students && students.length > 6 && (
+            <p className="text-xs text-neutral-dark">
+              {students.length - 6} more students available. Use student roster for more.
+            </p>
+          )}
+        </div>
+        
+        <Dialog open={isStudentDialogOpen} onOpenChange={setIsStudentDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reset Points for Student</DialogTitle>
+              <DialogDescription>
+                {selectedStudent ? (
+                  <>
+                    This action will delete ALL behavior points for <span className="font-semibold">{selectedStudent.name}</span>.
+                    <div className="mt-2 font-semibold">This action cannot be undone.</div>
+                  </>
+                ) : (
+                  "Please select a student first."
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="mt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setIsStudentDialogOpen(false);
+                  setSelectedStudent(null);
+                }}
+              >
+                Cancel
+              </Button>
+              {selectedStudent && (
+                <Button 
+                  variant="destructive"
+                  onClick={() => resetStudentPointsMutation.mutate(selectedStudent.id)}
+                  disabled={resetStudentPointsMutation.isPending}
+                >
+                  {resetStudentPointsMutation.isPending ? "Resetting..." : "Reset Points"}
+                </Button>
+              )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </Card>
+    </>
+  );
+}
 
 export default function AdminPage() {
   const { user } = useAuth();
@@ -143,8 +369,17 @@ export default function AdminPage() {
                     <CardTitle>System Settings</CardTitle>
                     <CardDescription>Configure global system settings</CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-neutral-dark">System configuration options will be available soon.</p>
+                  <CardContent className="space-y-6">
+                    <div>
+                      <h3 className="text-lg font-medium mb-2">Points Management</h3>
+                      <p className="text-neutral-dark mb-4">
+                        Reset points for all students or individual students. These actions cannot be undone.
+                      </p>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <PointsResetSection />
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
