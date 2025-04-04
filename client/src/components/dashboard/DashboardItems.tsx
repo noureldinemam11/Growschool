@@ -82,8 +82,8 @@ export default function DashboardItems() {
   
   // Fetch teacher's own behavior points
   const { data: teacherPoints = [] } = useQuery<BehaviorPoint[]>({
-    queryKey: ['/api/behavior-points/teacher', user?.id],
-    enabled: !!user
+    queryKey: [`/api/behavior-points/teacher/${user?.id}`],
+    enabled: !!user && !!user.id
   });
   
   // Calculate stats
