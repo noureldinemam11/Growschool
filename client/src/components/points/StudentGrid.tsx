@@ -1,12 +1,25 @@
 import React, { useState } from 'react';
-import { User } from '@shared/schema';
+import { User, BehaviorCategory } from '@shared/schema';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useQuery } from '@tanstack/react-query';
-import { Loader2, Grid, Shuffle, List, XCircle, MoreHorizontal, ArrowRight } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Loader2, Grid, Shuffle, List, XCircle, MoreHorizontal, ArrowRight, Award } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import BatchPointsAssignment from './BatchPointsAssignment';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
+
+// Direct batch points assignment implementation
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 interface StudentGridProps {
   onSelectStudent: (studentId: number) => void;
@@ -15,16 +28,35 @@ interface StudentGridProps {
 }
 
 export default function StudentGrid({ onSelectStudent, selectedDate, teacherFilter }: StudentGridProps) {
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  
+  // State for student selection
   const [selectedStudentIds, setSelectedStudentIds] = useState<number[]>([]);
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [teacherFilterType, setTeacherFilterType] = useState<string>('all');
-  const [isBatchModalOpen, setIsBatchModalOpen] = useState<boolean>(false);
+  
+  // State for direct batch assignment dialog
+  const [batchDialogOpen, setBatchDialogOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [pointsMultiplier, setPointsMultiplier] = useState(1);
+  const [notes, setNotes] = useState('');
   
   // Fetch students (only role=student)
-  const { data: students, isLoading } = useQuery<User[]>({
+  const { data: students, isLoading: studentsLoading } = useQuery<User[]>({
     queryKey: ['/api/users/role/student'],
   });
+  
+  // Fetch behavior categories
+  const { data: categories, isLoading: categoriesLoading } = useQuery<BehaviorCategory[]>({
+    queryKey: ['/api/behavior-categories'],
+  });
 
+  // Get only positive categories
+  const positiveCategories = categories?.filter(c => c.isPositive) || [];
+
+  // Toggle student selection
   const toggleStudentSelection = (studentId: number) => {
     if (selectedStudentIds.includes(studentId)) {
       setSelectedStudentIds(selectedStudentIds.filter(id => id !== studentId));
@@ -50,17 +82,104 @@ export default function StudentGrid({ onSelectStudent, selectedDate, teacherFilt
     }
   };
 
+  // Handle continue button - either select single student or open batch dialog
   const handleContinue = () => {
     if (selectedStudentIds.length === 1) {
       onSelectStudent(selectedStudentIds[0]);
     } else if (selectedStudentIds.length > 1) {
-      // Open batch assignment modal
-      setIsBatchModalOpen(true);
+      // Instead of using modal component, directly open our dialog
+      setBatchDialogOpen(true);
     }
   };
 
+  // Create a direct batch points mutation
+  const batchAssignMutation = useMutation({
+    mutationFn: async (pointsArray: any[]) => {
+      console.log('Direct Batch Points Request:', { points: pointsArray });
+      
+      try {
+        const res = await fetch('/api/behavior-points/batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ points: pointsArray }),
+          credentials: 'include',
+        });
+        
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(`Error: ${errorText}`);
+        }
+        
+        return await res.json();
+      } catch (error) {
+        console.error('Batch points error:', error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success!",
+        description: `Points assigned to ${selectedStudentIds.length} students.`,
+      });
+      
+      // Reset dialog state and selection
+      setBatchDialogOpen(false);
+      setSelectedCategory(null);
+      setPointsMultiplier(1);
+      setNotes('');
+      
+      // Refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/behavior-points/recent'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/behavior-points/teacher'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/houses'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error assigning points",
+        description: error.message || "An unknown error occurred",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Handle the batch points assignment
+  const handleBatchAssign = () => {
+    if (!selectedCategory) {
+      toast({
+        title: "No category selected",
+        description: "Please select a behavior category",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!user?.id) {
+      toast({
+        title: "Not authenticated",
+        description: "You must be logged in to assign points",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const category = categories?.find(c => c.id === selectedCategory);
+    if (!category) return;
+    
+    const pointValue = category.pointValue * pointsMultiplier;
+    
+    const pointsArray = selectedStudentIds.map(studentId => ({
+      studentId,
+      categoryId: selectedCategory,
+      points: pointValue,
+      teacherId: user.id,
+      notes: notes || undefined
+    }));
+    
+    batchAssignMutation.mutate(pointsArray);
+  };
+  
   // Show loading indicator while students are loading
-  if (isLoading) {
+  if (studentsLoading || categoriesLoading) {
     return (
       <div className="flex justify-center items-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -179,14 +298,91 @@ export default function StudentGrid({ onSelectStudent, selectedDate, teacherFilt
         </div>
       )}
       
-      {/* Batch Points Assignment Modal */}
-      {isBatchModalOpen && selectedStudentIds.length > 0 && (
-        <BatchPointsAssignment 
-          isOpen={isBatchModalOpen}
-          onClose={() => setIsBatchModalOpen(false)}
-          selectedStudentIds={selectedStudentIds}
-        />
-      )}
+      {/* Batch Points Assignment Dialog */}
+      <Dialog open={batchDialogOpen} onOpenChange={setBatchDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Assign Points to {selectedStudentIds.length} Students</DialogTitle>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="category">Behavior Category</Label>
+              <Select 
+                value={selectedCategory?.toString() || ""} 
+                onValueChange={(value) => setSelectedCategory(Number(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {positiveCategories.map((category) => (
+                    <SelectItem key={category.id} value={category.id.toString()}>
+                      {category.name} ({category.pointValue} points)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {selectedCategory && (
+              <div className="grid gap-2">
+                <Label htmlFor="multiplier">Point Multiplier</Label>
+                <div className="flex gap-2 items-center">
+                  <Input
+                    id="multiplier"
+                    type="number"
+                    min={1}
+                    max={5}
+                    value={pointsMultiplier}
+                    onChange={(e) => setPointsMultiplier(Number(e.target.value))}
+                    className="w-20"
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    {selectedCategory && categories ? 
+                      `(${categories.find(c => c.id === selectedCategory)?.pointValue || 0} × ${pointsMultiplier} = 
+                      ${(categories.find(c => c.id === selectedCategory)?.pointValue || 0) * pointsMultiplier} points per student)` 
+                      : ''}
+                  </span>
+                </div>
+              </div>
+            )}
+            
+            <div className="grid gap-2">
+              <Label htmlFor="notes">Notes (Optional)</Label>
+              <Textarea
+                id="notes"
+                placeholder="Enter a note about this assignment"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter className="sm:justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setBatchDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleBatchAssign}
+              disabled={!selectedCategory || batchAssignMutation.isPending}
+              className="gap-1"
+            >
+              {batchAssignMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Award className="h-4 w-4" />
+              )}
+              Assign Points
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
