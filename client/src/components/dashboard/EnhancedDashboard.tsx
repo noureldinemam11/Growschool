@@ -380,13 +380,33 @@ function AdminDashboard() {
             <QuickActionButton
               icon={<UserPlus className="h-6 w-6" />}
               label="Manage Users"
-              onClick={() => navigate('/admin')}
+              onClick={() => {
+                navigate('/admin');
+                // Set activeTab to 'users' through URL parameter
+                setTimeout(() => { 
+                  const urlParams = new URLSearchParams(window.location.search);
+                  urlParams.set('tab', 'users');
+                  window.history.replaceState({}, '', `${window.location.pathname}?${urlParams}`);
+                  // Trigger a reload to ensure tab change
+                  window.location.reload();
+                }, 50);
+              }}
               highlight={true}
             />
             <QuickActionButton
               icon={<Settings className="h-6 w-6" />}
               label="Behavior Categories"
-              onClick={() => navigate('/admin')}
+              onClick={() => {
+                navigate('/admin');
+                // Set activeTab to 'behavior' through URL parameter
+                setTimeout(() => { 
+                  const urlParams = new URLSearchParams(window.location.search);
+                  urlParams.set('tab', 'behavior');
+                  window.history.replaceState({}, '', `${window.location.pathname}?${urlParams}`);
+                  // Trigger a reload to ensure tab change
+                  window.location.reload();
+                }, 50);
+              }}
             />
             <QuickActionButton
               icon={<PlusCircle className="h-6 w-6" />}
@@ -795,7 +815,7 @@ function TeacherDashboard() {
             <QuickActionButton
               icon={<Trophy className="h-6 w-6" />}
               label="House Standings"
-              onClick={() => navigate('/house-points')}
+              onClick={() => navigate('/house/dashboard')}
             />
             <QuickActionButton
               icon={<List className="h-6 w-6" />}
@@ -948,7 +968,7 @@ function TeacherDashboard() {
               </div>
             </CardContent>
             <CardFooter className="border-t px-6 py-4">
-              <Button variant="ghost" size="sm" className="w-full" onClick={() => navigate('/house-points')}>
+              <Button variant="ghost" size="sm" className="w-full" onClick={() => navigate('/house/dashboard')}>
                 <Trophy className="h-4 w-4 mr-2" />
                 View House Dashboard
               </Button>
