@@ -6,6 +6,7 @@ import Sidebar from '@/components/layout/Sidebar';
 import MobileNavbar from '@/components/layout/MobileNavbar';
 import BehaviorChart from '@/components/reports/BehaviorChart';
 import PointsDistributionChart from '@/components/reports/PointsDistributionChart';
+import BehaviorAnalytics from '@/components/analytics/BehaviorAnalytics';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -178,14 +179,9 @@ export default function ReportsPage() {
                     </Card>
                   </div>
                   
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Behavior Trends</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-neutral-dark">Detailed behavior trend analysis will be available soon.</p>
-                    </CardContent>
-                  </Card>
+                  <div className="mt-6">
+                    <BehaviorAnalytics />
+                  </div>
                 </TabsContent>
                 
                 <TabsContent value="houses" className="space-y-6">
