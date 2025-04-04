@@ -344,6 +344,9 @@ export default function HousePage() {
                             <div className={`text-blue-900 font-medium ${isFullscreen ? 'text-xl' : ''}`}>
                               {house.name}
                             </div>
+                            <div className={`text-blue-900/70 text-xs ${isFullscreen ? 'text-sm' : ''} mt-1`}>
+                              Total from all educators
+                            </div>
 
                             {/* Show top student if available */}
                             {topStudentsByHouse && topStudentsByHouse.length > 0 && (
