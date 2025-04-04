@@ -86,9 +86,26 @@ export default function StudentGrid({ onSelectStudent, selectedDate, teacherFilt
       return res.json();
     },
     onSuccess: (data) => {
+      const studentsCount = data.count || data.points?.length || 0;
+      const studentNames = data.points?.map((p: any) => p.student?.firstName).filter(Boolean);
+      
+      // Create a student list for the toast notification
+      let studentList = "";
+      if (studentNames && studentNames.length > 0) {
+        if (studentNames.length === 1) {
+          studentList = studentNames[0];
+        } else if (studentNames.length === 2) {
+          studentList = `${studentNames[0]} and ${studentNames[1]}`;
+        } else {
+          studentList = `${studentNames[0]}, ${studentNames[1]}, and ${studentNames.length - 2} more`;
+        }
+      }
+      
       toast({
         title: "Points assigned successfully",
-        description: `Assigned points to ${data.count} students.`,
+        description: studentList 
+          ? `Assigned points to ${studentList}.`
+          : `Assigned points to ${studentsCount} students.`,
       });
       
       // Reset form and close modal
@@ -103,6 +120,10 @@ export default function StudentGrid({ onSelectStudent, selectedDate, teacherFilt
       queryClient.invalidateQueries({ queryKey: ['/api/behavior-points/teacher'] });
       queryClient.invalidateQueries({ queryKey: ['/api/houses'] });
       queryClient.invalidateQueries({ queryKey: ['/api/houses-top-students'] });
+      
+      // Force a refetch of the recent points to ensure we get the latest data
+      queryClient.refetchQueries({ queryKey: ['/api/behavior-points/recent'] });
+      queryClient.refetchQueries({ queryKey: ['/api/houses-top-students'] });
     },
     onError: (error) => {
       toast({

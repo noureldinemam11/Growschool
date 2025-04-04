@@ -12,6 +12,7 @@ interface EnrichedBehaviorPoint extends BehaviorPoint {
 export default function ActivityTable() {
   const { data: activityData, isLoading } = useQuery<EnrichedBehaviorPoint[]>({
     queryKey: ['/api/behavior-points/recent?limit=10'],
+    refetchInterval: 10000, // Refresh data every 10 seconds
   });
 
   if (isLoading) {

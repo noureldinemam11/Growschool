@@ -907,6 +907,7 @@ function TeacherDashboard() {
   
   const { data: recentPoints = [] } = useQuery<BehaviorPoint[]>({ 
     queryKey: ['/api/behavior-points/recent'],
+    refetchInterval: 10000 // Refresh data every 10 seconds
   });
   
   const { data: teacherPoints = [] } = useQuery<BehaviorPoint[]>({

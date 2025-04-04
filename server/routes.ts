@@ -411,10 +411,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Failed to create any behavior points" });
       }
       
+      // Enrich the created points with student and category info
+      const enrichedPoints = await Promise.all(createdPoints.map(async (point) => {
+        const student = await storage.getUser(point.student_id);
+        const category = await storage.getBehaviorCategory(point.category_id);
+        const teacher = await storage.getUser(point.teacher_id);
+        
+        return {
+          ...point,
+          // Convert snake_case to camelCase for consistency
+          studentId: point.student_id,
+          teacherId: point.teacher_id,
+          categoryId: point.category_id,
+          student: student ? {
+            id: student.id,
+            firstName: student.firstName,
+            lastName: student.lastName
+          } : null,
+          category: category,
+          teacher: teacher ? {
+            id: teacher.id,
+            firstName: teacher.firstName,
+            lastName: teacher.lastName
+          } : null
+        };
+      }));
+      
       res.status(201).json({ 
         success: true, 
         count: createdPoints.length,
-        points: createdPoints,
+        points: enrichedPoints,
         housesUpdated: Array.from(housePointsMap.keys())
       });
     } catch (error) {

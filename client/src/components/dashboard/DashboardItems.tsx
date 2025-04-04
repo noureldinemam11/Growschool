@@ -102,13 +102,15 @@ export default function DashboardItems() {
   // Fetch recent behavior points
   const { data: recentPoints = [] } = useQuery<BehaviorPoint[]>({ 
     queryKey: ['/api/behavior-points/recent'],
-    enabled: !!user
+    enabled: !!user,
+    refetchInterval: 10000 // Refresh data every 10 seconds
   });
   
   // Fetch all houses data
   const { data: houses = [] } = useQuery<House[]>({
     queryKey: ['/api/houses'],
-    enabled: !!user
+    enabled: !!user,
+    refetchInterval: 10000 // Refresh data every 10 seconds to keep house points updated
   });
   
   // Fetch teacher's own behavior points
