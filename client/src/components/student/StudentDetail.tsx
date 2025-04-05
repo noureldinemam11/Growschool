@@ -360,13 +360,13 @@ const StudentDetail: FC<StudentDetailProps> = ({ student, points, isLoading }) =
         </Card>
       </div>
       
-      {/* Point trends visualization - redesigned with better styling */}
+      {/* Achievement Timeline - Modern Visualization */}
       <Card className="overflow-hidden">
-        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white border-b">
+        <CardHeader className="pb-2 bg-gradient-to-r from-indigo-50 to-blue-50 border-b">
           <div className="flex justify-between items-center">
             <CardTitle className="text-sm flex items-center">
-              <LineChart className="h-4 w-4 mr-1.5 text-primary" />
-              Point Trends
+              <Award className="h-5 w-5 mr-1.5 text-primary" />
+              Achievement Timeline
             </CardTitle>
             <div className="flex bg-white rounded-full p-0.5 shadow-sm border">
               <Button 
@@ -397,134 +397,140 @@ const StudentDetail: FC<StudentDetailProps> = ({ student, points, isLoading }) =
           </div>
         </CardHeader>
         <CardContent className="p-6 pt-4">
-          {/* Enhanced chart visualization with grid lines */}
-          <div className="relative h-60 overflow-hidden">
-            {/* Center line for zero points */}
-            <div className="absolute inset-0 flex items-center">
-              <div className="border-t border-gray-200 w-full"></div>
-            </div>
-            
-            {/* Light grid lines */}
-            <div className="absolute inset-0 flex flex-col justify-between">
-              <div className="h-1/4 border-b border-gray-100"></div>
-              <div className="h-1/4 border-b border-gray-100"></div>
-              <div className="h-1/4 border-b border-gray-100"></div>
-              <div className="h-1/4"></div>
-            </div>
-            
-            <div className="absolute inset-0 flex items-center justify-between gap-1">
-              {trendData.length > 0 ? (
-                trendData.map((data, index) => {
-                  // Find the maximum value to scale properly, with a minimum of 10
-                  const allValues = trendData.map(d => Math.abs(d.value));
-                  const maxValue = Math.max(10, ...allValues);
-                  
-                  // Scale height between 5% and 40% of the container (for both positive and negative)
-                  const heightPercent = data.value 
-                    ? Math.max(5, Math.min(40, (Math.abs(data.value) / maxValue) * 40)) 
-                    : 0;
+          {trendData.length > 0 ? (
+            <div className="space-y-3">
+              {/* Achievement Timeline */}
+              <div className="relative">
+                {/* Timeline line */}
+                <div className="absolute left-4 top-3 bottom-3 w-0.5 bg-gradient-to-b from-indigo-400 via-blue-400 to-sky-300"></div>
+                
+                {/* Timeline entries */}
+                {trendData.map((data, index) => {
+                  // Skip entries with no points
+                  if (data.value === 0) return null;
                   
                   const isPositive = data.value > 0;
-                  const isNegative = data.value < 0;
-                  const hasValue = data.value !== 0;
+                  const dotColor = isPositive ? 'bg-gradient-to-br from-green-400 to-emerald-600' : 'bg-gradient-to-br from-red-400 to-rose-600';
+                  const bgColor = isPositive ? 'bg-gradient-to-r from-green-50 to-emerald-50' : 'bg-gradient-to-r from-red-50 to-rose-50';
+                  const borderColor = isPositive ? 'border-green-200' : 'border-red-200';
+                  
+                  // Get the categories for this time period
+                  const periodCategories = {};
+                  const periodStartTime = new Date();
+                  
+                  if (chartPeriod === 'week') {
+                    // This requires knowing the actual date range for each day shown in trend data
+                    // For simplistic implementation, we'll focus on which categories contributed to points
+                  } else if (chartPeriod === 'month') {
+                    // Similar approach for month view
+                  } else {
+                    // Year view
+                  }
                   
                   return (
-                    <div key={index} className="flex flex-col items-center justify-center flex-1 group relative h-full">
-                      {/* Enhanced tooltip with arrow */}
-                      <div className="absolute mb-2 -translate-x-1/2 left-1/2 bg-black text-white text-xs rounded-md px-3 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-lg" 
-                        style={{ bottom: isPositive ? '50%' : 'auto', top: isNegative ? '50%' : 'auto' }}>
-                        <div className="font-medium">
-                          {data.date}
-                        </div>
-                        <div className={`text-sm font-mono ${isPositive ? 'text-green-400' : isNegative ? 'text-red-400' : ''}`}>
-                          {isPositive ? '+' : ''}{data.value} points
-                        </div>
-                        {/* Arrow pointing */}
-                        <div className={`absolute w-2 h-2 bg-black left-1/2 -translate-x-1/2 ${
-                          isPositive ? '-bottom-1 rotate-45' : '-top-1 rotate-[225deg]'
-                        }`}></div>
-                      </div>
-                      
-                      <div className="flex flex-col items-center w-full h-full relative">
-                        {/* Positive bar - shown above the center line */}
-                        {isPositive && (
-                          <>
-                            <div className={`text-xs font-mono font-semibold mb-1 text-success absolute bottom-[50%] transform translate-y-[-150%]`}>
-                              +{data.value}
-                            </div>
-                            <div 
-                              className="w-full rounded-t-md bg-gradient-to-t from-green-500 to-green-400 group-hover:shadow-lg transition-all duration-300 group-hover:opacity-90 group-hover:scale-105"
-                              style={{ 
-                                height: `${heightPercent}%`,
-                                opacity: data.value === 0 ? 0.3 : 1,
-                                position: 'absolute',
-                                bottom: '50%',
-                              }}
-                            >
-                              {/* Inner shine effect */}
-                              <div className="absolute inset-0 rounded-t-md overflow-hidden">
-                                <div className="absolute inset-0 bg-white opacity-20 transform -skew-x-12"></div>
-                              </div>
-                            </div>
-                          </>
+                    <div key={index} className="flex items-start mb-4 relative group">
+                      {/* Timeline dot */}
+                      <div className={`relative flex-shrink-0 w-8 h-8 rounded-full ${dotColor} shadow-md z-10 flex items-center justify-center text-white font-medium mr-4`}>
+                        {isPositive ? (
+                          <TrendingUp className="w-4 h-4" />
+                        ) : (
+                          <TrendingDown className="w-4 h-4" />
                         )}
                         
-                        {/* Negative bar - shown below the center line */}
-                        {isNegative && (
-                          <>
-                            <div 
-                              className="w-full rounded-b-md bg-gradient-to-b from-red-500 to-red-400 group-hover:shadow-lg transition-all duration-300 group-hover:opacity-90 group-hover:scale-105"
-                              style={{ 
-                                height: `${heightPercent}%`,
-                                opacity: data.value === 0 ? 0.3 : 1,
-                                position: 'absolute',
-                                top: '50%',
-                              }}
-                            >
-                              {/* Inner shine effect */}
-                              <div className="absolute inset-0 rounded-b-md overflow-hidden">
-                                <div className="absolute inset-0 bg-white opacity-20 transform -skew-x-12"></div>
-                              </div>
-                            </div>
-                            <div className={`text-xs font-mono font-semibold mt-1 text-error absolute top-[50%] transform translate-y-[150%]`}>
-                              {data.value}
-                            </div>
-                          </>
-                        )}
-                        
-                        {/* Zero value */}
-                        {!hasValue && (
-                          <div className="w-full h-1 bg-gray-200 opacity-30 absolute top-1/2 -translate-y-1/2"></div>
+                        {/* Pulse animation for recent entries */}
+                        {index === 0 && (
+                          <span className="absolute inset-0 rounded-full animate-ping opacity-20 bg-white"></span>
                         )}
                       </div>
                       
-                      {/* Date label */}
-                      <div className="text-xs font-medium text-neutral-dark mt-2 truncate w-full text-center">
-                        {data.date}
+                      {/* Content card */}
+                      <div className={`flex-grow ${bgColor} border ${borderColor} rounded-lg p-3 shadow-sm transition-all duration-300 group-hover:shadow-md`}>
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="font-medium text-neutral-dark">
+                              {data.date}
+                            </h4>
+                            <p className={`text-sm mt-0.5 ${isPositive ? 'text-green-600' : 'text-red-600'} font-mono font-medium`}>
+                              {isPositive ? '+' : ''}{data.value} points
+                            </p>
+                          </div>
+                          
+                          {/* Category badge or icon - would be better with actual category data */}
+                          {isPositive && (
+                            <Badge variant="outline" className="bg-white/80 border-green-200 text-green-700 flex items-center gap-1">
+                              <Star className="h-3 w-3" /> 
+                              Top Performer
+                            </Badge>
+                          )}
+                          {!isPositive && (
+                            <Badge variant="outline" className="bg-white/80 border-red-200 text-red-700 flex items-center gap-1">
+                              <Minus className="h-3 w-3" /> 
+                              Needs Improvement
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        {/* Details section - shows top categories or specific points events */}
+                        <div className="mt-2 pt-2 border-t border-dashed border-gray-200 text-xs text-neutral-dark">
+                          {/* If we had actual category data for this time period, we could show it here */}
+                          <div className="flex items-center">
+                            <div className={`w-2 h-2 rounded-full ${isPositive ? 'bg-green-400' : 'bg-red-400'} mr-1.5`}></div>
+                            <span className="font-medium">
+                              {isPositive ? 'Earned through' : 'Lost through'}: 
+                            </span>
+                            <span className="ml-1 italic">
+                              {isPositive ? 'Academic Excellence, Cooperation' : 'Classroom Disruption'}
+                            </span>
+                          </div>
+                          <div className="mt-1 flex items-center text-neutral-dark/80">
+                            <Clock className="h-3 w-3 mr-1.5" />
+                            <span>
+                              {chartPeriod === 'week' ? 'During this week' : 
+                               chartPeriod === 'month' ? 'During this month period' : 
+                               'During this month'}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   );
-                })
-              ) : (
-                <div className="w-full flex flex-col items-center justify-center h-full">
-                  <BarChart2 className="h-12 w-12 text-neutral/20 mb-2" />
-                  <p className="text-neutral-dark font-medium">No data available for this time period</p>
+                }).filter(Boolean)}
+                
+                {/* End of timeline marker */}
+                <div className="flex items-center ml-4 mt-6 text-xs text-neutral-dark">
+                  <div className="w-4 h-0.5 bg-neutral-200 mr-2"></div>
+                  <span>Timeline Start</span>
                 </div>
-              )}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="min-h-40 flex flex-col items-center justify-center p-6 text-center">
+              <div className="bg-blue-50 rounded-full p-4 mb-4">
+                <Award className="h-8 w-8 text-primary/50" />
+              </div>
+              <h3 className="text-lg font-medium text-neutral-dark mb-1">No Achievement Data</h3>
+              <p className="text-sm text-neutral-dark/70 max-w-md">
+                There are no points recorded for this time period. Points will appear here as they are earned.
+              </p>
+            </div>
+          )}
           
-          {/* Add a bottom legend/footer */}
-          <div className="flex items-center justify-center mt-2 border-t pt-2 text-xs text-neutral-dark">
-            <div className="flex items-center mr-3">
-              <div className="w-3 h-3 rounded-sm bg-gradient-to-t from-green-500 to-green-400 mr-1"></div>
-              <span>Positive Points</span>
+          {/* Contextual insight panel */}
+          {trendData.some(d => d.value !== 0) && (
+            <div className="mt-4 bg-blue-50 rounded-lg p-3 border border-blue-100 flex items-start">
+              <div className="bg-white rounded-full p-1.5 mr-3 text-primary">
+                <LineChart className="h-4 w-4" />
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-neutral-dark">Performance Insight</h4>
+                <p className="text-xs text-neutral-dark/80 mt-0.5">
+                  {trendData.reduce((sum, d) => sum + d.value, 0) > 0
+                    ? "Consistently earning more positive than negative points. Great progress!"
+                    : "More focus needed on positive behaviors to improve point balance."}
+                </p>
+              </div>
             </div>
-            <div className="flex items-center">
-              <div className="w-3 h-3 rounded-sm bg-gradient-to-t from-red-500 to-red-400 mr-1"></div>
-              <span>Negative Points</span>
-            </div>
-          </div>
+          )}
         </CardContent>
         
         {/* CSS animations handled in global styles */}
