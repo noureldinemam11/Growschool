@@ -156,35 +156,7 @@ const StudentDetail: FC<StudentDetailProps> = ({ student, points, isLoading }) =
     .map(id => ({ id: parseInt(id), points: categoryBreakdown[parseInt(id)] }))
     .sort((a, b) => b.points - a.points);
 
-  const handlePointsAction = (action: 'add' | 'deduct') => {
-    // Save current student to localStorage for points assignment
-    localStorage.setItem('batchSelectedStudentIds', JSON.stringify([student.id]));
-    
-    // Create a new modal open logic that will directly open the points assignment modals
-    // This is more direct than navigating to another page
-    if (action === 'add') {
-      // Open Award Points Modal for this specific student
-      const event = new CustomEvent('open-award-points-modal', { 
-        detail: { studentId: student.id }
-      });
-      window.dispatchEvent(event);
-    } else {
-      // Open Deduct Points Modal for this specific student
-      const event = new CustomEvent('open-deduct-points-modal', { 
-        detail: { studentId: student.id }
-      });
-      window.dispatchEvent(event);
-    }
-  };
-
-  const handleParentContact = () => {
-    // Example of what would happen if we were to contact the parent
-    toast({
-      title: "Contact feature",
-      description: "This feature would allow you to send a message to the student's parent.",
-      variant: "default",
-    });
-  };
+  // Removing all action buttons from student detail as requested
 
   return (
     <div className="space-y-4">
@@ -257,21 +229,7 @@ const StudentDetail: FC<StudentDetailProps> = ({ student, points, isLoading }) =
             <Progress value={goalPercentage} className="h-2" />
           </div>
           
-          {/* Quick action buttons */}
-          <div className="mt-6 flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" className="gap-1" onClick={() => handlePointsAction('add')}>
-              <Plus className="h-3.5 w-3.5" />
-              Award Points
-            </Button>
-            <Button size="sm" variant="outline" className="gap-1" onClick={() => handlePointsAction('deduct')}>
-              <Minus className="h-3.5 w-3.5" />
-              Deduct Points
-            </Button>
-            <Button size="sm" variant="outline" className="gap-1" onClick={handleParentContact}>
-              <Mail className="h-3.5 w-3.5" />
-              Contact Parent
-            </Button>
-          </div>
+          {/* Action buttons have been removed as requested */}
         </CardContent>
       </Card>
       
