@@ -21,7 +21,6 @@ interface StudentDetailProps {
 
 const StudentDetail: FC<StudentDetailProps> = ({ student, points, isLoading }) => {
   const { toast } = useToast();
-  const [chartPeriod, setChartPeriod] = useState<'week' | 'month' | 'year'>('month');
   const [trendData, setTrendData] = useState<{date: string, value: number}[]>([]);
   
   // Fetch data about houses for house context
@@ -40,139 +39,42 @@ const StudentDetail: FC<StudentDetailProps> = ({ student, points, isLoading }) =
   });
 
   useEffect(() => {
-    // Create trend data for the selected time period
-    const now = new Date();
+    // We'll simplify and just create a weekly trend data
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const data: {date: string, value: number}[] = [];
     
-    // Debug log to check if points data is coming through
-    console.log('Points data for trend chart:', points);
-    
-    if (chartPeriod === 'week') {
-      // Fix for the weekly display - show the current week properly
-      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      
-      // Create empty data for all days of the week
-      for (let i = 0; i < 7; i++) {
-        data.push({ date: dayNames[i], value: 0 });
-      }
-      
-      // Add points to the correct day
-      points.forEach(point => {
-        const pointDate = new Date(point.timestamp);
-        const dayOfWeek = pointDate.getDay(); // 0 = Sunday, 6 = Saturday
-        
-        // Check if the point is from this week (last 7 days)
-        const today = new Date();
-        const sevenDaysAgo = new Date(today);
-        sevenDaysAgo.setDate(today.getDate() - 7);
-        
-        if (pointDate >= sevenDaysAgo) {
-          data[dayOfWeek].value += point.points;
-        }
-      });
-      
-      // If we still don't have any points showing but the student has points
-      // Assume all points are from today
-      if (points.length > 0 && data.every(d => d.value === 0)) {
-        const today = new Date();
-        const dayIndex = today.getDay(); // Get today's index (0-6)
-        const totalPoints = points.reduce((sum, p) => sum + p.points, 0);
-        data[dayIndex].value = totalPoints;
-      }
-    } else if (chartPeriod === 'month') {
-      // Use the current date to determine which week we're in
-      const currentDate = now.getDate();
-      const currentMonth = now.getMonth();
-      
-      // Instead of using complex week calculations, show 4 weeks of the current month
-      // Split the month into 4 parts
-      const daysInMonth = new Date(now.getFullYear(), currentMonth + 1, 0).getDate();
-      const weekSize = Math.ceil(daysInMonth / 4);
-      
-      for (let weekNum = 0; weekNum < 4; weekNum++) {
-        const weekStart = weekNum * weekSize + 1;
-        const weekEnd = Math.min((weekNum + 1) * weekSize, daysInMonth);
-        
-        const startDate = new Date(now.getFullYear(), currentMonth, weekStart);
-        const endDate = new Date(now.getFullYear(), currentMonth, weekEnd);
-        
-        const dateStr = `${currentMonth + 1}/${weekStart}-${currentMonth + 1}/${weekEnd}`;
-        
-        // Find points assigned in this date range
-        const weekPoints = points.filter(p => {
-          const pointDate = new Date(p.timestamp);
-          const pointDay = pointDate.getDate();
-          const pointMonth = pointDate.getMonth();
-          const pointYear = pointDate.getFullYear();
-          
-          // If the point is in the current month and within this week's range
-          return pointMonth === currentMonth && 
-                 pointYear === now.getFullYear() &&
-                 pointDay >= weekStart && 
-                 pointDay <= weekEnd;
-        }).reduce((sum, p) => sum + p.points, 0);
-        
-        data.push({ date: dateStr, value: weekPoints });
-      }
-      
-      // If we have no points in the chart but the student has points, check which week they should be in
-      if (points.length > 0 && data.every(d => d.value === 0)) {
-        // Identify the appropriate week for each point and add them to the chart
-        points.forEach(point => {
-          const pointDate = new Date(point.timestamp);
-          const pointDay = pointDate.getDate();
-          
-          // Skip if not in current month/year
-          if (pointDate.getMonth() !== currentMonth || pointDate.getFullYear() !== now.getFullYear()) {
-            return;
-          }
-          
-          // Figure out which week this point belongs to
-          const weekIndex = Math.floor((pointDay - 1) / weekSize);
-          if (weekIndex >= 0 && weekIndex < 4) {
-            data[weekIndex].value += point.points;
-          }
-        });
-      }
-    } else { // year
-      // Last 6 months display
-      for (let i = 5; i >= 0; i--) {
-        const date = new Date(now);
-        date.setMonth(date.getMonth() - i);
-        const monthIndex = date.getMonth();
-        const year = date.getFullYear();
-        const dateStr = date.toLocaleDateString('en-US', { month: 'short' });
-        
-        // Find points assigned in this month
-        const monthPoints = points.filter(p => {
-          const pointDate = new Date(p.timestamp);
-          return pointDate.getMonth() === monthIndex &&
-                 pointDate.getFullYear() === year;
-        }).reduce((sum, p) => sum + p.points, 0);
-        
-        data.push({ date: dateStr, value: monthPoints });
-      }
+    // Create empty data for all days of the week
+    for (let i = 0; i < 7; i++) {
+      data.push({ date: dayNames[i], value: 0 });
     }
     
-    // Global fallback: if we still have no points in the chart but the student has points
+    // Add points to the correct day
+    points.forEach(point => {
+      const pointDate = new Date(point.timestamp);
+      const dayOfWeek = pointDate.getDay(); // 0 = Sunday, 6 = Saturday
+      
+      // Check if the point is from this week (last 7 days)
+      const today = new Date();
+      const sevenDaysAgo = new Date(today);
+      sevenDaysAgo.setDate(today.getDate() - 7);
+      
+      if (pointDate >= sevenDaysAgo) {
+        data[dayOfWeek].value += point.points;
+      }
+    });
+    
+    // If we still don't have any points showing but the student has points
+    // Assume all points are from today
     if (points.length > 0 && data.every(d => d.value === 0)) {
-      // Add all points to today/current period
+      const today = new Date();
+      const dayIndex = today.getDay(); // Get today's index (0-6)
       const totalPoints = points.reduce((sum, p) => sum + p.points, 0);
-      if (totalPoints !== 0) {
-        // Add to the last bar in the chart (representing the current period)
-        data[data.length - 1].value = totalPoints;
-      }
-    }
-    
-    // Ensure we display both positive and negative values properly
-    if (data.some(d => d.value < 0)) {
-      // We have some negative values, make sure we account for them in the chart
-      console.log('Found negative values in trend data');
+      data[dayIndex].value = totalPoints;
     }
     
     console.log('Trend data being displayed:', data);
     setTrendData(data);
-  }, [points, chartPeriod]);
+  }, [points]);
 
   if (isLoading) {
     return (
@@ -359,127 +261,6 @@ const StudentDetail: FC<StudentDetailProps> = ({ student, points, isLoading }) =
           </CardContent>
         </Card>
       </div>
-      
-      {/* Point Trends Chart */}
-      <Card className="overflow-hidden">
-        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white border-b">
-          <div className="flex justify-between items-center">
-            <CardTitle className="text-sm flex items-center">
-              <BarChart2 className="h-4 w-4 mr-1.5 text-primary" />
-              Point Trends
-            </CardTitle>
-            <div className="flex bg-white rounded-full p-0.5 shadow-sm border">
-              <Button 
-                size="sm" 
-                variant="ghost"
-                className={`h-7 text-xs px-3 rounded-full ${chartPeriod === 'week' ? 'bg-primary text-white shadow-sm' : ''}`}
-                onClick={() => setChartPeriod('week')}
-              >
-                Week
-              </Button>
-              <Button 
-                size="sm" 
-                variant="ghost"
-                className={`h-7 text-xs px-3 rounded-full ${chartPeriod === 'month' ? 'bg-primary text-white shadow-sm' : ''}`}
-                onClick={() => setChartPeriod('month')}
-              >
-                Month
-              </Button>
-              <Button 
-                size="sm" 
-                variant="ghost"
-                className={`h-7 text-xs px-3 rounded-full ${chartPeriod === 'year' ? 'bg-primary text-white shadow-sm' : ''}`}
-                onClick={() => setChartPeriod('year')}
-              >
-                Year
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-6 pt-4">
-          <div className="h-64 relative">
-            {/* Chart grid */}
-            <div className="absolute inset-0 flex flex-col justify-between pb-8">
-              <div className="border-b border-gray-100"></div>
-              <div className="border-b border-gray-100"></div>
-              <div className="border-b border-gray-100"></div>
-              <div className="border-b border-gray-100"></div>
-            </div>
-            
-            {/* Chart bars */}
-            <div className="absolute inset-0 flex items-end justify-between gap-2 pb-8">
-              {trendData.length > 0 ? (
-                trendData.map((data, index) => {
-                  // Calculate the max value to properly scale the bars
-                  const maxValue = Math.max(10, ...trendData.map(d => Math.abs(d.value)));
-                  
-                  // Calculate height percentage (max 80%)
-                  const heightPercent = data.value 
-                    ? Math.max(5, Math.min(80, (Math.abs(data.value) / maxValue) * 80)) 
-                    : 2;
-                  
-                  const barColor = data.value > 0 
-                    ? 'bg-gradient-to-t from-green-500 to-green-400' 
-                    : data.value < 0 
-                      ? 'bg-gradient-to-t from-red-500 to-red-400' 
-                      : 'bg-gray-200';
-                      
-                  return (
-                    <div key={index} className="flex-1 flex flex-col items-center justify-end group relative">
-                      {/* Bar */}
-                      <div 
-                        className={`w-full rounded-t-md ${barColor} group-hover:opacity-90 transition-all duration-300`}
-                        style={{ 
-                          height: `${heightPercent}%`,
-                          minHeight: '4px',
-                        }}
-                      >
-                        {/* Shine effect */}
-                        <div className="absolute inset-0 overflow-hidden rounded-t-md">
-                          <div className="absolute inset-0 bg-white opacity-30 transform -skew-x-12"></div>
-                        </div>
-                      </div>
-                      
-                      {/* Value tooltip */}
-                      <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap text-xs font-medium bg-black text-white px-2 py-1 rounded-md -translate-x-1/2 left-1/2 shadow-lg">
-                        {data.value > 0 ? '+' : ''}{data.value}
-                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-black rotate-45"></div>
-                      </div>
-                      
-                      {/* Label */}
-                      <div className="text-xs text-neutral-dark mt-2 font-medium">
-                        {data.date}
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="w-full flex flex-col items-center justify-center">
-                  <BarChart2 className="h-10 w-10 text-neutral/20 mb-2" />
-                  <p className="text-neutral-dark text-sm font-medium">No data available for this time period</p>
-                </div>
-              )}
-            </div>
-            
-            {/* X-axis */}
-            <div className="absolute bottom-0 left-0 right-0 h-px bg-gray-200"></div>
-          </div>
-
-          {/* Chart legend */}
-          <div className="flex justify-center mt-4 text-xs text-neutral-dark">
-            <div className="flex items-center mr-4">
-              <div className="w-3 h-3 rounded-sm bg-gradient-to-t from-green-500 to-green-400 mr-1"></div>
-              <span>Positive Points</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-3 h-3 rounded-sm bg-gradient-to-t from-red-500 to-red-400 mr-1"></div>
-              <span>Negative Points</span>
-            </div>
-          </div>
-        </CardContent>
-        
-        {/* CSS animations handled in global styles */}
-      </Card>
       
       {/* Top categories and recent points */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
