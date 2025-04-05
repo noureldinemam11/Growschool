@@ -6,7 +6,7 @@ import { setupAuth, comparePasswords, hashPassword } from "./auth";
 import { setupExcelImport } from "./excel-import";
 import { storage } from "./storage";
 import { db, pool } from "./db";
-import { insertBehaviorPointSchema, insertRewardRedemptionSchema, userRoles, users } from "@shared/schema";
+import { insertBehaviorPointSchema, insertRewardRedemptionSchema, userRoles, users, User } from "@shared/schema";
 import { z } from "zod";
 import { fileURLToPath } from "url";
 import { eq } from "drizzle-orm";
@@ -1297,6 +1297,188 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error deleting user:", error);
       return res.status(500).json({ 
         error: "Failed to delete user",
+        details: error.message || "Unknown error"
+      });
+    }
+  });
+
+  // Bulk delete users
+  app.post("/api/users/bulk-delete", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.status(403).json({ error: "Unauthorized - Only administrators can perform bulk delete" });
+    }
+
+    try {
+      const { userIds } = req.body;
+      
+      if (!Array.isArray(userIds) || userIds.length === 0) {
+        return res.status(400).json({ error: "No user IDs provided for deletion" });
+      }
+      
+      // Convert all IDs to numbers and validate
+      const validUserIds = userIds.map(Number).filter(id => !isNaN(id));
+      
+      if (validUserIds.length === 0) {
+        return res.status(400).json({ error: "No valid user IDs provided" });
+      }
+      
+      console.log(`Bulk delete request for ${validUserIds.length} users`);
+      
+      // Create a client for transaction
+      const client = await pool.connect();
+      
+      try {
+        await client.query('BEGIN');
+        
+        let deletedCount = 0;
+        let skippedIds = [];
+        
+        // Process each user ID
+        for (const userId of validUserIds) {
+          // Check if user exists
+          const userResult = await client.query('SELECT * FROM users WHERE id = $1', [userId]);
+          
+          if (userResult.rows.length === 0) {
+            skippedIds.push({ id: userId, reason: "User not found" });
+            continue;
+          }
+          
+          const user = userResult.rows[0];
+          
+          // Prevent deletion of current user
+          if (user.id === req.user.id) {
+            skippedIds.push({ id: userId, reason: "Cannot delete your own account" });
+            continue;
+          }
+          
+          // Delete related records based on role
+          if (user.role === 'student') {
+            // Delete behavior points for this student
+            await client.query('DELETE FROM behavior_points WHERE student_id = $1', [userId]);
+            
+            // Delete reward redemptions for this student
+            await client.query('DELETE FROM reward_redemptions WHERE student_id = $1', [userId]);
+          } else if (user.role === 'teacher') {
+            // Delete behavior points assigned by this teacher
+            await client.query('DELETE FROM behavior_points WHERE teacher_id = $1', [userId]);
+          }
+          
+          // Delete the user
+          const deleteResult = await client.query('DELETE FROM users WHERE id = $1', [userId]);
+          
+          const rowCount = deleteResult?.rowCount ?? 0;
+          if (rowCount > 0) {
+            deletedCount++;
+          } else {
+            skippedIds.push({ id: userId, reason: "Failed to delete" });
+          }
+        }
+        
+        // Commit the transaction
+        await client.query('COMMIT');
+        
+        return res.status(200).json({
+          success: true,
+          deletedCount,
+          skippedIds,
+          message: `Successfully deleted ${deletedCount} users`
+        });
+      } catch (txError: any) {
+        // Roll back the transaction if any step fails
+        await client.query('ROLLBACK');
+        console.error(`Bulk delete transaction rolled back: ${txError.message || 'Unknown error'}`);
+        
+        return res.status(500).json({
+          error: "Failed to delete users",
+          details: txError.message || "Unknown database error",
+        });
+      } finally {
+        // Always release the client
+        client.release();
+      }
+    } catch (error: any) {
+      console.error("Error in bulk delete operation:", error);
+      return res.status(500).json({
+        error: "Failed to process bulk delete request",
+        details: error.message || "Unknown error"
+      });
+    }
+  });
+
+  // Update user endpoint
+  app.put("/api/users/:id", async (req, res) => {
+    if (!req.isAuthenticated() || !["admin", "teacher"].includes(req.user.role)) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const userId = Number(req.params.id);
+      
+      // Check if userId is a valid number
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+      
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Admin users can update any account, non-admin users can only update student accounts
+      if (req.user.role !== "admin" && user.role !== "student") {
+        return res.status(403).json({ error: "Only admin users can update non-student accounts" });
+      }
+      
+      // Extract update fields from request
+      const {
+        firstName, 
+        lastName, 
+        email, 
+        gradeLevel,
+        section,
+        houseId
+      } = req.body;
+      
+      // Create update object with only provided fields
+      const updateFields: Partial<User> = {};
+      
+      if (firstName !== undefined) updateFields.firstName = firstName;
+      if (lastName !== undefined) updateFields.lastName = lastName;
+      if (email !== undefined) updateFields.email = email;
+      if (gradeLevel !== undefined) updateFields.gradeLevel = gradeLevel;
+      if (section !== undefined) updateFields.section = section;
+      if (houseId !== undefined) updateFields.houseId = houseId === null ? null : Number(houseId);
+      
+      // If no fields are provided to update
+      if (Object.keys(updateFields).length === 0) {
+        return res.status(400).json({ error: "No valid update fields provided" });
+      }
+      
+      // Update the user
+      const updatedUser = await storage.updateUser(userId, updateFields);
+      
+      if (!updatedUser) {
+        return res.status(500).json({ error: "Failed to update user" });
+      }
+      
+      // Return safe user data
+      const safeUser = {
+        id: updatedUser.id,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        role: updatedUser.role,
+        email: updatedUser.email,
+        gradeLevel: updatedUser.gradeLevel,
+        section: updatedUser.section,
+        houseId: updatedUser.houseId
+      };
+      
+      return res.status(200).json(safeUser);
+    } catch (error: any) {
+      console.error("Error updating user:", error);
+      return res.status(500).json({ 
+        error: "Failed to update user",
         details: error.message || "Unknown error"
       });
     }

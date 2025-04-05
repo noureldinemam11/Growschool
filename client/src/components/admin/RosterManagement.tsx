@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+import ManageRoster from '@/components/student/ManageRoster';
 
 import {
   Card,
@@ -305,11 +306,15 @@ export default function RosterManagement() {
 
   return (
     <div className="space-y-6">
+      {/* Integrate the ManageRoster component for enhanced student management */}
+      <ManageRoster />
+      
+      {/* Original student import functionality */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>Student Roster Management</CardTitle>
-            <CardDescription>Add, import, and manage student rosters</CardDescription>
+            <CardTitle>Bulk Student Import</CardTitle>
+            <CardDescription>Import multiple students at once</CardDescription>
           </div>
           <div className="flex gap-2">
             <Dialog open={isAddStudentDialogOpen} onOpenChange={setIsAddStudentDialogOpen}>
