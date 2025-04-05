@@ -8,8 +8,9 @@ import StudentList from '@/components/student/StudentList';
 import StudentDetail from '@/components/student/StudentDetail';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { User as UserType, BehaviorPoint, RewardRedemption } from '@shared/schema';
-import { Loader2, Gift, UserCircle, FileText, Award } from 'lucide-react';
+import { Loader2, Gift, UserCircle, FileText, Award, Calendar, Filter, Plus } from 'lucide-react';
 
 export default function StudentPage() {
   const { user } = useAuth();
