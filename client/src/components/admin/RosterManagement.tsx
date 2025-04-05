@@ -309,7 +309,7 @@ export default function RosterManagement() {
       {/* Integrate the ManageRoster component for enhanced student management */}
       <ManageRoster />
       
-      {/* Original student import functionality */}
+      {/* Bulk Student Import - Simplified UI per user's request */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
@@ -317,280 +317,234 @@ export default function RosterManagement() {
             <CardDescription>Import multiple students at once</CardDescription>
           </div>
           <div className="flex gap-2">
-            <Dialog open={isAddStudentDialogOpen} onOpenChange={setIsAddStudentDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="flex items-center gap-1.5">
-                  <UserPlus className="h-4 w-4" />
-                  <span>Add Student</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add New Student</DialogTitle>
-                  <DialogDescription>
-                    Add a single student to the roster.
-                  </DialogDescription>
-                </DialogHeader>
-                <Form {...singleStudentForm}>
-                  <form onSubmit={singleStudentForm.handleSubmit(onSingleStudentSubmit)} className="space-y-4">
-                    <FormField
-                      control={singleStudentForm.control}
-                      name="firstName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>First Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="John" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={singleStudentForm.control}
-                      name="lastName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Last Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Smith" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={singleStudentForm.control}
-                      name="gradeLevel"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Grade</FormLabel>
-                          <FormControl>
-                            <Input placeholder="9" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={singleStudentForm.control}
-                      name="houseId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>House</FormLabel>
-                          <Select
-                            onValueChange={(value) => field.onChange(parseInt(value))}
-                            defaultValue={field.value ? field.value.toString() : undefined}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a house" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {houses?.map((house) => (
-                                <SelectItem key={house.id} value={house.id.toString()}>
-                                  {house.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <DialogFooter>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        onClick={() => setIsAddStudentDialogOpen(false)}
-                      >
-                        Cancel
-                      </Button>
-                      <Button 
-                        type="submit" 
-                        disabled={addStudentMutation.isPending}
-                      >
-                        {addStudentMutation.isPending ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Adding...
-                          </>
-                        ) : (
-                          'Add Student'
-                        )}
-                      </Button>
-                    </DialogFooter>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
-
-            <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="flex items-center gap-1.5" variant="outline">
-                  <Upload className="h-4 w-4" />
-                  <span>Bulk Import</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-3xl">
-                <DialogHeader>
-                  <DialogTitle>Bulk Import Students</DialogTitle>
-                  <DialogDescription>
-                    Add multiple students at once by pasting their names.
-                  </DialogDescription>
-                </DialogHeader>
-                <Form {...bulkImportForm}>
-                  <form onSubmit={bulkImportForm.handleSubmit(onBulkImportSubmit)} className="space-y-4">
-                    <FormField
-                      control={bulkImportForm.control}
-                      name="studentNames"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Student Names</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="Paste student names here, one per line. Examples:
-ABDULRAHMAN AHMED HUSAIN AHMED ALKATHEERI
-ALI BADR ALI ABDULLA ALHOSANI
-MAYED AHMED MUBARAK OBIAD ALHAMELI"
-                              className="min-h-[200px]"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Enter each student on a new line. For names with multiple parts like "ABDULRAHMAN AHMED HUSAIN AHMED ALKATHEERI", the first part will be used as the first name and the rest as the last name.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={bulkImportForm.control}
-                        name="gradeLevel"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Grade</FormLabel>
-                            <FormControl>
-                              <Input placeholder="9" {...field} />
-                            </FormControl>
-                            <FormDescription>
-                              All imported students will be assigned to this grade.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={bulkImportForm.control}
-                        name="houseId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>House</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select a house" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {houses?.map((house) => (
-                                  <SelectItem key={house.id} value={house.id.toString()}>
-                                    {house.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormDescription>
-                              All imported students will be assigned to this house.
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <DialogFooter>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        onClick={() => setIsImportDialogOpen(false)}
-                      >
-                        Cancel
-                      </Button>
-                      <Button 
-                        type="submit" 
-                        disabled={bulkImportMutation.isPending}
-                      >
-                        {bulkImportMutation.isPending ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Importing...
-                          </>
-                        ) : (
-                          'Import Students'
-                        )}
-                      </Button>
-                    </DialogFooter>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
+            <Button 
+              onClick={() => setIsAddStudentDialogOpen(true)}
+              className="flex items-center gap-1.5"
+            >
+              <UserPlus className="h-4 w-4" />
+              Add Student
+            </Button>
+            <Button 
+              onClick={() => setIsImportDialogOpen(true)}
+              variant="outline"
+              className="flex items-center gap-1.5"
+            >
+              <Upload className="h-4 w-4" />
+              Bulk Import
+            </Button>
           </div>
         </CardHeader>
-        <CardContent>
-          {isLoadingStudents ? (
-            <div className="flex justify-center items-center h-40">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : !students || students.length === 0 ? (
-            <div className="text-center p-8 text-muted-foreground">
-              <Users className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
-              <p className="mb-4">No students found in the roster.</p>
-              <p className="mb-4 text-sm text-muted-foreground">
-                Add students individually or use the bulk import option to add multiple students at once.
-              </p>
-            </div>
-          ) : (
-            <Table>
-              <TableCaption>A list of all students in the roster.</TableCaption>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Grade</TableHead>
-                  <TableHead>House</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {students.map((student) => (
-                  <TableRow key={student.id}>
-                    <TableCell className="font-medium">
-                      {student.firstName} {student.lastName}
-                    </TableCell>
-                    <TableCell>{student.gradeLevel || "N/A"}</TableCell>
-                    <TableCell>
-                      {houses?.find(h => h.id === student.houseId)?.name || "Unassigned"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteStudent(student.id)}
-                        className="h-8 w-8 p-0 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                        title="Delete student and all associated records"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Delete</span>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
       </Card>
+
+      {/* Add Student Dialog */}
+      <Dialog open={isAddStudentDialogOpen} onOpenChange={setIsAddStudentDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Student</DialogTitle>
+            <DialogDescription>
+              Add a single student to the roster.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...singleStudentForm}>
+            <form onSubmit={singleStudentForm.handleSubmit(onSingleStudentSubmit)} className="space-y-4">
+              <FormField
+                control={singleStudentForm.control}
+                name="firstName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>First Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="John" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={singleStudentForm.control}
+                name="lastName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Last Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Smith" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={singleStudentForm.control}
+                name="gradeLevel"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Grade</FormLabel>
+                    <FormControl>
+                      <Input placeholder="9" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={singleStudentForm.control}
+                name="houseId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>House</FormLabel>
+                    <Select
+                      onValueChange={(value) => field.onChange(parseInt(value))}
+                      defaultValue={field.value ? field.value.toString() : undefined}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a house" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {houses?.map((house) => (
+                          <SelectItem key={house.id} value={house.id.toString()}>
+                            {house.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setIsAddStudentDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={addStudentMutation.isPending}
+                >
+                  {addStudentMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Adding...
+                    </>
+                  ) : (
+                    'Add Student'
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Import Dialog */}
+      <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Bulk Import Students</DialogTitle>
+            <DialogDescription>
+              Add multiple students at once by pasting their names.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...bulkImportForm}>
+            <form onSubmit={bulkImportForm.handleSubmit(onBulkImportSubmit)} className="space-y-4">
+              <FormField
+                control={bulkImportForm.control}
+                name="studentNames"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Student Names</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Paste student names here, one per line. Examples:
+ABDULRAHMAN AHMED HUSAIN AHMED ALKATHEERI
+ALI BADR ALI ABDULLA ALHOSANI
+KHALED ABDULHAMEED MOHAMED AHMED ALHAMMADI"
+                        className="font-mono h-60"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Enter each student on a new line. For names with multiple parts like "ABDULRAHMAN AHMED HUSAIN AHMED ALKATHEERI", the first part will be used as the first name and the rest as the last name.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={bulkImportForm.control}
+                  name="gradeLevel"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Grade</FormLabel>
+                      <FormControl>
+                        <Input placeholder="9" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        All imported students will be assigned to this grade.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={bulkImportForm.control}
+                  name="houseId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>House</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a house" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {houses?.map((house) => (
+                            <SelectItem key={house.id} value={house.id.toString()}>
+                              {house.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        All imported students will be assigned to this house.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setIsImportDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={bulkImportMutation.isPending}
+                >
+                  {bulkImportMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Importing...
+                    </>
+                  ) : (
+                    'Import Students'
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
