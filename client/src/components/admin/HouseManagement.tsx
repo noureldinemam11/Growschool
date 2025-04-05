@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { insertHouseSchema } from '@shared/schema';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
+import { HexColorPicker } from 'react-colorful';
 
 import {
   Card,
@@ -63,6 +64,8 @@ export default function HouseManagement() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedHouse, setSelectedHouse] = useState<House | null>(null);
   const [refreshCounter, setRefreshCounter] = useState(0);
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const [showEditColorPicker, setShowEditColorPicker] = useState(false);
 
   // Fetch houses with refresh counter to force refetch
   const { data: houses, isLoading, refetch } = useQuery<House[]>({
@@ -316,14 +319,45 @@ export default function HouseManagement() {
                         <FormLabel>House Color</FormLabel>
                         <div className="flex items-center gap-2">
                           <FormControl>
-                            <Input placeholder="#FF5733" {...field} />
+                            <Input 
+                              placeholder="#FF5733" 
+                              {...field} 
+                              onClick={() => setShowColorPicker(true)}
+                            />
                           </FormControl>
                           <div
-                            className="h-8 w-8 rounded-md border"
+                            className="h-8 w-8 rounded-md border cursor-pointer"
                             style={{ backgroundColor: field.value }}
+                            onClick={() => setShowColorPicker(true)}
                           />
                         </div>
-                        <FormDescription>Hex color code (e.g. #FF5733)</FormDescription>
+                        {showColorPicker && (
+                          <div className="relative mt-2">
+                            <div 
+                              className="fixed inset-0 z-40" 
+                              onClick={() => setShowColorPicker(false)}
+                            />
+                            <div className="absolute z-50 shadow-lg rounded-md p-3 bg-background border">
+                              <HexColorPicker 
+                                color={field.value} 
+                                onChange={(color) => {
+                                  field.onChange(color);
+                                }}
+                              />
+                              <div className="mt-2 flex justify-end">
+                                <Button 
+                                  type="button" 
+                                  size="sm" 
+                                  variant="secondary"
+                                  onClick={() => setShowColorPicker(false)}
+                                >
+                                  Done
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        <FormDescription>Select or enter a hex color code (e.g. #FF5733)</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -485,14 +519,44 @@ export default function HouseManagement() {
                       <FormLabel>House Color</FormLabel>
                       <div className="flex items-center gap-2">
                         <FormControl>
-                          <Input {...field} />
+                          <Input 
+                            {...field} 
+                            onClick={() => setShowEditColorPicker(true)}
+                          />
                         </FormControl>
                         <div
-                          className="h-8 w-8 rounded-md border"
+                          className="h-8 w-8 rounded-md border cursor-pointer"
                           style={{ backgroundColor: field.value }}
+                          onClick={() => setShowEditColorPicker(true)}
                         />
                       </div>
-                      <FormDescription>Hex color code (e.g. #FF5733)</FormDescription>
+                      {showEditColorPicker && (
+                        <div className="relative mt-2">
+                          <div 
+                            className="fixed inset-0 z-40" 
+                            onClick={() => setShowEditColorPicker(false)}
+                          />
+                          <div className="absolute z-50 shadow-lg rounded-md p-3 bg-background border">
+                            <HexColorPicker 
+                              color={field.value} 
+                              onChange={(color) => {
+                                field.onChange(color);
+                              }}
+                            />
+                            <div className="mt-2 flex justify-end">
+                              <Button 
+                                type="button" 
+                                size="sm" 
+                                variant="secondary"
+                                onClick={() => setShowEditColorPicker(false)}
+                              >
+                                Done
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      <FormDescription>Select or enter a hex color code (e.g. #FF5733)</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

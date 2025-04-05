@@ -6,6 +6,22 @@ import connectPg from "connect-pg-simple";
 import { and, eq, desc } from "drizzle-orm";
 import { db, pool } from "./db";
 
+// Helper function to ensure correct typing for User objects
+function ensureUserType(user: any): User {
+  if (user) {
+    // Set houseId to null if undefined
+    if (user.houseId === undefined) {
+      user.houseId = null;
+    }
+    
+    // Add classId as null since it doesn't exist in the database
+    const userWithType = user as User;
+    userWithType.classId = null;
+    return userWithType;
+  }
+  return user as User;
+}
+
 // Create session stores
 const MemoryStore = createMemoryStore(session);
 const PostgresSessionStore = connectPg(session);
@@ -567,15 +583,9 @@ export class DatabaseStorage implements IStorage {
           return undefined;
         }
         
-        // Make sure houseId is properly set to null if it's undefined
+        // Use our helper function to ensure correct typing
         const user = result.rows[0];
-        if (user.houseId === undefined) {
-          user.houseId = null;
-        }
-        // Set classId to null since it doesn't exist in the database
-        user.classId = null;
-        
-        return user as User;
+        return ensureUserType(user);
       } finally {
         client.release();
       }
@@ -599,15 +609,9 @@ export class DatabaseStorage implements IStorage {
           return undefined;
         }
         
-        // Make sure houseId is properly set to null if it's undefined
+        // Use our helper function to ensure correct typing
         const user = result.rows[0];
-        if (user.houseId === undefined) {
-          user.houseId = null;
-        }
-        // Set classId to null since it doesn't exist in the database
-        user.classId = null;
-        
-        return user as User;
+        return ensureUserType(user);
       } finally {
         client.release();
       }
@@ -649,10 +653,8 @@ export class DatabaseStorage implements IStorage {
         userResult.houseId = null;
       }
       
-      // Set classId to null since it doesn't exist in the database
-      userResult.classId = null;
-      
-      return userResult as User;
+      // Use our helper function to ensure correct typing
+      return ensureUserType(userResult);
     } catch (error) {
       console.error('Error creating user:', error);
       throw error;
@@ -712,11 +714,9 @@ export class DatabaseStorage implements IStorage {
           return undefined;
         }
         
-        // Add classId as null since it doesn't exist in the database
+        // Use our helper function to ensure correct typing
         const user = result.rows[0];
-        user.classId = null;
-        
-        return user as User;
+        return ensureUserType(user);
       } finally {
         client.release();
       }
@@ -829,15 +829,8 @@ export class DatabaseStorage implements IStorage {
           'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", house_id AS "houseId" FROM users'
         );
         
-        // Make sure houseId is properly set to null if it's undefined
-        // And set classId to null since it doesn't exist in the database
-        const users = result.rows.map(user => {
-          if (user.houseId === undefined) {
-            user.houseId = null;
-          }
-          user.classId = null;
-          return user;
-        });
+        // Use our helper function to ensure correct typing for each user
+        const users = result.rows.map(user => ensureUserType(user));
         
         return users as User[];
       } finally {
@@ -866,13 +859,7 @@ export class DatabaseStorage implements IStorage {
         
         // Make sure houseId is properly set to null if it's undefined
         // And add classId as null since it doesn't exist in the database
-        const users = result.rows.map(user => {
-          if (user.houseId === undefined) {
-            user.houseId = null;
-          }
-          user.classId = null;
-          return user;
-        });
+        const users = result.rows.map(user => ensureUserType(user));
         
         return users as User[];
       } finally {
@@ -901,14 +888,8 @@ export class DatabaseStorage implements IStorage {
         );
         
         // Make sure houseId is properly set to null if it's undefined
-        // And add classId as null since it doesn't exist in the database
-        const users = result.rows.map(user => {
-          if (user.houseId === undefined) {
-            user.houseId = null;
-          }
-          user.classId = null;
-          return user;
-        });
+        // Use our helper function to ensure correct typing
+        const users = result.rows.map(user => ensureUserType(user));
         
         return users as User[];
       } finally {
@@ -938,13 +919,12 @@ export class DatabaseStorage implements IStorage {
         );
         
         // Make sure all users have a houseId property, even if null
-        // And add classId as null since it doesn't exist in the database
+        // Use our helper function to ensure correct typing, but ensure houseId is set to passed value
         const users = result.rows.map(user => {
-          if (user.houseId === undefined) {
-            user.houseId = houseId; // We know this is the correct house ID since we filtered by it
-          }
-          user.classId = null;
-          return user;
+          const processedUser = ensureUserType(user);
+          // Ensure houseId is set to the correct value we queried for
+          processedUser.houseId = houseId;
+          return processedUser;
         });
         
         // Return the properly formatted results
@@ -952,12 +932,11 @@ export class DatabaseStorage implements IStorage {
       } finally {
         client.release();
       }
-    } catch (error: any) {
-      console.error(`Error in getStudentsByHouseId for houseId ${houseId}:`, error.message || 'Unknown error');
+    } catch (error) {
+      console.error(`Error in getStudentsByHouseId for house ${houseId}:`, error);
       throw error;
     }
   }
-  
   // House Management
   async getHouse(id: number): Promise<House | undefined> {
     const result = await db.select().from(houses).where(eq(houses.id, id));
