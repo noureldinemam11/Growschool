@@ -164,6 +164,12 @@ const StudentDetail: FC<StudentDetailProps> = ({ student, points, isLoading }) =
       }
     }
     
+    // Ensure we display both positive and negative values properly
+    if (data.some(d => d.value < 0)) {
+      // We have some negative values, make sure we account for them in the chart
+      console.log('Found negative values in trend data');
+    }
+    
     console.log('Trend data being displayed:', data);
     setTrendData(data);
   }, [points, chartPeriod]);
@@ -392,84 +398,104 @@ const StudentDetail: FC<StudentDetailProps> = ({ student, points, isLoading }) =
         </CardHeader>
         <CardContent className="p-6 pt-4">
           {/* Enhanced chart visualization with grid lines */}
-          <div className="relative h-56 overflow-hidden">
-            {/* Light grid lines */}
-            <div className="absolute inset-0 flex flex-col justify-between pb-8">
-              <div className="border-t border-gray-100 h-1/3"></div>
-              <div className="border-t border-gray-100 h-1/3"></div>
-              <div className="border-t border-gray-100 h-1/3"></div>
+          <div className="relative h-60 overflow-hidden">
+            {/* Center line for zero points */}
+            <div className="absolute inset-0 flex items-center">
+              <div className="border-t border-gray-200 w-full"></div>
             </div>
             
-            <div className="absolute inset-0 flex items-end justify-between gap-1 pb-8">
+            {/* Light grid lines */}
+            <div className="absolute inset-0 flex flex-col justify-between">
+              <div className="h-1/4 border-b border-gray-100"></div>
+              <div className="h-1/4 border-b border-gray-100"></div>
+              <div className="h-1/4 border-b border-gray-100"></div>
+              <div className="h-1/4"></div>
+            </div>
+            
+            <div className="absolute inset-0 flex items-center justify-between gap-1">
               {trendData.length > 0 ? (
                 trendData.map((data, index) => {
-                  // Find the maximum value to scale properly
-                  const maxValue = Math.max(10, ...trendData.map(d => Math.abs(d.value)));
-                  // Scale height between 5% and 85% of the container
-                  const height = data.value 
-                    ? Math.max(5, Math.min(85, (Math.abs(data.value) / maxValue) * 85)) 
-                    : 2;
+                  // Find the maximum value to scale properly, with a minimum of 10
+                  const allValues = trendData.map(d => Math.abs(d.value));
+                  const maxValue = Math.max(10, ...allValues);
+                  
+                  // Scale height between 5% and 40% of the container (for both positive and negative)
+                  const heightPercent = data.value 
+                    ? Math.max(5, Math.min(40, (Math.abs(data.value) / maxValue) * 40)) 
+                    : 0;
                   
                   const isPositive = data.value > 0;
                   const isNegative = data.value < 0;
                   const hasValue = data.value !== 0;
                   
                   return (
-                    <div key={index} className="flex flex-col items-center justify-end flex-1 group relative h-full">
+                    <div key={index} className="flex flex-col items-center justify-center flex-1 group relative h-full">
                       {/* Enhanced tooltip with arrow */}
-                      <div className="absolute bottom-full mb-2 -translate-x-1/2 left-1/2 bg-black text-white text-xs rounded-md px-3 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-lg">
+                      <div className="absolute mb-2 -translate-x-1/2 left-1/2 bg-black text-white text-xs rounded-md px-3 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-lg" 
+                        style={{ bottom: isPositive ? '50%' : 'auto', top: isNegative ? '50%' : 'auto' }}>
                         <div className="font-medium">
                           {data.date}
                         </div>
                         <div className={`text-sm font-mono ${isPositive ? 'text-green-400' : isNegative ? 'text-red-400' : ''}`}>
                           {isPositive ? '+' : ''}{data.value} points
                         </div>
-                        {/* Arrow pointing down */}
-                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-black rotate-45"></div>
+                        {/* Arrow pointing */}
+                        <div className={`absolute w-2 h-2 bg-black left-1/2 -translate-x-1/2 ${
+                          isPositive ? '-bottom-1 rotate-45' : '-top-1 rotate-[225deg]'
+                        }`}></div>
                       </div>
                       
-                      {/* Bar container with hover effect */}
-                      <div 
-                        className={`w-full relative flex flex-col items-center justify-end transition-all duration-300 ${
-                          hasValue ? 'group-hover:opacity-85 group-hover:scale-105' : ''
-                        }`}
-                        style={{ height: '100%' }}
-                      >
-                        {/* Value label - now positioned above the bar */}
-                        <div className={`text-xs font-mono font-semibold mb-1 transition-all ${
-                          isPositive ? 'text-success' : isNegative ? 'text-error' : 'text-neutral'
-                        }`}>
-                          {isPositive ? '+' : ''}{data.value}
-                        </div>
-                        
-                        {/* Actual bar with gradient and glow effect for non-zero values */}
-                        <div 
-                          className={`w-full rounded-md ${
-                            isPositive 
-                              ? 'bg-gradient-to-t from-green-500 to-green-400' 
-                              : isNegative 
-                                ? 'bg-gradient-to-t from-red-500 to-red-400' 
-                                : 'bg-gray-200'
-                          } ${hasValue ? 'group-hover:shadow-lg' : ''}`}
-                          style={{ 
-                            height: data.value === 0 ? '2px' : `${height}%`,
-                            minHeight: data.value === 0 ? '2px' : '10px',
-                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                            animation: hasValue ? 'pulse 2s infinite' : 'none',
-                          }}
-                        >
-                          {/* Add shine effect for bars with values */}
-                          {hasValue && (
+                      <div className="flex flex-col items-center w-full h-full relative">
+                        {/* Positive bar - shown above the center line */}
+                        {isPositive && (
+                          <>
+                            <div className={`text-xs font-mono font-semibold mb-1 text-success absolute bottom-[50%] transform translate-y-[-150%]`}>
+                              +{data.value}
+                            </div>
                             <div 
-                              className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30"
+                              className="w-full rounded-t-md bg-gradient-to-t from-green-500 to-green-400 group-hover:shadow-lg transition-all duration-300 group-hover:opacity-90 group-hover:scale-105"
                               style={{ 
-                                mixBlendMode: 'overlay',
-                                transform: 'translateX(-100%)',
-                                animation: 'shine 2s infinite'
+                                height: `${heightPercent}%`,
+                                opacity: data.value === 0 ? 0.3 : 1,
+                                position: 'absolute',
+                                bottom: '50%',
                               }}
-                            />
-                          )}
-                        </div>
+                            >
+                              {/* Inner shine effect */}
+                              <div className="absolute inset-0 rounded-t-md overflow-hidden">
+                                <div className="absolute inset-0 bg-white opacity-20 transform -skew-x-12"></div>
+                              </div>
+                            </div>
+                          </>
+                        )}
+                        
+                        {/* Negative bar - shown below the center line */}
+                        {isNegative && (
+                          <>
+                            <div 
+                              className="w-full rounded-b-md bg-gradient-to-b from-red-500 to-red-400 group-hover:shadow-lg transition-all duration-300 group-hover:opacity-90 group-hover:scale-105"
+                              style={{ 
+                                height: `${heightPercent}%`,
+                                opacity: data.value === 0 ? 0.3 : 1,
+                                position: 'absolute',
+                                top: '50%',
+                              }}
+                            >
+                              {/* Inner shine effect */}
+                              <div className="absolute inset-0 rounded-b-md overflow-hidden">
+                                <div className="absolute inset-0 bg-white opacity-20 transform -skew-x-12"></div>
+                              </div>
+                            </div>
+                            <div className={`text-xs font-mono font-semibold mt-1 text-error absolute top-[50%] transform translate-y-[150%]`}>
+                              {data.value}
+                            </div>
+                          </>
+                        )}
+                        
+                        {/* Zero value */}
+                        {!hasValue && (
+                          <div className="w-full h-1 bg-gray-200 opacity-30 absolute top-1/2 -translate-y-1/2"></div>
+                        )}
                       </div>
                       
                       {/* Date label */}
