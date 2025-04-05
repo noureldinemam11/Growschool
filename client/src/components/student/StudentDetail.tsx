@@ -43,19 +43,20 @@ const StudentDetail: FC<StudentDetailProps> = ({ student, points, isLoading }) =
     const now = new Date();
     const data: {date: string, value: number}[] = [];
     
-    // Add some demo data if needed for debugging
-    // This will help ensure the chart is filled even during development
-    const demoMode = false; // Set to true temporarily if needed for testing
-    
     // Debug log to check if points data is coming through
     console.log('Points data for trend chart:', points);
     
     if (chartPeriod === 'week') {
-      // Last 7 days
-      for (let i = 6; i >= 0; i--) {
-        const date = new Date(now);
-        date.setDate(date.getDate() - i);
-        const dateStr = date.toLocaleDateString('en-US', { weekday: 'short' });
+      // Fix for the weekly display - show the current week properly
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - now.getDay()); // Sunday of current week
+      
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(startOfWeek);
+        date.setDate(date.getDate() + i);
+        const dateStr = dayNames[i];
         
         // Find points assigned on this day
         const dayPoints = points.filter(p => {
@@ -65,80 +66,94 @@ const StudentDetail: FC<StudentDetailProps> = ({ student, points, isLoading }) =
                  pointDate.getFullYear() === date.getFullYear();
         }).reduce((sum, p) => sum + p.points, 0);
         
-        // To make the chart more interesting during dev/testing
-        const value = demoMode && dayPoints === 0 && i === 0 ? 5 : dayPoints;
-        
-        data.push({ date: dateStr, value });
-      }
-      
-      // Special case: if the student has points but they're not showing in the chart
-      // we'll manually add them to today's data point to ensure they're visible
-      if (points.length > 0 && data.every(d => d.value === 0)) {
-        const totalPoints = points.reduce((sum, p) => sum + p.points, 0);
-        if (totalPoints !== 0) {
-          data[data.length - 1].value = totalPoints;
-        }
+        data.push({ date: dateStr, value: dayPoints });
       }
     } else if (chartPeriod === 'month') {
-      // Last 4 weeks
-      for (let i = 3; i >= 0; i--) {
-        const weekStart = new Date(now);
-        weekStart.setDate(weekStart.getDate() - (i * 7) - weekStart.getDay());
-        const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekEnd.getDate() + 6);
+      // Use the current date to determine which week we're in
+      const currentDate = now.getDate();
+      const currentMonth = now.getMonth();
+      
+      // Instead of using complex week calculations, show 4 weeks of the current month
+      // Split the month into 4 parts
+      const daysInMonth = new Date(now.getFullYear(), currentMonth + 1, 0).getDate();
+      const weekSize = Math.ceil(daysInMonth / 4);
+      
+      for (let weekNum = 0; weekNum < 4; weekNum++) {
+        const weekStart = weekNum * weekSize + 1;
+        const weekEnd = Math.min((weekNum + 1) * weekSize, daysInMonth);
         
-        const dateStr = `${weekStart.getMonth() + 1}/${weekStart.getDate()}-${weekEnd.getMonth() + 1}/${weekEnd.getDate()}`;
+        const startDate = new Date(now.getFullYear(), currentMonth, weekStart);
+        const endDate = new Date(now.getFullYear(), currentMonth, weekEnd);
         
-        // Find points assigned in this week
+        const dateStr = `${currentMonth + 1}/${weekStart}-${currentMonth + 1}/${weekEnd}`;
+        
+        // Find points assigned in this date range
         const weekPoints = points.filter(p => {
           const pointDate = new Date(p.timestamp);
-          return pointDate >= weekStart && pointDate <= weekEnd;
+          const pointDay = pointDate.getDate();
+          const pointMonth = pointDate.getMonth();
+          const pointYear = pointDate.getFullYear();
+          
+          // If the point is in the current month and within this week's range
+          return pointMonth === currentMonth && 
+                 pointYear === now.getFullYear() &&
+                 pointDay >= weekStart && 
+                 pointDay <= weekEnd;
         }).reduce((sum, p) => sum + p.points, 0);
         
-        // To make the chart more interesting during dev/testing
-        const value = demoMode && weekPoints === 0 && i === 0 ? 5 : weekPoints;
-        
-        data.push({ date: dateStr, value });
+        data.push({ date: dateStr, value: weekPoints });
       }
       
-      // Special case: if the student has points but they're not showing in the chart
-      // we'll manually add them to the most recent week to ensure they're visible
+      // If we have no points in the chart but the student has points, check which week they should be in
       if (points.length > 0 && data.every(d => d.value === 0)) {
-        const totalPoints = points.reduce((sum, p) => sum + p.points, 0);
-        if (totalPoints !== 0) {
-          data[data.length - 1].value = totalPoints;
-        }
+        // Identify the appropriate week for each point and add them to the chart
+        points.forEach(point => {
+          const pointDate = new Date(point.timestamp);
+          const pointDay = pointDate.getDate();
+          
+          // Skip if not in current month/year
+          if (pointDate.getMonth() !== currentMonth || pointDate.getFullYear() !== now.getFullYear()) {
+            return;
+          }
+          
+          // Figure out which week this point belongs to
+          const weekIndex = Math.floor((pointDay - 1) / weekSize);
+          if (weekIndex >= 0 && weekIndex < 4) {
+            data[weekIndex].value += point.points;
+          }
+        });
       }
     } else { // year
-      // Last 6 months
+      // Last 6 months display
       for (let i = 5; i >= 0; i--) {
         const date = new Date(now);
         date.setMonth(date.getMonth() - i);
+        const monthIndex = date.getMonth();
+        const year = date.getFullYear();
         const dateStr = date.toLocaleDateString('en-US', { month: 'short' });
         
         // Find points assigned in this month
         const monthPoints = points.filter(p => {
           const pointDate = new Date(p.timestamp);
-          return pointDate.getMonth() === date.getMonth() &&
-                 pointDate.getFullYear() === date.getFullYear();
+          return pointDate.getMonth() === monthIndex &&
+                 pointDate.getFullYear() === year;
         }).reduce((sum, p) => sum + p.points, 0);
         
-        // To make the chart more interesting during dev/testing
-        const value = demoMode && monthPoints === 0 && i === 0 ? 5 : monthPoints;
-        
-        data.push({ date: dateStr, value });
-      }
-      
-      // Special case: if the student has points but they're not showing in the chart
-      // we'll manually add them to the current month to ensure they're visible
-      if (points.length > 0 && data.every(d => d.value === 0)) {
-        const totalPoints = points.reduce((sum, p) => sum + p.points, 0);
-        if (totalPoints !== 0) {
-          data[data.length - 1].value = totalPoints;
-        }
+        data.push({ date: dateStr, value: monthPoints });
       }
     }
     
+    // Global fallback: if we still have no points in the chart but the student has points
+    if (points.length > 0 && data.every(d => d.value === 0)) {
+      // Add all points to today/current period
+      const totalPoints = points.reduce((sum, p) => sum + p.points, 0);
+      if (totalPoints !== 0) {
+        // Add to the last bar in the chart (representing the current period)
+        data[data.length - 1].value = totalPoints;
+      }
+    }
+    
+    console.log('Trend data being displayed:', data);
     setTrendData(data);
   }, [points, chartPeriod]);
 
