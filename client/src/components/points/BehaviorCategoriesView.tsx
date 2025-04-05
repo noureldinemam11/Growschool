@@ -366,25 +366,22 @@ export default function BehaviorCategoriesView({
         </BehaviorCategoryGroup>
       ))}
 
-      {/* Fixed bottom toolbar - styled to match the design */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-2 flex justify-center">
-        <div className="max-w-md w-full bg-white rounded-full shadow-md flex items-center justify-between">
-          {/* We don't need the back button here anymore since we have it in the header */}
-          <div className="w-24"></div> {/* Spacer to balance the layout */}
-          
-          <Button 
-            variant={totalPoints > 0 ? "default" : "ghost"}
-            className="rounded-r-full flex items-center justify-center"
-            onClick={handleSubmitAll}
-            disabled={totalPoints === 0}
-          >
-            <span className="text-sm">
-              {totalPoints > 0 
-                ? `Submit (${totalPoints} points)` 
-                : "Submit"}
-            </span>
-          </Button>
-        </div>
+      {/* Fixed bottom toolbar - made more visible on mobile */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 flex justify-center">
+        <Button 
+          variant="default"
+          size="lg"
+          className="w-full h-12 text-base font-medium flex items-center justify-center"
+          onClick={handleSubmitAll}
+          disabled={totalPoints === 0}
+        >
+          <Check className="mr-2 h-5 w-5" />
+          <span>
+            {totalPoints > 0 
+              ? `Submit Points (${totalPoints} total)` 
+              : "Submit Points"}
+          </span>
+        </Button>
       </div>
     </div>
   );
