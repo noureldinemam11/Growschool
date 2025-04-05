@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
   Loader2, TrendingUp, TrendingDown, Medal, Award, Calendar, 
-  BookOpen, Users, Clock, ArrowUp, ArrowDown, Star, Plus, Minus, Mail
+  BookOpen, Users, Clock, ArrowUp, ArrowDown, Star, Plus, Minus, Mail,
+  LineChart, BarChart2, Gift, UserCircle, FileText
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
@@ -353,32 +354,35 @@ const StudentDetail: FC<StudentDetailProps> = ({ student, points, isLoading }) =
         </Card>
       </div>
       
-      {/* Point trends visualization */}
-      <Card>
-        <CardHeader className="pb-2">
+      {/* Point trends visualization - redesigned with better styling */}
+      <Card className="overflow-hidden">
+        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white border-b">
           <div className="flex justify-between items-center">
-            <CardTitle className="text-sm">Point Trends</CardTitle>
-            <div className="flex gap-1">
+            <CardTitle className="text-sm flex items-center">
+              <LineChart className="h-4 w-4 mr-1.5 text-primary" />
+              Point Trends
+            </CardTitle>
+            <div className="flex bg-white rounded-full p-0.5 shadow-sm border">
               <Button 
                 size="sm" 
-                variant={chartPeriod === 'week' ? 'default' : 'outline'} 
-                className="h-7 text-xs px-2"
+                variant="ghost"
+                className={`h-7 text-xs px-3 rounded-full ${chartPeriod === 'week' ? 'bg-primary text-white shadow-sm' : ''}`}
                 onClick={() => setChartPeriod('week')}
               >
                 Week
               </Button>
               <Button 
                 size="sm" 
-                variant={chartPeriod === 'month' ? 'default' : 'outline'} 
-                className="h-7 text-xs px-2"
+                variant="ghost"
+                className={`h-7 text-xs px-3 rounded-full ${chartPeriod === 'month' ? 'bg-primary text-white shadow-sm' : ''}`}
                 onClick={() => setChartPeriod('month')}
               >
                 Month
               </Button>
               <Button 
                 size="sm" 
-                variant={chartPeriod === 'year' ? 'default' : 'outline'} 
-                className="h-7 text-xs px-2"
+                variant="ghost"
+                className={`h-7 text-xs px-3 rounded-full ${chartPeriod === 'year' ? 'bg-primary text-white shadow-sm' : ''}`}
                 onClick={() => setChartPeriod('year')}
               >
                 Year
@@ -386,57 +390,118 @@ const StudentDetail: FC<StudentDetailProps> = ({ student, points, isLoading }) =
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pb-2">
-          {/* Enhanced chart visualization */}
-          <div className="h-44 flex items-end justify-between gap-1 mt-3">
-            {trendData.length > 0 ? (
-              trendData.map((data, index) => {
-                // Find the maximum value to scale properly
-                const maxValue = Math.max(10, ...trendData.map(d => Math.abs(d.value)));
-                // Scale height between 5% and 90% of the container
-                const height = data.value 
-                  ? Math.max(5, Math.min(90, (Math.abs(data.value) / maxValue) * 90)) 
-                  : 5;
-                
-                return (
-                  <div key={index} className="flex flex-col items-center justify-end flex-1 group relative">
-                    {/* Tooltip */}
-                    <div className="absolute bottom-full mb-1 -translate-x-1/2 left-1/2 bg-black text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                      {data.date}: {data.value > 0 ? '+' : ''}{data.value} points
-                    </div>
-                    
-                    {/* Bar */}
-                    <div className="w-full rounded-t-sm flex flex-col items-center">
-                      {/* Value label */}
-                      <div className="text-xs font-mono font-semibold mb-1">
-                        {data.value > 0 ? '+' : ''}{data.value}
+        <CardContent className="p-6 pt-4">
+          {/* Enhanced chart visualization with grid lines */}
+          <div className="relative h-56 overflow-hidden">
+            {/* Light grid lines */}
+            <div className="absolute inset-0 flex flex-col justify-between pb-8">
+              <div className="border-t border-gray-100 h-1/3"></div>
+              <div className="border-t border-gray-100 h-1/3"></div>
+              <div className="border-t border-gray-100 h-1/3"></div>
+            </div>
+            
+            <div className="absolute inset-0 flex items-end justify-between gap-1 pb-8">
+              {trendData.length > 0 ? (
+                trendData.map((data, index) => {
+                  // Find the maximum value to scale properly
+                  const maxValue = Math.max(10, ...trendData.map(d => Math.abs(d.value)));
+                  // Scale height between 5% and 85% of the container
+                  const height = data.value 
+                    ? Math.max(5, Math.min(85, (Math.abs(data.value) / maxValue) * 85)) 
+                    : 2;
+                  
+                  const isPositive = data.value > 0;
+                  const isNegative = data.value < 0;
+                  const hasValue = data.value !== 0;
+                  
+                  return (
+                    <div key={index} className="flex flex-col items-center justify-end flex-1 group relative h-full">
+                      {/* Enhanced tooltip with arrow */}
+                      <div className="absolute bottom-full mb-2 -translate-x-1/2 left-1/2 bg-black text-white text-xs rounded-md px-3 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-lg">
+                        <div className="font-medium">
+                          {data.date}
+                        </div>
+                        <div className={`text-sm font-mono ${isPositive ? 'text-green-400' : isNegative ? 'text-red-400' : ''}`}>
+                          {isPositive ? '+' : ''}{data.value} points
+                        </div>
+                        {/* Arrow pointing down */}
+                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-black rotate-45"></div>
                       </div>
                       
-                      {/* Actual bar */}
+                      {/* Bar container with hover effect */}
                       <div 
-                        className={`w-full rounded-md ${data.value > 0 ? 'bg-success' : data.value < 0 ? 'bg-error' : 'bg-gray-200'}`}
-                        style={{ 
-                          height: data.value === 0 ? '5px' : `${height}%`,
-                          minHeight: '5px',
-                          transition: 'height 0.3s ease'
-                        }}
-                      ></div>
+                        className={`w-full relative flex flex-col items-center justify-end transition-all duration-300 ${
+                          hasValue ? 'group-hover:opacity-85 group-hover:scale-105' : ''
+                        }`}
+                        style={{ height: '100%' }}
+                      >
+                        {/* Value label - now positioned above the bar */}
+                        <div className={`text-xs font-mono font-semibold mb-1 transition-all ${
+                          isPositive ? 'text-success' : isNegative ? 'text-error' : 'text-neutral'
+                        }`}>
+                          {isPositive ? '+' : ''}{data.value}
+                        </div>
+                        
+                        {/* Actual bar with gradient and glow effect for non-zero values */}
+                        <div 
+                          className={`w-full rounded-md ${
+                            isPositive 
+                              ? 'bg-gradient-to-t from-green-500 to-green-400' 
+                              : isNegative 
+                                ? 'bg-gradient-to-t from-red-500 to-red-400' 
+                                : 'bg-gray-200'
+                          } ${hasValue ? 'group-hover:shadow-lg' : ''}`}
+                          style={{ 
+                            height: data.value === 0 ? '2px' : `${height}%`,
+                            minHeight: data.value === 0 ? '2px' : '10px',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            animation: hasValue ? 'pulse 2s infinite' : 'none',
+                          }}
+                        >
+                          {/* Add shine effect for bars with values */}
+                          {hasValue && (
+                            <div 
+                              className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30"
+                              style={{ 
+                                mixBlendMode: 'overlay',
+                                transform: 'translateX(-100%)',
+                                animation: 'shine 2s infinite'
+                              }}
+                            />
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Date label */}
+                      <div className="text-xs font-medium text-neutral-dark mt-2 truncate w-full text-center">
+                        {data.date}
+                      </div>
                     </div>
-                    
-                    {/* Date label */}
-                    <div className="text-xs text-neutral-dark mt-1 truncate w-full text-center">
-                      {data.date}
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="w-full flex flex-col items-center justify-center h-44">
-                <p className="text-neutral-dark">No data available for this time period</p>
-              </div>
-            )}
+                  );
+                })
+              ) : (
+                <div className="w-full flex flex-col items-center justify-center h-full">
+                  <BarChart2 className="h-12 w-12 text-neutral/20 mb-2" />
+                  <p className="text-neutral-dark font-medium">No data available for this time period</p>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Add a bottom legend/footer */}
+          <div className="flex items-center justify-center mt-2 border-t pt-2 text-xs text-neutral-dark">
+            <div className="flex items-center mr-3">
+              <div className="w-3 h-3 rounded-sm bg-gradient-to-t from-green-500 to-green-400 mr-1"></div>
+              <span>Positive Points</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-3 h-3 rounded-sm bg-gradient-to-t from-red-500 to-red-400 mr-1"></div>
+              <span>Negative Points</span>
+            </div>
           </div>
         </CardContent>
+        
+        {/* CSS animations handled in global styles */}
       </Card>
       
       {/* Top categories and recent points */}
