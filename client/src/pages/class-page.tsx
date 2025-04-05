@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import ClassManagement from '@/components/admin/ClassManagement';
+// Directly importing component paths to avoid module resolution issues
+import ClassManagement from '../components/admin/ClassManagement';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -14,7 +15,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Loader2, User, School, Bookmark, Users } from 'lucide-react';
 import { Class, User as UserType } from '@shared/schema';
 import { Badge } from "@/components/ui/badge";
-import StudentClassAssignment from '@/components/admin/StudentClassAssignment';
+import StudentClassAssignment from '../components/admin/StudentClassAssignment';
 
 export default function ClassPage() {
   const { user } = useAuth();

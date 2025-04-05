@@ -21,7 +21,7 @@ import { toast } from '@/hooks/use-toast';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Search, CheckCircle2, XCircle, School, User, Users } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
-import { Class, User as UserType } from '@shared/schema';
+import { Class, User as UserType, House } from '@shared/schema';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
@@ -42,6 +42,21 @@ export default function StudentClassAssignment() {
   const { data: students, isLoading: isLoadingStudents } = useQuery<UserType[]>({
     queryKey: ['/api/users/role/student'],
   });
+  
+  // Get house data
+  const { data: houses, isLoading: isLoadingHouses } = useQuery<House[]>({
+    queryKey: ['/api/houses'],
+  });
+
+  // Helper function to get house details by ID
+  const getHouseDetails = (houseId: number | null | undefined) => {
+    if (!houseId || !houses) return { name: 'No House', color: '#CBD5E1' };
+    const house = houses.find(h => h.id === houseId);
+    return {
+      name: house?.name || `House ${houseId}`,
+      color: house?.color || '#CBD5E1', // Default gray color if house not found
+    };
+  };
 
   // Filter students by search query
   const filteredStudents = students?.filter((student) => {
@@ -185,8 +200,10 @@ export default function StudentClassAssignment() {
     const classItem = classes?.find((c) => c.id === classId);
     return classItem ? `${classItem.name} (Grade ${classItem.gradeLevel}-${classItem.section})` : 'Unknown Class';
   };
+  
+  // Modified the getHouseDetails function above to handle null/undefined
 
-  const isLoading = isLoadingClasses || isLoadingStudents;
+  const isLoading = isLoadingClasses || isLoadingStudents || isLoadingHouses;
 
   return (
     <div className="space-y-6">
@@ -348,11 +365,11 @@ export default function StudentClassAssignment() {
                                 <Badge
                                   className="w-fit"
                                   style={{
-                                    backgroundColor: student.house?.color || undefined,
+                                    backgroundColor: getHouseDetails(student.houseId).color,
                                     color: '#fff',
                                   }}
                                 >
-                                  {student.house?.name || `House ${student.houseId}`}
+                                  {getHouseDetails(student.houseId).name}
                                 </Badge>
                               ) : (
                                 <Badge variant="outline">No House</Badge>
@@ -482,18 +499,18 @@ export default function StudentClassAssignment() {
                                   <Badge
                                     className="w-fit"
                                     style={{
-                                      backgroundColor: student.house?.color || undefined,
+                                      backgroundColor: getHouseDetails(student.houseId).color,
                                       color: '#fff',
                                     }}
                                   >
-                                    {student.house?.name || `House ${student.houseId}`}
+                                    {getHouseDetails(student.houseId).name}
                                   </Badge>
                                 ) : (
                                   <Badge variant="outline">No House</Badge>
                                 )}
                               </TableCell>
                               <TableCell className="text-right">
-                                {selectedClass && student.classId.toString() !== selectedClass ? (
+                                {selectedClass && student.classId && student.classId.toString() !== selectedClass ? (
                                   <div className="flex justify-end gap-2">
                                     <Button
                                       variant="outline"
@@ -597,11 +614,11 @@ export default function StudentClassAssignment() {
                                   <Badge
                                     className="w-fit"
                                     style={{
-                                      backgroundColor: student.house?.color || undefined,
+                                      backgroundColor: getHouseDetails(student.houseId).color,
                                       color: '#fff',
                                     }}
                                   >
-                                    {student.house?.name || `House ${student.houseId}`}
+                                    {getHouseDetails(student.houseId).name}
                                   </Badge>
                                 ) : (
                                   <Badge variant="outline">No House</Badge>
