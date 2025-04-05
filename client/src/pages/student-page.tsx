@@ -98,20 +98,22 @@ export default function StudentPage() {
                 <div className="lg:col-span-3">
                   {selectedStudent ? (
                     <Tabs defaultValue="overview" className="w-full">
-                      <TabsList className="bg-white mb-4 p-1 rounded-lg inline-flex h-10 items-center justify-center">
-                        <TabsTrigger value="overview" className="inline-flex items-center justify-center px-4 py-1.5 text-sm font-medium mr-1 rounded-md data-[state=active]:bg-primary data-[state=active]:text-white">
-                          <UserCircle className="h-4 w-4 mr-1.5" />
-                          <span>Overview</span>
-                        </TabsTrigger>
-                        <TabsTrigger value="behavior" className="inline-flex items-center justify-center px-4 py-1.5 text-sm font-medium mx-1 rounded-md data-[state=active]:bg-primary data-[state=active]:text-white">
-                          <FileText className="h-4 w-4 mr-1.5" />
-                          <span>Behavior Records</span>
-                        </TabsTrigger>
-                        <TabsTrigger value="rewards" className="inline-flex items-center justify-center px-4 py-1.5 text-sm font-medium ml-1 rounded-md data-[state=active]:bg-primary data-[state=active]:text-white">
-                          <Award className="h-4 w-4 mr-1.5" />
-                          <span>Rewards</span>
-                        </TabsTrigger>
-                      </TabsList>
+                      <div className="bg-white rounded-lg p-2 mb-4">
+                        <TabsList className="flex w-full h-10 items-center justify-start p-1 border-0 mb-0 bg-neutral/20 rounded-md">
+                          <TabsTrigger value="overview" className="flex items-center justify-center px-4 py-1.5 text-sm font-medium rounded-md border-0 data-[state=active]:border-0 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                            <UserCircle className="h-4 w-4 mr-1.5" />
+                            <span>Overview</span>
+                          </TabsTrigger>
+                          <TabsTrigger value="behavior" className="flex items-center justify-center px-4 py-1.5 text-sm font-medium rounded-md border-0 data-[state=active]:border-0 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                            <FileText className="h-4 w-4 mr-1.5" />
+                            <span>Behavior Records</span>
+                          </TabsTrigger>
+                          <TabsTrigger value="rewards" className="flex items-center justify-center px-4 py-1.5 text-sm font-medium rounded-md border-0 data-[state=active]:border-0 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                            <Award className="h-4 w-4 mr-1.5" />
+                            <span>Rewards</span>
+                          </TabsTrigger>
+                        </TabsList>
+                      </div>
                       
                       <TabsContent value="overview" className="space-y-4 mt-0">
                         <StudentDetail 
