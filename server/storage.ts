@@ -1,5 +1,5 @@
-import { users, houses, behaviorCategories, behaviorPoints, rewards, rewardRedemptions } from "@shared/schema";
-import type { User, InsertUser, House, InsertHouse, BehaviorCategory, InsertBehaviorCategory, BehaviorPoint, InsertBehaviorPoint, Reward, InsertReward, RewardRedemption, InsertRewardRedemption, UserRole } from "@shared/schema";
+import { users, houses, behaviorCategories, behaviorPoints, rewards, rewardRedemptions, classes, teacherClassAssignments } from "@shared/schema";
+import type { User, InsertUser, House, InsertHouse, BehaviorCategory, InsertBehaviorCategory, BehaviorPoint, InsertBehaviorPoint, Reward, InsertReward, RewardRedemption, InsertRewardRedemption, UserRole, Class, InsertClass, TeacherClassAssignment, InsertTeacherClassAssignment } from "@shared/schema";
 import createMemoryStore from "memorystore";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
@@ -74,6 +74,23 @@ export interface IStorage {
   getRewardRedemptionsByStudentId(studentId: number): Promise<RewardRedemption[]>;
   updateRewardRedemptionStatus(id: number, status: "pending" | "approved" | "delivered"): Promise<RewardRedemption | undefined>;
   
+  // Class management
+  getClass(id: number): Promise<Class | undefined>;
+  getClassByName(name: string): Promise<Class | undefined>;
+  createClass(class_: InsertClass): Promise<Class>;
+  updateClass(id: number, class_: Partial<Class>): Promise<Class | undefined>;
+  deleteClass(id: number): Promise<boolean>;
+  getAllClasses(): Promise<Class[]>;
+  
+  // Teacher-Class Assignments
+  getTeacherClassAssignment(id: number): Promise<TeacherClassAssignment | undefined>;
+  createTeacherClassAssignment(assignment: InsertTeacherClassAssignment): Promise<TeacherClassAssignment>;
+  updateTeacherClassAssignment(id: number, assignment: Partial<TeacherClassAssignment>): Promise<TeacherClassAssignment | undefined>;
+  deleteTeacherClassAssignment(id: number): Promise<boolean>;
+  getAssignmentsByTeacherId(teacherId: number): Promise<TeacherClassAssignment[]>;
+  getAssignmentsByClassId(classId: number): Promise<TeacherClassAssignment[]>;
+  getAllTeacherClassAssignments(): Promise<TeacherClassAssignment[]>;
+  
   // Session store
   sessionStore: any; // Using any for session store type to avoid compatibility issues
 }
@@ -85,6 +102,8 @@ export class MemStorage implements IStorage {
   private behaviorPoints: Map<number, BehaviorPoint>;
   private rewards: Map<number, Reward>;
   private rewardRedemptions: Map<number, RewardRedemption>;
+  private classes: Map<number, Class>;
+  private teacherClassAssignments: Map<number, TeacherClassAssignment>;
   
   sessionStore: any; // Using any instead of session.SessionStore
   
@@ -94,6 +113,8 @@ export class MemStorage implements IStorage {
   private pointCurrentId: number;
   private rewardCurrentId: number;
   private redemptionCurrentId: number;
+  private classCurrentId: number;
+  private assignmentCurrentId: number;
 
   constructor() {
     this.users = new Map();
@@ -102,6 +123,8 @@ export class MemStorage implements IStorage {
     this.behaviorPoints = new Map();
     this.rewards = new Map();
     this.rewardRedemptions = new Map();
+    this.classes = new Map();
+    this.teacherClassAssignments = new Map();
     
     this.userCurrentId = 1;
     this.houseCurrentId = 1;
@@ -109,6 +132,8 @@ export class MemStorage implements IStorage {
     this.pointCurrentId = 1;
     this.rewardCurrentId = 1;
     this.redemptionCurrentId = 1;
+    this.classCurrentId = 1;
+    this.assignmentCurrentId = 1;
     
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000 // 24 hours
@@ -477,10 +502,263 @@ export class MemStorage implements IStorage {
     this.rewardRedemptions.set(id, updatedRedemption);
     return updatedRedemption;
   }
+
+  // Class management methods
+  async getClass(id: number): Promise<Class | undefined> {
+    return this.classes.get(id);
+  }
+
+  async getClassByName(name: string): Promise<Class | undefined> {
+    return Array.from(this.classes.values()).find(
+      (class_) => class_.name === name
+    );
+  }
+
+  async createClass(class_: InsertClass): Promise<Class> {
+    const id = this.classCurrentId++;
+    const newClass: Class = {
+      id,
+      name: class_.name,
+      gradeLevel: class_.gradeLevel,
+      section: class_.section,
+      description: class_.description || null,
+      academicYear: class_.academicYear
+    };
+    this.classes.set(id, newClass);
+    return newClass;
+  }
+
+  async updateClass(id: number, classUpdate: Partial<Class>): Promise<Class | undefined> {
+    const class_ = this.classes.get(id);
+    if (!class_) return undefined;
+    
+    const updatedClass = { ...class_, ...classUpdate };
+    this.classes.set(id, updatedClass);
+    return updatedClass;
+  }
+  
+  async deleteClass(id: number): Promise<boolean> {
+    if (!this.classes.has(id)) return false;
+    
+    // Remove any teacher-class assignments for this class
+    Array.from(this.teacherClassAssignments.entries())
+      .filter(([_, assignment]) => assignment.classId === id)
+      .forEach(([assignmentId, _]) => this.teacherClassAssignments.delete(assignmentId));
+    
+    return this.classes.delete(id);
+  }
+
+  async getAllClasses(): Promise<Class[]> {
+    return Array.from(this.classes.values());
+  }
+
+  // Teacher-Class Assignment methods
+  async getTeacherClassAssignment(id: number): Promise<TeacherClassAssignment | undefined> {
+    return this.teacherClassAssignments.get(id);
+  }
+
+  async createTeacherClassAssignment(assignment: InsertTeacherClassAssignment): Promise<TeacherClassAssignment> {
+    const id = this.assignmentCurrentId++;
+    const newAssignment: TeacherClassAssignment = {
+      id,
+      teacherId: assignment.teacherId,
+      classId: assignment.classId,
+      isMainTeacher: assignment.isMainTeacher || false,
+      subjectTaught: assignment.subjectTaught || null,
+      assignedDate: new Date()
+    };
+    this.teacherClassAssignments.set(id, newAssignment);
+    return newAssignment;
+  }
+
+  async updateTeacherClassAssignment(id: number, assignmentUpdate: Partial<TeacherClassAssignment>): Promise<TeacherClassAssignment | undefined> {
+    const assignment = this.teacherClassAssignments.get(id);
+    if (!assignment) return undefined;
+    
+    const updatedAssignment = { ...assignment, ...assignmentUpdate };
+    this.teacherClassAssignments.set(id, updatedAssignment);
+    return updatedAssignment;
+  }
+  
+  async deleteTeacherClassAssignment(id: number): Promise<boolean> {
+    if (!this.teacherClassAssignments.has(id)) return false;
+    return this.teacherClassAssignments.delete(id);
+  }
+
+  async getAssignmentsByTeacherId(teacherId: number): Promise<TeacherClassAssignment[]> {
+    return Array.from(this.teacherClassAssignments.values())
+      .filter(assignment => assignment.teacherId === teacherId);
+  }
+
+  async getAssignmentsByClassId(classId: number): Promise<TeacherClassAssignment[]> {
+    return Array.from(this.teacherClassAssignments.values())
+      .filter(assignment => assignment.classId === classId);
+  }
+
+  async getAllTeacherClassAssignments(): Promise<TeacherClassAssignment[]> {
+    return Array.from(this.teacherClassAssignments.values());
+  }
 }
 
 export class DatabaseStorage implements IStorage {
   sessionStore: any; // Using any instead of session.SessionStore
+  
+  // Class management methods
+  async getClass(id: number): Promise<Class | undefined> {
+    try {
+      const [result] = await db.select().from(classes).where(eq(classes.id, id));
+      return result;
+    } catch (error) {
+      console.error(`Error in getClass for ID ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async getClassByName(name: string): Promise<Class | undefined> {
+    try {
+      const [result] = await db.select().from(classes).where(eq(classes.name, name));
+      return result;
+    } catch (error) {
+      console.error(`Error in getClassByName for name ${name}:`, error);
+      throw error;
+    }
+  }
+
+  async createClass(class_: InsertClass): Promise<Class> {
+    try {
+      const [result] = await db.insert(classes).values(class_).returning();
+      return result;
+    } catch (error) {
+      console.error('Error in createClass:', error);
+      throw error;
+    }
+  }
+
+  async updateClass(id: number, classUpdate: Partial<Class>): Promise<Class | undefined> {
+    try {
+      const [result] = await db.update(classes)
+        .set(classUpdate)
+        .where(eq(classes.id, id))
+        .returning();
+      return result;
+    } catch (error) {
+      console.error(`Error in updateClass for ID ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async deleteClass(id: number): Promise<boolean> {
+    try {
+      // First delete any teacher-class assignments for this class
+      await db.delete(teacherClassAssignments)
+        .where(eq(teacherClassAssignments.classId, id));
+      
+      // Then delete the class
+      const result = await db.delete(classes)
+        .where(eq(classes.id, id));
+      
+      return true;
+    } catch (error) {
+      console.error(`Error in deleteClass for ID ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async getAllClasses(): Promise<Class[]> {
+    try {
+      const results = await db.select().from(classes);
+      return results;
+    } catch (error) {
+      console.error('Error in getAllClasses:', error);
+      throw error;
+    }
+  }
+
+  // Teacher-Class Assignment methods
+  async getTeacherClassAssignment(id: number): Promise<TeacherClassAssignment | undefined> {
+    try {
+      const [result] = await db.select()
+        .from(teacherClassAssignments)
+        .where(eq(teacherClassAssignments.id, id));
+      return result;
+    } catch (error) {
+      console.error(`Error in getTeacherClassAssignment for ID ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async createTeacherClassAssignment(assignment: InsertTeacherClassAssignment): Promise<TeacherClassAssignment> {
+    try {
+      const [result] = await db.insert(teacherClassAssignments)
+        .values({
+          ...assignment,
+          assignedDate: new Date()
+        })
+        .returning();
+      return result;
+    } catch (error) {
+      console.error('Error in createTeacherClassAssignment:', error);
+      throw error;
+    }
+  }
+
+  async updateTeacherClassAssignment(id: number, assignmentUpdate: Partial<TeacherClassAssignment>): Promise<TeacherClassAssignment | undefined> {
+    try {
+      const [result] = await db.update(teacherClassAssignments)
+        .set(assignmentUpdate)
+        .where(eq(teacherClassAssignments.id, id))
+        .returning();
+      return result;
+    } catch (error) {
+      console.error(`Error in updateTeacherClassAssignment for ID ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async deleteTeacherClassAssignment(id: number): Promise<boolean> {
+    try {
+      await db.delete(teacherClassAssignments)
+        .where(eq(teacherClassAssignments.id, id));
+      return true;
+    } catch (error) {
+      console.error(`Error in deleteTeacherClassAssignment for ID ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async getAssignmentsByTeacherId(teacherId: number): Promise<TeacherClassAssignment[]> {
+    try {
+      const results = await db.select()
+        .from(teacherClassAssignments)
+        .where(eq(teacherClassAssignments.teacherId, teacherId));
+      return results;
+    } catch (error) {
+      console.error(`Error in getAssignmentsByTeacherId for teacher ID ${teacherId}:`, error);
+      throw error;
+    }
+  }
+
+  async getAssignmentsByClassId(classId: number): Promise<TeacherClassAssignment[]> {
+    try {
+      const results = await db.select()
+        .from(teacherClassAssignments)
+        .where(eq(teacherClassAssignments.classId, classId));
+      return results;
+    } catch (error) {
+      console.error(`Error in getAssignmentsByClassId for class ID ${classId}:`, error);
+      throw error;
+    }
+  }
+
+  async getAllTeacherClassAssignments(): Promise<TeacherClassAssignment[]> {
+    try {
+      const results = await db.select().from(teacherClassAssignments);
+      return results;
+    } catch (error) {
+      console.error('Error in getAllTeacherClassAssignments:', error);
+      throw error;
+    }
+  }
   
   constructor() {
     this.sessionStore = new PostgresSessionStore({ 

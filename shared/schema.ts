@@ -22,6 +22,18 @@ export const houses = pgTable("houses", {
 
 export const insertHouseSchema = createInsertSchema(houses).omit({ id: true, points: true });
 
+// Class model
+export const classes = pgTable("classes", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  gradeLevel: text("grade_level").notNull(),
+  section: text("section").notNull(),
+  description: text("description"),
+  academicYear: text("academic_year").notNull(),
+});
+
+export const insertClassSchema = createInsertSchema(classes).omit({ id: true });
+
 // User model - avoid circular dependency by recreating a parentId definition
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -35,6 +47,7 @@ export const users = pgTable("users", {
   section: text("section"),
   parentId: integer("parent_id"), // This will reference the users table but not with a direct reference
   houseId: integer("house_id"),   // Reference to house table for students
+  classId: integer("class_id").references(() => classes.id), // Reference to class for students
 });
 
 export const insertUserSchema = createInsertSchema(users)
@@ -113,3 +126,27 @@ export type InsertReward = z.infer<typeof insertRewardSchema>;
 
 export type RewardRedemption = typeof rewardRedemptions.$inferSelect;
 export type InsertRewardRedemption = z.infer<typeof insertRewardRedemptionSchema>;
+
+// Teacher-Class assignments
+export const teacherClassAssignments = pgTable("teacher_class_assignments", {
+  id: serial("id").primaryKey(),
+  teacherId: integer("teacher_id").notNull().references(() => users.id),
+  classId: integer("class_id").notNull().references(() => classes.id),
+  isMainTeacher: boolean("is_main_teacher").notNull().default(false),
+  subjectTaught: text("subject_taught"),
+  assignedDate: timestamp("assigned_date").notNull().defaultNow(),
+}, (table) => {
+  return {
+    // Ensure a teacher can't be assigned to the same class twice
+    teacherClassUnique: uniqueIndex("teacher_class_unique").on(table.teacherId, table.classId),
+  };
+});
+
+export const insertTeacherClassAssignmentSchema = createInsertSchema(teacherClassAssignments).omit({ id: true, assignedDate: true });
+
+// Data types for new tables
+export type Class = typeof classes.$inferSelect;
+export type InsertClass = z.infer<typeof insertClassSchema>;
+
+export type TeacherClassAssignment = typeof teacherClassAssignments.$inferSelect;
+export type InsertTeacherClassAssignment = z.infer<typeof insertTeacherClassAssignmentSchema>;

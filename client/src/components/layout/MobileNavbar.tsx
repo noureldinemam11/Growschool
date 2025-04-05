@@ -7,7 +7,8 @@ import {
   Plus, 
   Award, 
   Settings, 
-  Menu 
+  Menu,
+  GraduationCap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -118,12 +119,20 @@ export default function MobileNavbar() {
                   </Button>
                 </Link>
                 {isAdmin && (
-                  <Link href="/admin" onClick={() => setIsDrawerOpen(false)}>
-                    <Button variant="outline" className="w-full h-20 flex flex-col gap-2 items-center justify-center">
-                      <Settings className="h-6 w-6 text-primary" />
-                      <span>Admin</span>
-                    </Button>
-                  </Link>
+                  <>
+                    <Link href="/admin" onClick={() => setIsDrawerOpen(false)}>
+                      <Button variant="outline" className="w-full h-20 flex flex-col gap-2 items-center justify-center">
+                        <Settings className="h-6 w-6 text-primary" />
+                        <span>Admin</span>
+                      </Button>
+                    </Link>
+                    <Link href="/classes" onClick={() => setIsDrawerOpen(false)}>
+                      <Button variant="outline" className="w-full h-20 flex flex-col gap-2 items-center justify-center">
+                        <GraduationCap className="h-6 w-6 text-primary" />
+                        <span>Classes</span>
+                      </Button>
+                    </Link>
+                  </>
                 )}
                 <Link href="/profile" onClick={() => setIsDrawerOpen(false)}>
                   <Button variant="outline" className="w-full h-20 flex flex-col gap-2 items-center justify-center">
