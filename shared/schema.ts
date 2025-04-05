@@ -33,8 +33,9 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   gradeLevel: text("grade_level"),
   section: text("section"),
-  houseId: integer("house_id").references(() => houses.id),
   parentId: integer("parent_id"), // This will reference the users table but not with a direct reference
+  classId: integer("class_id"),   // Reference to class table if needed
+  houseId: integer("house_id"),   // Reference to house table for students
 });
 
 export const insertUserSchema = createInsertSchema(users)

@@ -553,8 +553,27 @@ export class DatabaseStorage implements IStorage {
     }
     
     try {
-      const result = await db.select().from(users).where(eq(users.id, id));
-      return result[0] as User | undefined;
+      // Use direct SQL query to avoid schema mismatch issues
+      const client = await pool.connect();
+      try {
+        // Don't include house_id in the query since it may not exist yet
+        const result = await client.query(
+          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", class_id AS "classId" FROM users WHERE id = $1',
+          [id]
+        );
+        
+        if (result.rows.length === 0) {
+          return undefined;
+        }
+        
+        // Add houseId with a null value so code that references it won't break
+        const user = result.rows[0];
+        user.houseId = null;
+        
+        return user as User;
+      } finally {
+        client.release();
+      }
     } catch (error: any) {
       console.error(`Error in getUser for ID ${id}:`, error.message || 'Unknown error');
       throw error; // Re-throw to allow the caller to handle
@@ -562,8 +581,31 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.username, username));
-    return result[0] as User | undefined;
+    try {
+      const client = await pool.connect();
+      try {
+        // Don't include house_id in the query since it may not exist yet
+        const result = await client.query(
+          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", class_id AS "classId" FROM users WHERE username = $1',
+          [username]
+        );
+        
+        if (result.rows.length === 0) {
+          return undefined;
+        }
+        
+        // Add houseId with a null value so code that references it won't break
+        const user = result.rows[0];
+        user.houseId = null;
+        
+        return user as User;
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error(`Error in getUserByUsername for username ${username}:`, error);
+      throw error;
+    }
   }
   
   async createUser(user: InsertUser): Promise<User> {
@@ -579,15 +621,19 @@ export class DatabaseStorage implements IStorage {
         email: users.email,
         gradeLevel: users.gradeLevel,
         section: users.section,
-        houseId: users.houseId,
-        parentId: users.parentId
+        parentId: users.parentId,
+        classId: users.classId
       });
       
       if (!result || result.length === 0) {
         throw new Error('Failed to insert user - no results returned');
       }
       
-      return result[0];
+      // Add houseId with a null value to match the User type
+      const userResult = result[0];
+      userResult.houseId = null;
+      
+      return userResult;
     } catch (error) {
       console.error('Error creating user:', error);
       throw error;
@@ -595,11 +641,67 @@ export class DatabaseStorage implements IStorage {
   }
   
   async updateUser(id: number, userUpdate: Partial<User>): Promise<User | undefined> {
-    const result = await db.update(users)
-      .set(userUpdate)
-      .where(eq(users.id, id))
-      .returning();
-    return result[0] as User | undefined;
+    try {
+      const client = await pool.connect();
+      try {
+        // Build the SQL update statement dynamically based on the fields in userUpdate
+        let updateFields = [];
+        let updateValues = [];
+        let paramCounter = 1;
+        
+        // Map property names to DB column names
+        const columnMap: Record<string, string> = {
+          firstName: 'first_name',
+          lastName: 'last_name',
+          gradeLevel: 'grade_level',
+          parentId: 'parent_id',
+          classId: 'class_id',
+          houseId: 'house_id'
+        };
+        
+        for (const [key, value] of Object.entries(userUpdate)) {
+          // Skip undefined values
+          if (value === undefined) continue;
+          
+          // Map property name to column name if needed
+          const columnName = columnMap[key] || key;
+          updateFields.push(`${columnName} = $${paramCounter}`);
+          updateValues.push(value);
+          paramCounter++;
+        }
+        
+        // If no valid update fields, return the existing user
+        if (updateFields.length === 0) {
+          return await this.getUser(id);
+        }
+        
+        // Add the WHERE parameter
+        updateValues.push(id);
+        
+        // Execute the update
+        const sql = `
+          UPDATE users 
+          SET ${updateFields.join(', ')} 
+          WHERE id = $${paramCounter} 
+          RETURNING id, username, password, first_name AS "firstName", last_name AS "lastName", 
+                   role, email, grade_level AS "gradeLevel", section, 
+                   parent_id AS "parentId", class_id AS "classId", house_id AS "houseId"
+        `;
+        
+        const result = await client.query(sql, updateValues);
+        
+        if (result.rows.length === 0) {
+          return undefined;
+        }
+        
+        return result.rows[0] as User;
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error(`Error in updateUser for ID ${id}:`, error);
+      throw error;
+    }
   }
   
   async deleteUser(id: number, forceDelete: boolean = false): Promise<boolean> {
@@ -697,17 +799,59 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getAllUsers(): Promise<User[]> {
-    const result = await db.select().from(users);
-    return result as User[];
+    try {
+      const client = await pool.connect();
+      try {
+        // Don't include house_id in the query since it may not exist yet
+        const result = await client.query(
+          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", class_id AS "classId" FROM users'
+        );
+        
+        // Add houseId with null value to each user
+        const users = result.rows.map(user => {
+          user.houseId = null;
+          return user;
+        });
+        
+        return users as User[];
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error('Error in getAllUsers:', error);
+      throw error;
+    }
   }
   
   async getUsersByRole(role: string): Promise<User[]> {
-    if (role === 'all') {
-      const result = await db.select().from(users);
-      return result as User[];
+    try {
+      const client = await pool.connect();
+      try {
+        // Don't include house_id in the query since it may not exist yet
+        let sql = 'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", class_id AS "classId" FROM users';
+        
+        let result;
+        if (role !== 'all') {
+          sql += ' WHERE role = $1';
+          result = await client.query(sql, [role]);
+        } else {
+          result = await client.query(sql);
+        }
+        
+        // Add houseId with null value to each user
+        const users = result.rows.map(user => {
+          user.houseId = null;
+          return user;
+        });
+        
+        return users as User[];
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error(`Error in getUsersByRole for role ${role}:`, error);
+      throw error;
     }
-    const result = await db.select().from(users).where(eq(users.role, role as any));
-    return result as User[];
   }
   
   async getStudentsByParentId(parentId: number): Promise<User[]> {
@@ -718,12 +862,24 @@ export class DatabaseStorage implements IStorage {
     }
     
     try {
-      const result = await db.select().from(users)
-        .where(and(
-          eq(users.role, 'student'),
-          eq(users.parentId, parentId)
-        ));
-      return result as User[];
+      const client = await pool.connect();
+      try {
+        // Don't include house_id in the query since it may not exist yet
+        const result = await client.query(
+          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", class_id AS "classId" FROM users WHERE role = $1 AND parent_id = $2',
+          ['student', parentId]
+        );
+        
+        // Add houseId with null value to each user
+        const users = result.rows.map(user => {
+          user.houseId = null;
+          return user;
+        });
+        
+        return users as User[];
+      } finally {
+        client.release();
+      }
     } catch (error: any) {
       console.error(`Error in getStudentsByParentId for parentId ${parentId}:`, error.message || 'Unknown error');
       throw error;
@@ -738,12 +894,31 @@ export class DatabaseStorage implements IStorage {
     }
     
     try {
-      const result = await db.select().from(users)
-        .where(and(
-          eq(users.role, 'student'),
-          eq(users.houseId, houseId)
-        ));
-      return result as User[];
+      // Since house_id column doesn't exist yet, we need to handle this specially
+      // For now, return an empty array as there can't be any students in a house yet
+      console.log(`Attempted to get students by house ID ${houseId}, but house_id column may not exist yet`);
+      return [];
+      
+      /* Enable this code once house_id column exists
+      // Use raw SQL to retrieve the students by house_id
+      const client = await pool.connect();
+      try {
+        const result = await client.query(
+          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", class_id AS "classId" FROM users WHERE role = $1 AND house_id = $2',
+          ['student', houseId]
+        );
+        
+        // Add houseId with value from parameter to each user
+        const users = result.rows.map(user => {
+          user.houseId = houseId;
+          return user;
+        });
+        
+        return users as User[];
+      } finally {
+        client.release();
+      }
+      */
     } catch (error: any) {
       console.error(`Error in getStudentsByHouseId for houseId ${houseId}:`, error.message || 'Unknown error');
       throw error;
@@ -853,11 +1028,30 @@ export class DatabaseStorage implements IStorage {
       timestamp: new Date()
     }).returning();
     
-    // Update house points if student is in a house
-    const student = await this.getUser(point.studentId);
-    if (student?.houseId) {
-      await this.updateHousePoints(student.houseId, point.points);
+    // Since house_id column may not exist yet, we'll skip house point updates for now
+    // In a future update, we'll connect students to houses and enable this code
+    
+    /*
+    // Use raw SQL to update house points if student is in a house
+    try {
+      const client = await pool.connect();
+      try {
+        const studentResult = await client.query(
+          'SELECT house_id FROM users WHERE id = $1 AND role = $2',
+          [point.studentId, 'student']
+        );
+        
+        if (studentResult.rows.length > 0 && studentResult.rows[0].house_id) {
+          const houseId = studentResult.rows[0].house_id;
+          await this.updateHousePoints(houseId, point.points);
+        }
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error(`Error updating house points for student ${point.studentId}:`, error);
     }
+    */
     
     return result[0] as BehaviorPoint;
   }
@@ -918,35 +1112,8 @@ export class DatabaseStorage implements IStorage {
       try {
         await client.query('BEGIN');
         
-        // Get the student
-        const studentResult = await client.query(
-          'SELECT house_id FROM users WHERE id = $1 AND role = $2',
-          [studentId, 'student']
-        );
-        
-        if (studentResult.rows.length === 0 || !studentResult.rows[0].house_id) {
-          // No student found or no house assigned, so just end transaction
-          await client.query('COMMIT');
-          return;
-        }
-        
-        const houseId = studentResult.rows[0].house_id;
-        
-        // Calculate total points from this student
-        const pointsResult = await client.query(
-          'SELECT SUM(points) as total FROM behavior_points WHERE student_id = $1',
-          [studentId]
-        );
-        
-        const pointsToSubtract = Number(pointsResult.rows[0]?.total || 0);
-        
-        // Update house points
-        if (pointsToSubtract !== 0) {
-          await client.query(
-            'UPDATE houses SET points = GREATEST(0, points - $1) WHERE id = $2',
-            [pointsToSubtract, houseId]
-          );
-        }
+        // Since house_id column doesn't exist yet, we'll skip house point updates for now
+        // In a future update, we'll implement this once the house_id column exists
         
         // Delete behavior points for this student
         await client.query(
