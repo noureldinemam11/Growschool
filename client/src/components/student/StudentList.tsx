@@ -51,24 +51,12 @@ const StudentList: FC<StudentListProps> = ({ students, selectedStudentId, onSele
   const [studentPoints, setStudentPoints] = useState<Record<number, {total: number, positive: number, negative: number}>>({});
   
   useEffect(() => {
-    // Simulate fetching points data if not available from API
-    if (!studentPointsData || Object.keys(studentPointsData).length === 0) {
-      const tempPoints: Record<number, {total: number, positive: number, negative: number}> = {};
-      students.forEach(student => {
-        if (student.id) {
-          // For demo purpose using random points between 0-100
-          const positive = Math.floor(Math.random() * 100);
-          const negative = Math.floor(Math.random() * 20);
-          tempPoints[student.id] = {
-            total: positive - negative,
-            positive,
-            negative
-          };
-        }
-      });
-      setStudentPoints(tempPoints);
-    } else {
+    // Only use points data from the API, don't generate random points
+    if (studentPointsData && Object.keys(studentPointsData).length > 0) {
       setStudentPoints(studentPointsData);
+    } else {
+      // Set empty points data
+      setStudentPoints({});
     }
   }, [students, studentPointsData]);
 
@@ -403,7 +391,7 @@ const StudentList: FC<StudentListProps> = ({ students, selectedStudentId, onSele
               </div>
               
               {/* Points indicator */}
-              {student.id && studentPoints[student.id] && (
+              {student.id && studentPoints[student.id] ? (
                 <div className={cn(
                   "text-sm font-mono font-semibold",
                   student.id === selectedStudentId 
@@ -416,6 +404,15 @@ const StudentList: FC<StudentListProps> = ({ students, selectedStudentId, onSele
                 )}>
                   {studentPoints[student.id].total > 0 && '+'}
                   {studentPoints[student.id].total}
+                </div>
+              ) : (
+                <div className={cn(
+                  "text-xs",
+                  student.id === selectedStudentId 
+                    ? "text-white text-opacity-80" 
+                    : "text-neutral-dark"
+                )}>
+                  No points
                 </div>
               )}
             </div>
@@ -468,10 +465,10 @@ const StudentList: FC<StudentListProps> = ({ students, selectedStudentId, onSele
               </div>
               
               {/* Points and mini progress bar */}
-              {student.id && studentPoints[student.id] && (
-                <div className="mt-2">
-                  <div className="flex justify-between items-center text-xs mb-1">
-                    <span className="text-neutral-dark">Total Points</span>
+              <div className="mt-2">
+                <div className="flex justify-between items-center text-xs mb-1">
+                  <span className="text-neutral-dark">Total Points</span>
+                  {student.id && studentPoints[student.id] ? (
                     <span className={cn(
                       "font-mono font-semibold",
                       studentPoints[student.id].total > 0 
@@ -483,8 +480,14 @@ const StudentList: FC<StudentListProps> = ({ students, selectedStudentId, onSele
                       {studentPoints[student.id].total > 0 && '+'}
                       {studentPoints[student.id].total}
                     </span>
-                  </div>
-                  
+                  ) : (
+                    <span className="text-neutral-dark">
+                      No points
+                    </span>
+                  )}
+                </div>
+                
+                {student.id && studentPoints[student.id] ? (
                   <div className="flex gap-1 h-1">
                     <div 
                       className="bg-green-500 rounded-full" 
@@ -499,8 +502,10 @@ const StudentList: FC<StudentListProps> = ({ students, selectedStudentId, onSele
                       }}
                     ></div>
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="h-1 bg-neutral-light rounded-full"></div>
+                )}
+              </div>
               
               {/* House indicator */}
               {houses && student.houseId && (
