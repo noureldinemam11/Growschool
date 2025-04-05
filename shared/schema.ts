@@ -10,8 +10,8 @@ export type UserRole = typeof userRoles[number];
 export const appUserRoles = ["admin", "teacher"] as const;
 export type AppUserRole = typeof appUserRoles[number];
 
-// Houses for house competitions
-export const houses = pgTable("houses", {
+// Pods - top level organizational unit that contains classes
+export const pods = pgTable("pods", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
   color: text("color").notNull(),
@@ -20,7 +20,18 @@ export const houses = pgTable("houses", {
   points: integer("points").notNull().default(0),
 });
 
-export const insertHouseSchema = createInsertSchema(houses).omit({ id: true, points: true });
+export const insertPodSchema = createInsertSchema(pods).omit({ id: true, points: true });
+
+// Classes - belong to pods, students belong to classes
+export const classes = pgTable("classes", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(), // Class name/identifier (e.g., "9A", "10B")
+  description: text("description"),
+  podId: integer("pod_id").notNull().references(() => pods.id),
+  points: integer("points").notNull().default(0),
+});
+
+export const insertClassSchema = createInsertSchema(classes).omit({ id: true, points: true });
 
 // User model - avoid circular dependency by recreating a parentId definition
 export const users = pgTable("users", {
@@ -33,7 +44,7 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   gradeLevel: text("grade_level"),
   section: text("section"),
-  houseId: integer("house_id").references(() => houses.id),
+  classId: integer("class_id").references(() => classes.id), // Reference to class instead of house
   parentId: integer("parent_id"), // This will reference the users table but not with a direct reference
 });
 
@@ -96,11 +107,22 @@ export const rewardRedemptions = pgTable("reward_redemptions", {
 export const insertRewardRedemptionSchema = createInsertSchema(rewardRedemptions).omit({ id: true, timestamp: true, status: true });
 
 // Data Types
-export type User = typeof users.$inferSelect;
+export type User = typeof users.$inferSelect & {
+  // For backward compatibility during migration
+  houseId?: number; // Add houseId as an optional property for backward compatibility
+};
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
-export type House = typeof houses.$inferSelect;
-export type InsertHouse = z.infer<typeof insertHouseSchema>;
+export type Pod = typeof pods.$inferSelect;
+export type InsertPod = z.infer<typeof insertPodSchema>;
+
+export type Class = typeof classes.$inferSelect;
+export type InsertClass = z.infer<typeof insertClassSchema>;
+
+// For backward compatibility during migration
+export type House = Pod; // Redirecting House to Pod for compatibility
+export type InsertHouse = InsertPod; // Redirecting InsertHouse to InsertPod for compatibility
+export const insertHouseSchema = insertPodSchema; // Export insertHouseSchema for backward compatibility
 
 export type BehaviorCategory = typeof behaviorCategories.$inferSelect;
 export type InsertBehaviorCategory = z.infer<typeof insertBehaviorCategorySchema>;

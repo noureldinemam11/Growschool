@@ -39,8 +39,8 @@ export default function PointsPage() {
   });
 
   const filteredStudents = students?.filter(student => {
-    // Apply house filter
-    if (filterHouse !== 'all' && student.houseId !== Number(filterHouse)) {
+    // Apply house/pod filter
+    if (filterHouse !== 'all' && (student.classId !== Number(filterHouse) && student.houseId !== Number(filterHouse))) {
       return false;
     }
     return true;

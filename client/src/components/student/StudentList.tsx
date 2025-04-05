@@ -70,8 +70,8 @@ const StudentList: FC<StudentListProps> = ({ students, selectedStudentId, onSele
     const fullName = `${student.firstName || ''} ${student.lastName || ''}`.toLowerCase();
     const nameMatch = fullName.includes(searchQuery.toLowerCase());
     
-    // Apply house filter
-    const houseMatch = selectedHouse === 'all' || student.houseId === selectedHouse;
+    // Apply house/pod filter (using classId in new structure)
+    const houseMatch = selectedHouse === 'all' || student.classId === selectedHouse || student.houseId === selectedHouse;
     
     // Apply grade filter
     const gradeMatch = selectedGrade === 'all' || student.gradeLevel === selectedGrade;
@@ -322,14 +322,14 @@ const StudentList: FC<StudentListProps> = ({ students, selectedStudentId, onSele
                     ? `Grade ${student.gradeLevel}${student.section}` 
                     : ''}
                   
-                  {houses && student.houseId && (
+                  {houses && (student.houseId || student.classId) && (
                     <span className="flex items-center">
                       •
                       <div 
                         className="w-2 h-2 rounded-full mx-1" 
-                        style={{ backgroundColor: houses.find(h => h.id === student.houseId)?.color || '#ccc' }}
+                        style={{ backgroundColor: houses.find(h => h.id === (student.houseId || student.classId))?.color || '#ccc' }}
                       ></div>
-                      {houses.find(h => h.id === student.houseId)?.name}
+                      {houses.find(h => h.id === (student.houseId || student.classId))?.name}
                     </span>
                   )}
                 </div>
@@ -375,14 +375,14 @@ const StudentList: FC<StudentListProps> = ({ students, selectedStudentId, onSele
               
               {/* No points data shown */}
               
-              {/* House indicator */}
-              {houses && student.houseId && (
+              {/* House/Pod indicator */}
+              {houses && (student.houseId || student.classId) && (
                 <div className="mt-2 flex items-center text-xs text-neutral-dark">
                   <div 
                     className="w-2 h-2 rounded-full mr-1" 
-                    style={{ backgroundColor: houses.find(h => h.id === student.houseId)?.color || '#ccc' }}
+                    style={{ backgroundColor: houses.find(h => h.id === (student.houseId || student.classId))?.color || '#ccc' }}
                   ></div>
-                  {houses.find(h => h.id === student.houseId)?.name}
+                  {houses.find(h => h.id === (student.houseId || student.classId))?.name}
                 </div>
               )}
             </div>
