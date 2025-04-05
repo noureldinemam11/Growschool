@@ -557,9 +557,9 @@ export class DatabaseStorage implements IStorage {
       // Use direct SQL query to avoid schema mismatch issues
       const client = await pool.connect();
       try {
-        // Don't include house_id in the query since it may not exist yet
+        // Include house_id in the query
         const result = await client.query(
-          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", class_id AS "classId" FROM users WHERE id = $1',
+          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", class_id AS "classId", house_id AS "houseId" FROM users WHERE id = $1',
           [id]
         );
         
@@ -567,9 +567,11 @@ export class DatabaseStorage implements IStorage {
           return undefined;
         }
         
-        // Add houseId with a null value so code that references it won't break
+        // Make sure houseId is properly set to null if it's undefined
         const user = result.rows[0];
-        user.houseId = null;
+        if (user.houseId === undefined) {
+          user.houseId = null;
+        }
         
         return user as User;
       } finally {
@@ -585,9 +587,9 @@ export class DatabaseStorage implements IStorage {
     try {
       const client = await pool.connect();
       try {
-        // Don't include house_id in the query since it may not exist yet
+        // Include house_id in the query
         const result = await client.query(
-          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", class_id AS "classId" FROM users WHERE username = $1',
+          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", class_id AS "classId", house_id AS "houseId" FROM users WHERE username = $1',
           [username]
         );
         
@@ -595,9 +597,11 @@ export class DatabaseStorage implements IStorage {
           return undefined;
         }
         
-        // Add houseId with a null value so code that references it won't break
+        // Make sure houseId is properly set to null if it's undefined
         const user = result.rows[0];
-        user.houseId = null;
+        if (user.houseId === undefined) {
+          user.houseId = null;
+        }
         
         return user as User;
       } finally {
@@ -684,14 +688,14 @@ export class DatabaseStorage implements IStorage {
         // Add the WHERE parameter
         updateValues.push(id);
         
-        // Execute the update - don't include house_id in RETURNING
+        // Execute the update - include house_id in RETURNING
         const sql = `
           UPDATE users 
           SET ${updateFields.join(', ')} 
           WHERE id = $${paramCounter} 
           RETURNING id, username, password, first_name AS "firstName", last_name AS "lastName", 
                    role, email, grade_level AS "gradeLevel", section, 
-                   parent_id AS "parentId", class_id AS "classId"
+                   parent_id AS "parentId", class_id AS "classId", house_id AS "houseId"
         `;
         
         const result = await client.query(sql, updateValues);
@@ -808,14 +812,16 @@ export class DatabaseStorage implements IStorage {
     try {
       const client = await pool.connect();
       try {
-        // Don't include house_id in the query since it may not exist yet
+        // Include house_id in the query
         const result = await client.query(
-          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", class_id AS "classId" FROM users'
+          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", class_id AS "classId", house_id AS "houseId" FROM users'
         );
         
-        // Add houseId with null value to each user
+        // Make sure houseId is properly set to null if it's undefined
         const users = result.rows.map(user => {
-          user.houseId = null;
+          if (user.houseId === undefined) {
+            user.houseId = null;
+          }
           return user;
         });
         
@@ -833,8 +839,8 @@ export class DatabaseStorage implements IStorage {
     try {
       const client = await pool.connect();
       try {
-        // Don't include house_id in the query since it may not exist yet
-        let sql = 'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", class_id AS "classId" FROM users';
+        // Include house_id in the query
+        let sql = 'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", class_id AS "classId", house_id AS "houseId" FROM users';
         
         let result;
         if (role !== 'all') {
@@ -844,9 +850,11 @@ export class DatabaseStorage implements IStorage {
           result = await client.query(sql);
         }
         
-        // Add houseId with null value to each user
+        // Make sure houseId is properly set to null if it's undefined
         const users = result.rows.map(user => {
-          user.houseId = null;
+          if (user.houseId === undefined) {
+            user.houseId = null;
+          }
           return user;
         });
         
@@ -870,15 +878,17 @@ export class DatabaseStorage implements IStorage {
     try {
       const client = await pool.connect();
       try {
-        // Don't include house_id in the query since it may not exist yet
+        // Include house_id in the query
         const result = await client.query(
-          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", class_id AS "classId" FROM users WHERE role = $1 AND parent_id = $2',
+          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", class_id AS "classId", house_id AS "houseId" FROM users WHERE role = $1 AND parent_id = $2',
           ['student', parentId]
         );
         
-        // Add houseId with null value to each user
+        // Make sure houseId is properly set to null if it's undefined
         const users = result.rows.map(user => {
-          user.houseId = null;
+          if (user.houseId === undefined) {
+            user.houseId = null;
+          }
           return user;
         });
         

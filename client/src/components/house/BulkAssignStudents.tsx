@@ -21,11 +21,19 @@ export function BulkAssignStudents({ houseId, houseName, color }: { houseId: num
   });
   
   // Filter students that are not in this house or match search query
-  const filteredStudents = students?.filter(student => 
-    (student.houseId !== houseId) && 
-    ((student.firstName?.toLowerCase() || '').includes(searchQuery.toLowerCase()) || 
-     (student.lastName?.toLowerCase() || '').includes(searchQuery.toLowerCase()))
-  );
+  const filteredStudents = students?.filter(student => {
+    // Consider null, undefined, or 0 as "no house"
+    const studentHasNoHouse = student.houseId === null || student.houseId === undefined || student.houseId === 0;
+    // Either student has no house or has a different house than current
+    const canBeAssigned = studentHasNoHouse || (student.houseId !== houseId);
+    
+    // Apply search filter
+    const matchesSearch = 
+      (student.firstName?.toLowerCase() || '').includes(searchQuery.toLowerCase()) || 
+      (student.lastName?.toLowerCase() || '').includes(searchQuery.toLowerCase());
+    
+    return canBeAssigned && matchesSearch;
+  });
   
   // Mutation to assign students to house
   const assignStudents = useMutation({

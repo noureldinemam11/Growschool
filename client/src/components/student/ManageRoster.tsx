@@ -267,12 +267,18 @@ const ManageRoster: FC<ManageRosterProps> = () => {
 
   // Get house color and name
   const getHouseDetails = (houseId: number | null | undefined) => {
-    if (!houseId || !houses) return { color: '#cccccc', name: 'No House' };
+    if (houseId === null || houseId === undefined || houseId === 0 || !houses) {
+      return { color: '#cccccc', name: 'No House' };
+    }
     
     const house = houses.find(h => h.id === houseId);
+    if (!house) {
+      return { color: '#cccccc', name: 'No House' };
+    }
+    
     return {
-      color: house?.color || '#cccccc',
-      name: house?.name || 'Unknown House'
+      color: house.color,
+      name: house.name
     };
   };
 
@@ -548,11 +554,11 @@ const ManageRoster: FC<ManageRosterProps> = () => {
               <div className="space-y-2">
                 <Label htmlFor="houseId">House</Label>
                 <Select 
-                  value={formData.houseId?.toString() || ''} 
+                  value={formData.houseId?.toString() || '0'} 
                   onValueChange={(value) => {
                     setFormData({
                       ...formData,
-                      houseId: value ? parseInt(value) : null
+                      houseId: value && value !== '0' ? parseInt(value) : null
                     });
                   }}
                 >
@@ -560,7 +566,7 @@ const ManageRoster: FC<ManageRosterProps> = () => {
                     <SelectValue placeholder="Select a house" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No House</SelectItem>
+                    <SelectItem value="0">No House</SelectItem>
                     {houses?.map(house => (
                       <SelectItem key={house.id} value={house.id.toString()}>
                         <div className="flex items-center gap-2">
