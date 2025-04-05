@@ -163,7 +163,8 @@ export class MemStorage implements IStorage {
       gradeLevel: insertUser.gradeLevel ? String(insertUser.gradeLevel) : null,
       section: insertUser.section ? String(insertUser.section) : null,
       houseId: typeof insertUser.houseId === 'number' ? insertUser.houseId : null,
-      parentId: typeof insertUser.parentId === 'number' ? insertUser.parentId : null
+      parentId: typeof insertUser.parentId === 'number' ? insertUser.parentId : null,
+      classId: typeof insertUser.classId === 'number' ? insertUser.classId : null
     };
     
     this.users.set(id, user);
@@ -622,18 +623,23 @@ export class DatabaseStorage implements IStorage {
         gradeLevel: users.gradeLevel,
         section: users.section,
         parentId: users.parentId,
-        classId: users.classId
+        classId: users.classId,
+        houseId: users.houseId
       });
       
       if (!result || result.length === 0) {
         throw new Error('Failed to insert user - no results returned');
       }
       
-      // Add houseId with a null value to match the User type
+      // No need to add houseId since we now include it in the returning clause
       const userResult = result[0];
-      userResult.houseId = null;
       
-      return userResult;
+      // If houseId is undefined, set it to null to satisfy the type
+      if (userResult && userResult.houseId === undefined) {
+        userResult.houseId = null;
+      }
+      
+      return userResult as User;
     } catch (error) {
       console.error('Error creating user:', error);
       throw error;
@@ -678,14 +684,14 @@ export class DatabaseStorage implements IStorage {
         // Add the WHERE parameter
         updateValues.push(id);
         
-        // Execute the update
+        // Execute the update - don't include house_id in RETURNING
         const sql = `
           UPDATE users 
           SET ${updateFields.join(', ')} 
           WHERE id = $${paramCounter} 
           RETURNING id, username, password, first_name AS "firstName", last_name AS "lastName", 
                    role, email, grade_level AS "gradeLevel", section, 
-                   parent_id AS "parentId", class_id AS "classId", house_id AS "houseId"
+                   parent_id AS "parentId", class_id AS "classId"
         `;
         
         const result = await client.query(sql, updateValues);
@@ -894,31 +900,27 @@ export class DatabaseStorage implements IStorage {
     }
     
     try {
-      // Since house_id column doesn't exist yet, we need to handle this specially
-      // For now, return an empty array as there can't be any students in a house yet
-      console.log(`Attempted to get students by house ID ${houseId}, but house_id column may not exist yet`);
-      return [];
-      
-      /* Enable this code once house_id column exists
       // Use raw SQL to retrieve the students by house_id
       const client = await pool.connect();
       try {
         const result = await client.query(
-          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", class_id AS "classId" FROM users WHERE role = $1 AND house_id = $2',
+          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", class_id AS "classId", house_id AS "houseId" FROM users WHERE role = $1 AND house_id = $2',
           ['student', houseId]
         );
         
-        // Add houseId with value from parameter to each user
+        // Make sure all users have a houseId property, even if null
         const users = result.rows.map(user => {
-          user.houseId = houseId;
+          if (user.houseId === undefined) {
+            user.houseId = houseId; // We know this is the correct house ID since we filtered by it
+          }
           return user;
         });
         
+        // Return the properly formatted results
         return users as User[];
       } finally {
         client.release();
       }
-      */
     } catch (error: any) {
       console.error(`Error in getStudentsByHouseId for houseId ${houseId}:`, error.message || 'Unknown error');
       throw error;
@@ -1028,10 +1030,6 @@ export class DatabaseStorage implements IStorage {
       timestamp: new Date()
     }).returning();
     
-    // Since house_id column may not exist yet, we'll skip house point updates for now
-    // In a future update, we'll connect students to houses and enable this code
-    
-    /*
     // Use raw SQL to update house points if student is in a house
     try {
       const client = await pool.connect();
@@ -1051,7 +1049,6 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error(`Error updating house points for student ${point.studentId}:`, error);
     }
-    */
     
     return result[0] as BehaviorPoint;
   }
@@ -1112,8 +1109,43 @@ export class DatabaseStorage implements IStorage {
       try {
         await client.query('BEGIN');
         
-        // Since house_id column doesn't exist yet, we'll skip house point updates for now
-        // In a future update, we'll implement this once the house_id column exists
+        // Get the student's house
+        const studentResult = await client.query(
+          'SELECT house_id FROM users WHERE id = $1 AND role = $2',
+          [studentId, 'student']
+        );
+        
+        let houseId = null;
+        if (studentResult.rows.length > 0 && studentResult.rows[0].house_id) {
+          houseId = studentResult.rows[0].house_id;
+          
+          // Calculate the total points to remove from the house
+          const pointsResult = await client.query(
+            'SELECT SUM(points) as total_points FROM behavior_points WHERE student_id = $1',
+            [studentId]
+          );
+          
+          if (pointsResult.rows.length > 0 && pointsResult.rows[0].total_points) {
+            const totalPoints = parseInt(pointsResult.rows[0].total_points);
+            
+            // Get current house points and update
+            const houseResult = await client.query(
+              'SELECT points FROM houses WHERE id = $1',
+              [houseId]
+            );
+            
+            if (houseResult.rows.length > 0) {
+              const currentPoints = parseInt(houseResult.rows[0].points);
+              const newPoints = currentPoints - totalPoints;
+              
+              // Update house points (ensure it doesn't go below 0)
+              await client.query(
+                'UPDATE houses SET points = GREATEST(0, $1) WHERE id = $2',
+                [newPoints, houseId]
+              );
+            }
+          }
+        }
         
         // Delete behavior points for this student
         await client.query(

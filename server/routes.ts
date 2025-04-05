@@ -196,6 +196,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint to assign multiple students to a house
+  app.post("/api/houses/:id/assign-students", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const houseId = Number(req.params.id);
+      const { studentIds } = req.body;
+      
+      // Validate input
+      if (!studentIds || !Array.isArray(studentIds) || studentIds.length === 0) {
+        return res.status(400).json({ error: "Invalid request: studentIds array is required" });
+      }
+      
+      // Check if house exists
+      const house = await storage.getHouse(houseId);
+      if (!house) {
+        return res.status(404).json({ error: "House not found" });
+      }
+      
+      // Get all users to update
+      const students = await Promise.all(
+        studentIds.map(id => storage.getUser(Number(id)))
+      );
+      
+      // Filter out non-existent users and non-students
+      const validStudents = students.filter(
+        student => student && student.role === "student"
+      );
+      
+      if (validStudents.length === 0) {
+        return res.status(400).json({ error: "No valid students found in the provided IDs" });
+      }
+      
+      // Update each student's house ID
+      const updated = await Promise.all(
+        validStudents.map(student => {
+          if (student) {
+            return storage.updateUser(student.id, { houseId });
+          }
+          return null;
+        })
+      );
+      
+      res.status(200).json({
+        success: true,
+        message: `${updated.filter(Boolean).length} students assigned to house successfully`,
+        assignedStudents: updated.filter(Boolean)
+      });
+    } catch (error) {
+      console.error("Error assigning students to house:", error);
+      res.status(500).json({ 
+        error: "Failed to assign students to house",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   // Behavior Categories
   app.get("/api/behavior-categories", async (req, res) => {
     try {
@@ -1312,6 +1371,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ 
         error: "Failed to import students",
         details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+  
+  // Bulk assign students to houses
+  app.post("/api/houses/:houseId/assign-students", async (req, res) => {
+    if (!req.isAuthenticated() || !["admin", "teacher"].includes(req.user.role)) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+    
+    try {
+      const houseId = Number(req.params.houseId);
+      const { studentIds } = req.body;
+      
+      // Validate request
+      if (!Array.isArray(studentIds) || studentIds.length === 0) {
+        return res.status(400).json({ error: "No student IDs provided" });
+      }
+      
+      // Verify house exists
+      const house = await storage.getHouse(houseId);
+      if (!house) {
+        return res.status(404).json({ error: "House not found" });
+      }
+      
+      // Use a transaction for this bulk operation
+      const client = await pool.connect();
+      const updatedStudents = [];
+      
+      try {
+        await client.query('BEGIN');
+        
+        for (const studentId of studentIds) {
+          // Verify each student exists and is a student
+          const student = await storage.getUser(studentId);
+          
+          if (!student || student.role !== 'student') {
+            console.warn(`Skipping invalid student ID: ${studentId}`);
+            continue;
+          }
+          
+          // Update the student's house
+          const result = await client.query(
+            'UPDATE users SET house_id = $1 WHERE id = $2 AND role = $3 RETURNING id, first_name AS "firstName", last_name AS "lastName", house_id AS "houseId"',
+            [houseId, studentId, 'student']
+          );
+          
+          if (result.rows.length > 0) {
+            updatedStudents.push(result.rows[0]);
+          }
+        }
+        
+        await client.query('COMMIT');
+        console.log(`Successfully assigned ${updatedStudents.length} students to house ${houseId}`);
+      } catch (error) {
+        await client.query('ROLLBACK');
+        console.error(`Error assigning students to house ${houseId}:`, error);
+        throw error;
+      } finally {
+        client.release();
+      }
+      
+      res.json({
+        success: true,
+        house: house,
+        updatedCount: updatedStudents.length,
+        updatedStudents: updatedStudents
+      });
+    } catch (error) {
+      console.error("Error assigning students to house:", error);
+      res.status(500).json({
+        error: "Failed to assign students to house",
+        details: error instanceof Error ? error.message : "Unknown error"
       });
     }
   });
