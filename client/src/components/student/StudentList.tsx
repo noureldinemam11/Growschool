@@ -1,7 +1,7 @@
 import { FC, useState, useEffect } from 'react';
 import { User, BehaviorPoint } from '@shared/schema';
 import { cn } from '@/lib/utils';
-import { Search, Filter, Plus, Award, ChevronDown, X, UserPlus, CheckCircle } from 'lucide-react';
+import { Search, Filter, ChevronDown, X, UserPlus, CheckCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -97,19 +97,7 @@ const StudentList: FC<StudentListProps> = ({ students, selectedStudentId, onSele
     }
   });
 
-  // Navigate to points assignment page with multiple students
-  const handleAssignPoints = () => {
-    // Use the selected students or just the currently selected student
-    const studentsToAssign = selectedStudents.length > 0 
-      ? selectedStudents 
-      : (selectedStudentId ? [selectedStudentId] : []);
-
-    if (studentsToAssign.length > 0) {
-      // Save selected students in localStorage
-      localStorage.setItem('batchSelectedStudentIds', JSON.stringify(studentsToAssign));
-      window.location.href = '/points';
-    }
-  };
+  // No longer needed since we removed the assign points button
 
   // Reset all filters
   const clearFilters = () => {
@@ -302,7 +290,7 @@ const StudentList: FC<StudentListProps> = ({ students, selectedStudentId, onSele
         )}
       </div>
       
-      {/* Results summary and batch action buttons */}
+      {/* Results summary and selection info */}
       <div className="flex justify-between items-center pt-1">
         <div className="text-sm text-muted-foreground">
           {filteredStudents.length} {filteredStudents.length === 1 ? 'student' : 'students'}
@@ -314,15 +302,6 @@ const StudentList: FC<StudentListProps> = ({ students, selectedStudentId, onSele
               Clear {selectedStudents.length} selected
             </Button>
           )}
-          <Button 
-            size="sm" 
-            className="h-8" 
-            onClick={handleAssignPoints}
-            disabled={selectedStudents.length === 0 && !selectedStudentId}
-          >
-            <Plus className="h-3.5 w-3.5 mr-1" />
-            Assign Points
-          </Button>
         </div>
       </div>
       
