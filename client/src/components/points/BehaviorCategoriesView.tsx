@@ -329,7 +329,7 @@ export default function BehaviorCategoriesView({
   const isBatchMode = batchStudentCount > 1;
 
   return (
-    <div className="py-4 pb-20">
+    <div className="py-4">
       {/* Student name header */}
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-medium text-neutral-darker">
@@ -366,16 +366,16 @@ export default function BehaviorCategoriesView({
         </BehaviorCategoryGroup>
       ))}
 
-      {/* Fixed bottom toolbar - made more visible on mobile */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 flex justify-center">
+      {/* Fixed bottom toolbar - enhanced visibility for mobile */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 flex justify-center z-50">
         <Button 
           variant="default"
           size="lg"
-          className="w-full h-12 text-base font-medium flex items-center justify-center"
+          className="w-full h-14 text-lg font-bold flex items-center justify-center shadow-lg"
           onClick={handleSubmitAll}
           disabled={totalPoints === 0}
         >
-          <Check className="mr-2 h-5 w-5" />
+          <Check className="mr-2 h-6 w-6" />
           <span>
             {totalPoints > 0 
               ? `Submit Points (${totalPoints} total)` 
@@ -383,6 +383,9 @@ export default function BehaviorCategoriesView({
           </span>
         </Button>
       </div>
+      
+      {/* Add padding at the bottom to prevent content from being hidden behind the fixed button */}
+      <div className="h-24"></div>
     </div>
   );
 }
