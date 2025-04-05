@@ -495,40 +495,7 @@ function AdminDashboard() {
           <CardDescription>Quick access to administrative functions</CardDescription>
         </CardHeader>
         <CardContent className="p-3 md:p-6">
-          <div className="flex md:grid md:grid-cols-5 gap-2 md:gap-4 overflow-x-auto pb-2 md:pb-0 -mx-1 px-1">
-            <QuickActionButton
-              icon={<UserPlus className="h-5 w-5 md:h-6 md:w-6" />}
-              label="Manage Users"
-              onClick={() => {
-                navigate('/admin');
-                // Set activeTab to 'users' through URL parameter
-                setTimeout(() => { 
-                  const urlParams = new URLSearchParams(window.location.search);
-                  urlParams.set('tab', 'users');
-                  window.history.replaceState({}, '', `${window.location.pathname}?${urlParams}`);
-                  // Trigger a reload to ensure tab change
-                  window.location.reload();
-                }, 50);
-              }}
-              highlight={true}
-              className="min-w-[140px] md:min-w-0 flex-shrink-0 md:flex-shrink"
-            />
-            <QuickActionButton
-              icon={<Settings className="h-5 w-5 md:h-6 md:w-6" />}
-              label="Behavior Categories"
-              onClick={() => {
-                navigate('/admin');
-                // Set activeTab to 'behavior' through URL parameter
-                setTimeout(() => { 
-                  const urlParams = new URLSearchParams(window.location.search);
-                  urlParams.set('tab', 'behavior');
-                  window.history.replaceState({}, '', `${window.location.pathname}?${urlParams}`);
-                  // Trigger a reload to ensure tab change
-                  window.location.reload();
-                }, 50);
-              }}
-              className="min-w-[140px] md:min-w-0 flex-shrink-0 md:flex-shrink"
-            />
+          <div className="flex md:grid md:grid-cols-3 gap-2 md:gap-4 overflow-x-auto pb-2 md:pb-0 -mx-1 px-1">
             <QuickActionButton
               icon={<PlusCircle className="h-5 w-5 md:h-6 md:w-6" />}
               label="Award Points"
@@ -537,15 +504,26 @@ function AdminDashboard() {
               className="min-w-[140px] md:min-w-0 flex-shrink-0 md:flex-shrink"
             />
             <QuickActionButton
-              icon={<FileText className="h-5 w-5 md:h-6 md:w-6" />}
-              label="Generate Reports"
-              onClick={() => navigate('/reports')}
+              icon={<Trophy className="h-5 w-5 md:h-6 md:w-6" />}
+              label="House Points"
+              onClick={() => navigate('/house/dashboard')}
+              highlight={true}
               className="min-w-[140px] md:min-w-0 flex-shrink-0 md:flex-shrink"
             />
             <QuickActionButton
-              icon={<Download className="h-5 w-5 md:h-6 md:w-6" />}
-              label="Export Data"
-              onClick={() => navigate('/reports')}
+              icon={<Settings className="h-5 w-5 md:h-6 md:w-6" />}
+              label="Admin"
+              onClick={() => {
+                navigate('/admin');
+                // Set activeTab to 'overview' through URL parameter
+                setTimeout(() => { 
+                  const urlParams = new URLSearchParams(window.location.search);
+                  urlParams.set('tab', 'overview');
+                  window.history.replaceState({}, '', `${window.location.pathname}?${urlParams}`);
+                  // Trigger a reload to ensure tab change
+                  window.location.reload();
+                }, 50);
+              }}
               className="min-w-[140px] md:min-w-0 flex-shrink-0 md:flex-shrink"
             />
           </div>
