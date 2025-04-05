@@ -77,9 +77,15 @@ export default function PointsPage() {
 
   const handleContinue = () => {
     if (selectedStudents.length > 0) {
+      // Store all selected student IDs in localStorage
+      localStorage.setItem('batchSelectedStudentIds', JSON.stringify(selectedStudents));
+      
+      // For backward compatibility, still set the first student as the "selected" one
       const studentId = selectedStudents[0];
       const student = students?.find(s => s.id === studentId) || null;
       setSelectedStudent(student);
+      
+      // Navigate to categories page
       setLocation('/points/categories');
     }
   };
@@ -135,7 +141,13 @@ export default function PointsPage() {
           showBackButton={true}
           showHomeButton={true}
           customBackAction={handleBackToStudents}
-          title={`Points for ${selectedStudent.firstName}`}
+          title={(() => {
+            const batchStudentIds = JSON.parse(localStorage.getItem('batchSelectedStudentIds') || '[]');
+            if (batchStudentIds.length > 1) {
+              return `Points for ${selectedStudent.firstName} + ${batchStudentIds.length - 1} more`;
+            }
+            return `Points for ${selectedStudent.firstName}`;
+          })()}
         />
         
         {/* Behavior Categories View */}

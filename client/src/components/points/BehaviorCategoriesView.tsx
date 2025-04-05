@@ -192,6 +192,52 @@ export default function BehaviorCategoriesView({
     }
   });
 
+  // Get all selected student IDs from localStorage
+  const getBatchSelectedStudentIds = (): number[] => {
+    const storedIds = localStorage.getItem('batchSelectedStudentIds');
+    if (storedIds) {
+      try {
+        return JSON.parse(storedIds);
+      } catch (e) {
+        console.error('Error parsing batch student IDs', e);
+        return [studentId]; // Fallback to just the current student
+      }
+    }
+    return [studentId]; // Fallback to just the current student
+  };
+
+  // Define types for the batch points request
+  type PointEntry = {
+    studentId: number;
+    categoryId: number;
+    points: number;
+    teacherId: number;
+    notes: string;
+  };
+
+  type BatchPointsRequest = {
+    points: PointEntry[];
+  };
+
+  // Mutation for batch points assignment
+  const batchPointsMutation = useMutation({
+    mutationFn: async (data: BatchPointsRequest) => {
+      const res = await apiRequest('POST', '/api/behavior-points/batch', data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/behavior-points'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/houses'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to add behavior points in batch. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
   // Handle submitting all selected categories
   const handleSubmitAll = () => {
     if (Object.keys(selectedCategories).length === 0) {
@@ -203,48 +249,98 @@ export default function BehaviorCategoriesView({
       return;
     }
 
-    // Submit all selected categories
-    const promises = Object.values(selectedCategories).map(category => {
-      const pointsValue = category.points || category.pointValue || 1;
+    // Get all selected student IDs
+    const selectedStudentIds = getBatchSelectedStudentIds();
+    const studentCount = selectedStudentIds.length;
+    
+    if (studentCount > 1) {
+      // Use batch endpoint for multiple students
+      // Need to create individual entries for each student-category combination
+      const pointsEntries: PointEntry[] = [];
       
-      return addPointsMutation.mutateAsync({
-        studentId,
-        categoryId: category.id,
-        points: pointsValue,
-        teacherId: user?.id || 1,
-        notes: `${category.name} - ${pointsValue} points`,
+      Object.values(selectedCategories).forEach(category => {
+        const pointsValue = category.points || category.pointValue || 1;
+        
+        // Create an entry for each student
+        selectedStudentIds.forEach(studentId => {
+          pointsEntries.push({
+            studentId,
+            categoryId: category.id,
+            points: pointsValue,
+            teacherId: user?.id || 1,
+            notes: `${category.name} - ${pointsValue} points`,
+          });
+        });
       });
-    });
 
-    // Wait for all mutations to complete
-    Promise.all(promises)
-      .then(() => {
-        toast({
-          title: "Points Added",
-          description: `Successfully added ${totalPoints} points across ${Object.keys(selectedCategories).length} categories.`,
+      // The batch endpoint expects { points: [...pointsArray] }
+      batchPointsMutation.mutateAsync({ points: pointsEntries })
+        .then(() => {
+          toast({
+            title: "Points Added",
+            description: `Successfully added points to ${studentCount} students across ${Object.keys(selectedCategories).length} categories.`,
+          });
+          localStorage.removeItem('batchSelectedStudentIds'); // Clear the stored IDs
+          onComplete(); // Move back to student selection view
+        })
+        .catch((error: Error) => {
+          toast({
+            title: "Error",
+            description: "Some points could not be added. Please try again.",
+            variant: "destructive",
+          });
         });
-        onComplete(); // Move back to student selection view
-      })
-      .catch(error => {
-        toast({
-          title: "Error",
-          description: "Some points could not be added. Please try again.",
-          variant: "destructive",
+    } else {
+      // Use single student endpoint for backward compatibility
+      const promises = Object.values(selectedCategories).map(category => {
+        const pointsValue = category.points || category.pointValue || 1;
+        
+        return addPointsMutation.mutateAsync({
+          studentId,
+          categoryId: category.id,
+          points: pointsValue,
+          teacherId: user?.id || 1,
+          notes: `${category.name} - ${pointsValue} points`,
         });
       });
+
+      // Wait for all mutations to complete
+      Promise.all(promises)
+        .then(() => {
+          toast({
+            title: "Points Added",
+            description: `Successfully added ${totalPoints} points across ${Object.keys(selectedCategories).length} categories.`,
+          });
+          localStorage.removeItem('batchSelectedStudentIds'); // Clear the stored IDs
+          onComplete(); // Move back to student selection view
+        })
+        .catch((error: Error) => {
+          toast({
+            title: "Error",
+            description: "Some points could not be added. Please try again.",
+            variant: "destructive",
+          });
+        });
+    }
   };
+
+  // Get batch student count for display
+  const batchStudentCount = getBatchSelectedStudentIds().length;
+  const isBatchMode = batchStudentCount > 1;
 
   return (
     <div className="py-4 pb-20">
       {/* Student name header */}
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-medium text-neutral-darker">
-          {studentName}
+          {isBatchMode 
+            ? `${studentName} + ${batchStudentCount - 1} more students` 
+            : studentName}
         </h2>
         
         {totalPoints > 0 && (
           <div className="text-green-600 font-medium">
-            Selected: {totalPoints} points
+            Selected: {totalPoints} points{isBatchMode ? ` × ${batchStudentCount} students` : ''}
           </div>
         )}
       </div>
