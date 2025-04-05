@@ -557,9 +557,9 @@ export class DatabaseStorage implements IStorage {
       // Use direct SQL query to avoid schema mismatch issues
       const client = await pool.connect();
       try {
-        // Include house_id in the query
+        // Include house_id in the query, but not class_id since it doesn't exist
         const result = await client.query(
-          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", class_id AS "classId", house_id AS "houseId" FROM users WHERE id = $1',
+          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", house_id AS "houseId" FROM users WHERE id = $1',
           [id]
         );
         
@@ -572,6 +572,8 @@ export class DatabaseStorage implements IStorage {
         if (user.houseId === undefined) {
           user.houseId = null;
         }
+        // Set classId to null since it doesn't exist in the database
+        user.classId = null;
         
         return user as User;
       } finally {
@@ -587,9 +589,9 @@ export class DatabaseStorage implements IStorage {
     try {
       const client = await pool.connect();
       try {
-        // Include house_id in the query
+        // Remove class_id from the query since it doesn't exist
         const result = await client.query(
-          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", class_id AS "classId", house_id AS "houseId" FROM users WHERE username = $1',
+          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", house_id AS "houseId" FROM users WHERE username = $1',
           [username]
         );
         
@@ -602,6 +604,8 @@ export class DatabaseStorage implements IStorage {
         if (user.houseId === undefined) {
           user.houseId = null;
         }
+        // Set classId to null since it doesn't exist in the database
+        user.classId = null;
         
         return user as User;
       } finally {
@@ -615,8 +619,11 @@ export class DatabaseStorage implements IStorage {
   
   async createUser(user: InsertUser): Promise<User> {
     try {
+      // Remove classId from values if it exists, since the column doesn't exist in the database
+      const { classId, ...userWithoutClassId } = user;
+      
       // Explicitly returning PostgreSQL table data with proper typing
-      const result = await db.insert(users).values(user).returning({
+      const result = await db.insert(users).values(userWithoutClassId).returning({
         id: users.id,
         username: users.username,
         password: users.password,
@@ -627,7 +634,6 @@ export class DatabaseStorage implements IStorage {
         gradeLevel: users.gradeLevel,
         section: users.section,
         parentId: users.parentId,
-        classId: users.classId,
         houseId: users.houseId
       });
       
@@ -642,6 +648,9 @@ export class DatabaseStorage implements IStorage {
       if (userResult && userResult.houseId === undefined) {
         userResult.houseId = null;
       }
+      
+      // Set classId to null since it doesn't exist in the database
+      userResult.classId = null;
       
       return userResult as User;
     } catch (error) {
@@ -665,13 +674,12 @@ export class DatabaseStorage implements IStorage {
           lastName: 'last_name',
           gradeLevel: 'grade_level',
           parentId: 'parent_id',
-          classId: 'class_id',
           houseId: 'house_id'
         };
         
         for (const [key, value] of Object.entries(userUpdate)) {
-          // Skip undefined values
-          if (value === undefined) continue;
+          // Skip undefined values and classId since it doesn't exist in the database
+          if (value === undefined || key === 'classId') continue;
           
           // Map property name to column name if needed
           const columnName = columnMap[key] || key;
@@ -688,14 +696,14 @@ export class DatabaseStorage implements IStorage {
         // Add the WHERE parameter
         updateValues.push(id);
         
-        // Execute the update - include house_id in RETURNING
+        // Execute the update - removed class_id from RETURNING clause
         const sql = `
           UPDATE users 
           SET ${updateFields.join(', ')} 
           WHERE id = $${paramCounter} 
           RETURNING id, username, password, first_name AS "firstName", last_name AS "lastName", 
                    role, email, grade_level AS "gradeLevel", section, 
-                   parent_id AS "parentId", class_id AS "classId", house_id AS "houseId"
+                   parent_id AS "parentId", house_id AS "houseId"
         `;
         
         const result = await client.query(sql, updateValues);
@@ -704,7 +712,11 @@ export class DatabaseStorage implements IStorage {
           return undefined;
         }
         
-        return result.rows[0] as User;
+        // Add classId as null since it doesn't exist in the database
+        const user = result.rows[0];
+        user.classId = null;
+        
+        return user as User;
       } finally {
         client.release();
       }
@@ -812,16 +824,18 @@ export class DatabaseStorage implements IStorage {
     try {
       const client = await pool.connect();
       try {
-        // Include house_id in the query
+        // Remove class_id from the query since it doesn't exist
         const result = await client.query(
-          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", class_id AS "classId", house_id AS "houseId" FROM users'
+          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", house_id AS "houseId" FROM users'
         );
         
         // Make sure houseId is properly set to null if it's undefined
+        // And set classId to null since it doesn't exist in the database
         const users = result.rows.map(user => {
           if (user.houseId === undefined) {
             user.houseId = null;
           }
+          user.classId = null;
           return user;
         });
         
@@ -839,8 +853,8 @@ export class DatabaseStorage implements IStorage {
     try {
       const client = await pool.connect();
       try {
-        // Include house_id in the query
-        let sql = 'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", class_id AS "classId", house_id AS "houseId" FROM users';
+        // Remove class_id from the query since it doesn't exist
+        let sql = 'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", house_id AS "houseId" FROM users';
         
         let result;
         if (role !== 'all') {
@@ -851,10 +865,12 @@ export class DatabaseStorage implements IStorage {
         }
         
         // Make sure houseId is properly set to null if it's undefined
+        // And add classId as null since it doesn't exist in the database
         const users = result.rows.map(user => {
           if (user.houseId === undefined) {
             user.houseId = null;
           }
+          user.classId = null;
           return user;
         });
         
@@ -878,17 +894,19 @@ export class DatabaseStorage implements IStorage {
     try {
       const client = await pool.connect();
       try {
-        // Include house_id in the query
+        // Remove class_id from the query since it doesn't exist
         const result = await client.query(
-          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", class_id AS "classId", house_id AS "houseId" FROM users WHERE role = $1 AND parent_id = $2',
+          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", house_id AS "houseId" FROM users WHERE role = $1 AND parent_id = $2',
           ['student', parentId]
         );
         
         // Make sure houseId is properly set to null if it's undefined
+        // And add classId as null since it doesn't exist in the database
         const users = result.rows.map(user => {
           if (user.houseId === undefined) {
             user.houseId = null;
           }
+          user.classId = null;
           return user;
         });
         
@@ -913,16 +931,19 @@ export class DatabaseStorage implements IStorage {
       // Use raw SQL to retrieve the students by house_id
       const client = await pool.connect();
       try {
+        // Remove class_id from the query since it doesn't exist
         const result = await client.query(
-          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", class_id AS "classId", house_id AS "houseId" FROM users WHERE role = $1 AND house_id = $2',
+          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", house_id AS "houseId" FROM users WHERE role = $1 AND house_id = $2',
           ['student', houseId]
         );
         
         // Make sure all users have a houseId property, even if null
+        // And add classId as null since it doesn't exist in the database
         const users = result.rows.map(user => {
           if (user.houseId === undefined) {
             user.houseId = houseId; // We know this is the correct house ID since we filtered by it
           }
+          user.classId = null;
           return user;
         });
         

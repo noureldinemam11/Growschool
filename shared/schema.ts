@@ -34,7 +34,6 @@ export const users = pgTable("users", {
   gradeLevel: text("grade_level"),
   section: text("section"),
   parentId: integer("parent_id"), // This will reference the users table but not with a direct reference
-  classId: integer("class_id"),   // Reference to class table if needed
   houseId: integer("house_id"),   // Reference to house table for students
 });
 
@@ -97,8 +96,8 @@ export const rewardRedemptions = pgTable("reward_redemptions", {
 export const insertRewardRedemptionSchema = createInsertSchema(rewardRedemptions).omit({ id: true, timestamp: true, status: true });
 
 // Data Types
-export type User = typeof users.$inferSelect;
-export type InsertUser = z.infer<typeof insertUserSchema>;
+export type User = typeof users.$inferSelect & { classId?: number | null };
+export type InsertUser = z.infer<typeof insertUserSchema> & { classId?: number | null };
 
 export type House = typeof houses.$inferSelect;
 export type InsertHouse = z.infer<typeof insertHouseSchema>;
