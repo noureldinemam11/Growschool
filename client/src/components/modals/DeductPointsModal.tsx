@@ -14,12 +14,13 @@ import { Loader2, Plus, Minus } from 'lucide-react';
 
 interface DeductPointsModalProps {
   onClose: () => void;
+  preSelectedStudentId?: string | null;
 }
 
-export default function DeductPointsModal({ onClose }: DeductPointsModalProps) {
+export default function DeductPointsModal({ onClose, preSelectedStudentId }: DeductPointsModalProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [studentId, setStudentId] = useState<string>('');
+  const [studentId, setStudentId] = useState<string>(preSelectedStudentId || '');
   const [categoryId, setCategoryId] = useState<string>('');
   const [points, setPoints] = useState<number>(1);
   const [notes, setNotes] = useState<string>('');

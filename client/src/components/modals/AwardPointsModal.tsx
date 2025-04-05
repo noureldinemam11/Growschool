@@ -14,12 +14,13 @@ import { Loader2, Plus, Minus } from 'lucide-react';
 
 interface AwardPointsModalProps {
   onClose: () => void;
+  preSelectedStudentId?: string | null;
 }
 
-export default function AwardPointsModal({ onClose }: AwardPointsModalProps) {
+export default function AwardPointsModal({ onClose, preSelectedStudentId }: AwardPointsModalProps) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [studentId, setStudentId] = useState<string>('');
+  const [studentId, setStudentId] = useState<string>(preSelectedStudentId || '');
   const [categoryId, setCategoryId] = useState<string>('');
   const [points, setPoints] = useState<number>(1);
   const [notes, setNotes] = useState<string>('');

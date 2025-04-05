@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
+import { Dialog } from "@/components/ui/dialog";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import DashboardPage from "@/pages/dashboard-page";
@@ -17,6 +18,8 @@ import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
 import { CelebrationProvider } from "./hooks/use-celebration";
 import AppHeader from "@/components/ui/AppHeader";
+import AwardPointsModal from "@/components/modals/AwardPointsModal";
+import DeductPointsModal from "@/components/modals/DeductPointsModal";
 
 // Redirect component for simple routes
 function Redirect({ to }: { to: string }) {
@@ -114,12 +117,40 @@ function Router() {
 
 function App() {
   const [location] = useLocation();
+  const [awardPointsOpen, setAwardPointsOpen] = useState(false);
+  const [deductPointsOpen, setDeductPointsOpen] = useState(false);
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   
   // Don't show the global header on certain pages that have their own custom headers
   const hideGlobalHeader = 
     location.startsWith('/points') || 
     location === '/profile' || 
     location === '/change-password';
+  
+  // Set up event listeners for the custom events from StudentDetail component
+  useEffect(() => {
+    const handleAwardPointsModal = (event: Event) => {
+      const customEvent = event as CustomEvent<{studentId: number}>;
+      setSelectedStudentId(customEvent.detail.studentId.toString());
+      setAwardPointsOpen(true);
+    };
+    
+    const handleDeductPointsModal = (event: Event) => {
+      const customEvent = event as CustomEvent<{studentId: number}>;
+      setSelectedStudentId(customEvent.detail.studentId.toString());
+      setDeductPointsOpen(true);
+    };
+    
+    // Add the event listeners
+    window.addEventListener('open-award-points-modal', handleAwardPointsModal);
+    window.addEventListener('open-deduct-points-modal', handleDeductPointsModal);
+    
+    // Clean up event listeners on unmount
+    return () => {
+      window.removeEventListener('open-award-points-modal', handleAwardPointsModal);
+      window.removeEventListener('open-deduct-points-modal', handleDeductPointsModal);
+    };
+  }, []);
   
   return (
     <AuthProvider>
@@ -129,6 +160,22 @@ function App() {
           <div className="app-content">
             <Router />
           </div>
+          
+          {/* Modals for awarding and deducting points */}
+          <Dialog open={awardPointsOpen} onOpenChange={setAwardPointsOpen}>
+            <AwardPointsModal 
+              onClose={() => setAwardPointsOpen(false)} 
+              preSelectedStudentId={selectedStudentId}
+            />
+          </Dialog>
+          
+          <Dialog open={deductPointsOpen} onOpenChange={setDeductPointsOpen}>
+            <DeductPointsModal 
+              onClose={() => setDeductPointsOpen(false)} 
+              preSelectedStudentId={selectedStudentId}
+            />
+          </Dialog>
+          
           <Toaster />
         </div>
       </CelebrationProvider>

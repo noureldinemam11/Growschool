@@ -160,8 +160,21 @@ const StudentDetail: FC<StudentDetailProps> = ({ student, points, isLoading }) =
     // Save current student to localStorage for points assignment
     localStorage.setItem('batchSelectedStudentIds', JSON.stringify([student.id]));
     
-    // Navigate to points page - when implemented will open the appropriate modal
-    window.location.href = `/points?action=${action}`;
+    // Create a new modal open logic that will directly open the points assignment modals
+    // This is more direct than navigating to another page
+    if (action === 'add') {
+      // Open Award Points Modal for this specific student
+      const event = new CustomEvent('open-award-points-modal', { 
+        detail: { studentId: student.id }
+      });
+      window.dispatchEvent(event);
+    } else {
+      // Open Deduct Points Modal for this specific student
+      const event = new CustomEvent('open-deduct-points-modal', { 
+        detail: { studentId: student.id }
+      });
+      window.dispatchEvent(event);
+    }
   };
 
   const handleParentContact = () => {
