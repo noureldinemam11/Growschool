@@ -4,7 +4,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { ImportStudentsButton } from '@/components/roster/ImportStudentsButton';
 import {
   UsersIcon,
   UserX,
@@ -14,8 +13,6 @@ import {
   X,
   UserPlus,
   Users,
-  Upload,
-  Download,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -311,7 +308,6 @@ const ManageRoster: FC<ManageRosterProps> = () => {
               <UserPlus className="h-4 w-4" />
               Add Student
             </Button>
-            <ImportStudentsButton />
             <Button 
               size="sm" 
               variant="outline" 
