@@ -1,7 +1,7 @@
 import { FC, useState, useEffect } from 'react';
 import { User, BehaviorPoint } from '@shared/schema';
 import { cn } from '@/lib/utils';
-import { Search, Filter, ChevronDown, X, UserPlus, CheckCircle } from 'lucide-react';
+import { Search, Filter, ChevronDown, X, UserPlus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +17,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useQuery } from '@tanstack/react-query';
-import { useLocation } from 'wouter';
 
 interface StudentListProps {
   students: Partial<User>[];
@@ -30,9 +29,7 @@ const StudentList: FC<StudentListProps> = ({ students, selectedStudentId, onSele
   const [selectedHouse, setSelectedHouse] = useState<number | 'all'>('all');
   const [selectedGrade, setSelectedGrade] = useState<string | 'all'>('all');
   const [sortOrder, setSortOrder] = useState<'name' | 'points-high' | 'points-low'>('name');
-  const [selectedStudents, setSelectedStudents] = useState<number[]>([]);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
-  const [location, setLocation] = useState<any>();
   
   // Get houses for filtering
   const { data: houses } = useQuery<any[]>({
@@ -97,26 +94,12 @@ const StudentList: FC<StudentListProps> = ({ students, selectedStudentId, onSele
     }
   });
 
-  // No longer needed since we removed the assign points button
-
   // Reset all filters
   const clearFilters = () => {
     setSearchQuery('');
     setSelectedHouse('all');
     setSelectedGrade('all');
     setSortOrder('name');
-  };
-
-  // Toggle selection of a student for batch operations
-  const toggleStudentSelection = (id: number, event?: React.MouseEvent) => {
-    if (event) {
-      event.stopPropagation();
-    }
-    setSelectedStudents(prev => 
-      prev.includes(id) 
-        ? prev.filter(studentId => studentId !== id)
-        : [...prev, id]
-    );
   };
 
   return (
@@ -290,18 +273,10 @@ const StudentList: FC<StudentListProps> = ({ students, selectedStudentId, onSele
         )}
       </div>
       
-      {/* Results summary and selection info */}
+      {/* Results summary */}
       <div className="flex justify-between items-center pt-1">
         <div className="text-sm text-muted-foreground">
           {filteredStudents.length} {filteredStudents.length === 1 ? 'student' : 'students'}
-        </div>
-        
-        <div className="flex gap-2">
-          {selectedStudents.length > 0 && (
-            <Button size="sm" variant="outline" className="h-8" onClick={() => setSelectedStudents([])}>
-              Clear {selectedStudents.length} selected
-            </Button>
-          )}
         </div>
       </div>
       
@@ -319,15 +294,6 @@ const StudentList: FC<StudentListProps> = ({ students, selectedStudentId, onSele
               )}
               onClick={() => onSelectStudent(student.id!)}
             >
-              {/* Checkbox for batch selection */}
-              <div className="mr-2" onClick={(e) => toggleStudentSelection(student.id!, e)}>
-                {selectedStudents.includes(student.id!) ? (
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                ) : (
-                  <div className="h-5 w-5 rounded-full border border-gray-300"></div>
-                )}
-              </div>
-              
               <div className={cn(
                 "h-10 w-10 rounded-full flex items-center justify-center",
                 student.id === selectedStudentId 
@@ -410,7 +376,7 @@ const StudentList: FC<StudentListProps> = ({ students, selectedStudentId, onSele
               )}
               onClick={() => onSelectStudent(student.id!)}
             >
-              <div className="flex justify-between items-start mb-2">
+              <div className="flex items-start mb-2">
                 <div className="flex items-center">
                   <div className={cn(
                     "h-8 w-8 rounded-full flex items-center justify-center mr-2",
@@ -428,18 +394,6 @@ const StudentList: FC<StudentListProps> = ({ students, selectedStudentId, onSele
                         : ''}
                     </div>
                   </div>
-                </div>
-                
-                {/* Checkbox for batch selection */}
-                <div 
-                  className="ml-auto" 
-                  onClick={(e) => toggleStudentSelection(student.id!, e)}
-                >
-                  {selectedStudents.includes(student.id!) ? (
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                  ) : (
-                    <div className="h-5 w-5 rounded-full border border-gray-300"></div>
-                  )}
                 </div>
               </div>
               
