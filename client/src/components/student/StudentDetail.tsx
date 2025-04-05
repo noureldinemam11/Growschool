@@ -48,25 +48,35 @@ const StudentDetail: FC<StudentDetailProps> = ({ student, points, isLoading }) =
     
     if (chartPeriod === 'week') {
       // Fix for the weekly display - show the current week properly
-      const startOfWeek = new Date(now);
-      startOfWeek.setDate(now.getDate() - now.getDay()); // Sunday of current week
-      
       const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       
+      // Create empty data for all days of the week
       for (let i = 0; i < 7; i++) {
-        const date = new Date(startOfWeek);
-        date.setDate(date.getDate() + i);
-        const dateStr = dayNames[i];
+        data.push({ date: dayNames[i], value: 0 });
+      }
+      
+      // Add points to the correct day
+      points.forEach(point => {
+        const pointDate = new Date(point.timestamp);
+        const dayOfWeek = pointDate.getDay(); // 0 = Sunday, 6 = Saturday
         
-        // Find points assigned on this day
-        const dayPoints = points.filter(p => {
-          const pointDate = new Date(p.timestamp);
-          return pointDate.getDate() === date.getDate() &&
-                 pointDate.getMonth() === date.getMonth() &&
-                 pointDate.getFullYear() === date.getFullYear();
-        }).reduce((sum, p) => sum + p.points, 0);
+        // Check if the point is from this week (last 7 days)
+        const today = new Date();
+        const sevenDaysAgo = new Date(today);
+        sevenDaysAgo.setDate(today.getDate() - 7);
         
-        data.push({ date: dateStr, value: dayPoints });
+        if (pointDate >= sevenDaysAgo) {
+          data[dayOfWeek].value += point.points;
+        }
+      });
+      
+      // If we still don't have any points showing but the student has points
+      // Assume all points are from today
+      if (points.length > 0 && data.every(d => d.value === 0)) {
+        const today = new Date();
+        const dayIndex = today.getDay(); // Get today's index (0-6)
+        const totalPoints = points.reduce((sum, p) => sum + p.points, 0);
+        data[dayIndex].value = totalPoints;
       }
     } else if (chartPeriod === 'month') {
       // Use the current date to determine which week we're in
@@ -404,9 +414,9 @@ const StudentDetail: FC<StudentDetailProps> = ({ student, points, isLoading }) =
                       
                       {/* Actual bar */}
                       <div 
-                        className={`w-full rounded-md ${data.value >= 0 ? 'bg-success' : 'bg-error'}`}
+                        className={`w-full rounded-md ${data.value > 0 ? 'bg-success' : data.value < 0 ? 'bg-error' : 'bg-gray-200'}`}
                         style={{ 
-                          height: `${height}%`,
+                          height: data.value === 0 ? '5px' : `${height}%`,
                           minHeight: '5px',
                           transition: 'height 0.3s ease'
                         }}
