@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { User, Lock, LogOut, X, Edit, GraduationCap } from 'lucide-react';
+import { User, Lock, LogOut, X, Edit } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 
@@ -44,11 +44,6 @@ export default function ProfileDropdown({ onClose }: ProfileDropdownProps) {
 
   const handleChangePassword = () => {
     navigate('/change-password');
-    setIsOpen(false);
-  };
-  
-  const handleClassManagement = () => {
-    navigate('/classes');
     setIsOpen(false);
   };
 
@@ -115,17 +110,6 @@ export default function ProfileDropdown({ onClose }: ProfileDropdownProps) {
               <Lock className="h-5 w-5 mr-3" />
               Change Password
             </Button>
-            
-            {user.role === 'admin' && (
-              <Button 
-                variant="ghost" 
-                className="w-full justify-start px-4 py-3 text-white hover:bg-blue-600 border-t border-blue-600"
-                onClick={handleClassManagement}
-              >
-                <GraduationCap className="h-5 w-5 mr-3" />
-                Class Management
-              </Button>
-            )}
             
             <Button 
               variant="ghost" 

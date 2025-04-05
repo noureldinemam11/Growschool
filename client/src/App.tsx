@@ -13,7 +13,6 @@ import AdminPage from "@/pages/admin-page";
 import PointsPage from "@/pages/points-page";
 import ProfilePage from "@/pages/profile-page";
 import ChangePasswordPage from "@/pages/change-password-page";
-import ClassPage from "@/pages/class-page";
 import DebugPage from "@/pages/debug-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
@@ -110,11 +109,6 @@ function Router() {
       <ProtectedRoute 
         path="/debug" 
         component={DebugPage}
-        allowedRoles={["admin"]}
-      />
-      <ProtectedRoute 
-        path="/classes" 
-        component={ClassPage}
         allowedRoles={["admin"]}
       />
       <Route component={NotFound} />
