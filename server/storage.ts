@@ -1,5 +1,5 @@
-import { users, pods, classes, behaviorCategories, behaviorPoints, rewards, rewardRedemptions } from "@shared/schema";
-import type { User, InsertUser, Pod, InsertPod, Class, InsertClass, BehaviorCategory, InsertBehaviorCategory, BehaviorPoint, InsertBehaviorPoint, Reward, InsertReward, RewardRedemption, InsertRewardRedemption, UserRole, House, InsertHouse } from "@shared/schema";
+import { users, houses, behaviorCategories, behaviorPoints, rewards, rewardRedemptions } from "@shared/schema";
+import type { User, InsertUser, House, InsertHouse, BehaviorCategory, InsertBehaviorCategory, BehaviorPoint, InsertBehaviorPoint, Reward, InsertReward, RewardRedemption, InsertRewardRedemption, UserRole } from "@shared/schema";
 import createMemoryStore from "memorystore";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
@@ -162,7 +162,7 @@ export class MemStorage implements IStorage {
       email: String(insertUser.email),
       gradeLevel: insertUser.gradeLevel ? String(insertUser.gradeLevel) : null,
       section: insertUser.section ? String(insertUser.section) : null,
-      classId: typeof insertUser.classId === 'number' ? insertUser.classId : null,
+      houseId: typeof insertUser.houseId === 'number' ? insertUser.houseId : null,
       parentId: typeof insertUser.parentId === 'number' ? insertUser.parentId : null
     };
     
@@ -215,7 +215,7 @@ export class MemStorage implements IStorage {
 
   async getStudentsByHouseId(houseId: number): Promise<User[]> {
     return Array.from(this.users.values()).filter(user => 
-      user.role === 'student' && (user.classId === houseId || user.houseId === houseId)
+      user.role === 'student' && user.houseId === houseId
     );
   }
 
@@ -327,10 +327,10 @@ export class MemStorage implements IStorage {
     };
     this.behaviorPoints.set(id, newPoint);
     
-    // Update pod points if student is in a class
+    // Update house points if student is in a house
     const student = await this.getUser(point.studentId);
-    if (student && student.classId) {
-      await this.updateHousePoints(student.classId, point.points);
+    if (student && student.houseId) {
+      await this.updateHousePoints(student.houseId, point.points);
     }
     
     return newPoint;
@@ -369,20 +369,20 @@ export class MemStorage implements IStorage {
   async deleteBehaviorPointsByStudentId(studentId: number): Promise<void> {
     // Get the student
     const student = await this.getUser(studentId);
-    if (!student || !student.classId) return;
+    if (!student || !student.houseId) return;
     
     // Calculate total points from this student
     const studentPoints = Array.from(this.behaviorPoints.values())
       .filter(point => point.studentId === studentId);
     
-    // Calculate the sum to subtract from pod
+    // Calculate the sum to subtract from house
     const pointsToSubtract = studentPoints.reduce((sum, point) => sum + point.points, 0);
     
-    // Update pod points
-    const pod = await this.getHouse(student.classId);
-    if (pod) {
-      pod.points = Math.max(0, pod.points - pointsToSubtract);
-      this.houses.set(pod.id, pod);
+    // Update house points
+    const house = await this.getHouse(student.houseId);
+    if (house) {
+      house.points = Math.max(0, house.points - pointsToSubtract);
+      this.houses.set(house.id, house);
     }
     
     // Delete all behavior points for this student
@@ -579,7 +579,7 @@ export class DatabaseStorage implements IStorage {
         email: users.email,
         gradeLevel: users.gradeLevel,
         section: users.section,
-        classId: users.classId,
+        houseId: users.houseId,
         parentId: users.parentId
       });
       
@@ -741,7 +741,7 @@ export class DatabaseStorage implements IStorage {
       const result = await db.select().from(users)
         .where(and(
           eq(users.role, 'student'),
-          eq(users.classId, houseId)
+          eq(users.houseId, houseId)
         ));
       return result as User[];
     } catch (error: any) {
@@ -752,17 +752,17 @@ export class DatabaseStorage implements IStorage {
   
   // House Management
   async getHouse(id: number): Promise<House | undefined> {
-    const result = await db.select().from(pods).where(eq(pods.id, id));
+    const result = await db.select().from(houses).where(eq(houses.id, id));
     return result[0] as House | undefined;
   }
   
   async getHouseByName(name: string): Promise<House | undefined> {
-    const result = await db.select().from(pods).where(eq(pods.name, name));
+    const result = await db.select().from(houses).where(eq(houses.name, name));
     return result[0] as House | undefined;
   }
   
   async createHouse(house: InsertHouse): Promise<House> {
-    const result = await db.insert(pods).values({
+    const result = await db.insert(houses).values({
       ...house,
       points: 0
     }).returning();
@@ -770,22 +770,22 @@ export class DatabaseStorage implements IStorage {
   }
   
   async updateHouse(id: number, houseUpdate: Partial<House>): Promise<House | undefined> {
-    const result = await db.update(pods)
+    const result = await db.update(houses)
       .set(houseUpdate)
-      .where(eq(pods.id, id))
+      .where(eq(houses.id, id))
       .returning();
     return result[0] as House | undefined;
   }
   
   async getAllHouses(): Promise<House[]> {
-    const result = await db.select().from(pods);
+    const result = await db.select().from(houses);
     return result as House[];
   }
   
   async deleteHouse(id: number): Promise<boolean> {
     try {
-      const result = await db.delete(pods)
-        .where(eq(pods.id, id))
+      const result = await db.delete(houses)
+        .where(eq(houses.id, id))
         .returning();
       return result.length > 0;
     } catch (error) {
@@ -853,10 +853,10 @@ export class DatabaseStorage implements IStorage {
       timestamp: new Date()
     }).returning();
     
-    // Update pod points if student is in a class
+    // Update house points if student is in a house
     const student = await this.getUser(point.studentId);
-    if (student?.classId) {
-      await this.updateHousePoints(student.classId, point.points);
+    if (student?.houseId) {
+      await this.updateHousePoints(student.houseId, point.points);
     }
     
     return result[0] as BehaviorPoint;
@@ -893,8 +893,8 @@ export class DatabaseStorage implements IStorage {
         // Delete all behavior points
         await client.query('DELETE FROM behavior_points');
         
-        // Reset all house/pod points to 0
-        await client.query('UPDATE pods SET points = 0');
+        // Reset all house points to 0
+        await client.query('UPDATE houses SET points = 0');
         
         await client.query('COMMIT');
         console.log('Successfully deleted all behavior points and reset house points');
@@ -920,17 +920,17 @@ export class DatabaseStorage implements IStorage {
         
         // Get the student
         const studentResult = await client.query(
-          'SELECT class_id FROM users WHERE id = $1 AND role = $2',
+          'SELECT house_id FROM users WHERE id = $1 AND role = $2',
           [studentId, 'student']
         );
         
-        if (studentResult.rows.length === 0 || !studentResult.rows[0].class_id) {
-          // No student found or no class assigned, so just end transaction
+        if (studentResult.rows.length === 0 || !studentResult.rows[0].house_id) {
+          // No student found or no house assigned, so just end transaction
           await client.query('COMMIT');
           return;
         }
         
-        const houseId = studentResult.rows[0].class_id;
+        const houseId = studentResult.rows[0].house_id;
         
         // Calculate total points from this student
         const pointsResult = await client.query(
@@ -940,10 +940,10 @@ export class DatabaseStorage implements IStorage {
         
         const pointsToSubtract = Number(pointsResult.rows[0]?.total || 0);
         
-        // Update house/pod points
+        // Update house points
         if (pointsToSubtract !== 0) {
           await client.query(
-            'UPDATE pods SET points = GREATEST(0, points - $1) WHERE id = $2',
+            'UPDATE houses SET points = GREATEST(0, points - $1) WHERE id = $2',
             [pointsToSubtract, houseId]
           );
         }

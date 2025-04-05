@@ -170,10 +170,10 @@ const StudentDetail: FC<StudentDetailProps> = ({ student, points, isLoading }) =
                     {student.firstName?.charAt(0)}{student.lastName?.charAt(0)}
                   </span>
                 </div>
-                {houses && (student.houseId || student.classId) && (
+                {houses && student.houseId && (
                   <div 
                     className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-white flex items-center justify-center"
-                    style={{ backgroundColor: houses.find(h => h.id === (student.houseId || student.classId))?.color || '#ccc' }}
+                    style={{ backgroundColor: houses.find(h => h.id === student.houseId)?.color || '#ccc' }}
                   >
                     <Medal className="h-3 w-3 text-white" />
                   </div>
@@ -191,14 +191,14 @@ const StudentDetail: FC<StudentDetailProps> = ({ student, points, isLoading }) =
                       : 'No Grade'}
                   </div>
                   
-                  {houses && (student.houseId || student.classId) && (
+                  {houses && student.houseId && (
                     <div className="flex items-center">
                       <Users className="h-3.5 w-3.5 mr-1" />
                       <span className="flex items-center">
-                        <span>{houses.find(h => h.id === (student.houseId || student.classId))?.name}</span>
+                        <span>{houses.find(h => h.id === student.houseId)?.name}</span>
                         <div 
                           className="w-2 h-2 rounded-full ml-1" 
-                          style={{ backgroundColor: houses.find(h => h.id === (student.houseId || student.classId))?.color || '#ccc' }}
+                          style={{ backgroundColor: houses.find(h => h.id === student.houseId)?.color || '#ccc' }}
                         ></div>
                       </span>
                     </div>
