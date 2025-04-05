@@ -133,14 +133,14 @@ const StatsCard = ({
 }) => {
   return (
     <Card className="h-full">
-      <CardContent className="p-6">
+      <CardContent className="p-4 md:p-6">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            <p className="text-xs md:text-sm font-medium text-muted-foreground">{title}</p>
             <div className="flex items-baseline gap-1">
-              <h3 className="text-3xl font-bold tracking-tight">{value}</h3>
+              <h3 className="text-xl md:text-3xl font-bold tracking-tight">{value}</h3>
               {trendValue && (
-                <span className="text-sm font-medium text-muted-foreground ml-1">
+                <span className="text-xs md:text-sm font-medium text-muted-foreground ml-1">
                   {trendValue}
                 </span>
               )}
@@ -154,7 +154,7 @@ const StatsCard = ({
                 ) : (
                   <Repeat className="h-3 w-3 text-amber-500 mr-1" />
                 )}
-                <span className={`text-xs ${
+                <span className={`text-[10px] md:text-xs ${
                   trend === 'up' 
                     ? 'text-emerald-500' 
                     : trend === 'down' 
@@ -166,7 +166,7 @@ const StatsCard = ({
               </div>
             )}
           </div>
-          <div className={`p-3 rounded-full ${color} bg-opacity-10`}>
+          <div className={`p-2 md:p-3 rounded-full ${color} bg-opacity-10`}>
             {icon}
           </div>
         </div>
@@ -179,21 +179,23 @@ const QuickActionButton = ({
   icon, 
   label, 
   onClick,
-  highlight = false 
+  highlight = false,
+  className = ""
 }: { 
   icon: React.ReactNode; 
   label: string; 
   onClick: () => void;
   highlight?: boolean;
+  className?: string;
 }) => {
   return (
     <Button 
       variant={highlight ? "default" : "outline"} 
-      className="h-24 flex-col space-y-2 w-full" 
+      className={`h-16 md:h-24 flex-col space-y-1 md:space-y-2 w-full ${className}`} 
       onClick={onClick}
     >
       {icon}
-      <span className="text-xs">{label}</span>
+      <span className="text-[10px] md:text-xs">{label}</span>
     </Button>
   );
 };
@@ -455,25 +457,25 @@ function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 pb-16 md:pb-0">
       {/* Executive Overview */}
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-4">
+      <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
         <StatsCard
           title="Total Students"
           value={totalStudents}
-          icon={<Users className="h-6 w-6 text-blue-600" />}
+          icon={<Users className="h-5 w-5 md:h-6 md:w-6 text-blue-600" />}
           color="bg-blue-600"
         />
         <StatsCard
           title="Total Teachers"
           value={totalTeachers}
-          icon={<User className="h-6 w-6 text-indigo-600" />}
+          icon={<User className="h-5 w-5 md:h-6 md:w-6 text-indigo-600" />}
           color="bg-indigo-600"
         />
         <StatsCard
           title="Activity Today"
           value={todayActivityCount}
-          icon={<Activity className="h-6 w-6 text-emerald-600" />}
+          icon={<Activity className="h-5 w-5 md:h-6 md:w-6 text-emerald-600" />}
           trend={todayActivityCount > 20 ? 'up' : todayActivityCount < 10 ? 'down' : 'neutral'}
           trendLabel={todayActivityCount > 20 ? 'Above target' : todayActivityCount < 10 ? 'Below target' : 'On target'}
           color="bg-emerald-600"
@@ -481,21 +483,21 @@ function AdminDashboard() {
         <StatsCard
           title="Houses"
           value={totalHouses}
-          icon={<Trophy className="h-6 w-6 text-amber-600" />}
+          icon={<Trophy className="h-5 w-5 md:h-6 md:w-6 text-amber-600" />}
           color="bg-amber-600"
         />
       </div>
       
-      {/* Quick Actions */}
+      {/* Quick Actions - Scrollable horizontally on mobile */}
       <Card>
-        <CardHeader>
-          <CardTitle>Administrative Actions</CardTitle>
+        <CardHeader className="py-3 md:py-4">
+          <CardTitle className="text-lg md:text-xl">Administrative Actions</CardTitle>
           <CardDescription>Quick access to administrative functions</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <CardContent className="p-3 md:p-6">
+          <div className="flex md:grid md:grid-cols-5 gap-2 md:gap-4 overflow-x-auto pb-2 md:pb-0 -mx-1 px-1">
             <QuickActionButton
-              icon={<UserPlus className="h-6 w-6" />}
+              icon={<UserPlus className="h-5 w-5 md:h-6 md:w-6" />}
               label="Manage Users"
               onClick={() => {
                 navigate('/admin');
@@ -509,9 +511,10 @@ function AdminDashboard() {
                 }, 50);
               }}
               highlight={true}
+              className="min-w-[140px] md:min-w-0 flex-shrink-0 md:flex-shrink"
             />
             <QuickActionButton
-              icon={<Settings className="h-6 w-6" />}
+              icon={<Settings className="h-5 w-5 md:h-6 md:w-6" />}
               label="Behavior Categories"
               onClick={() => {
                 navigate('/admin');
@@ -524,29 +527,33 @@ function AdminDashboard() {
                   window.location.reload();
                 }, 50);
               }}
+              className="min-w-[140px] md:min-w-0 flex-shrink-0 md:flex-shrink"
             />
             <QuickActionButton
-              icon={<PlusCircle className="h-6 w-6" />}
+              icon={<PlusCircle className="h-5 w-5 md:h-6 md:w-6" />}
               label="Award Points"
               onClick={() => navigate('/points')}
               highlight={true}
+              className="min-w-[140px] md:min-w-0 flex-shrink-0 md:flex-shrink"
             />
             <QuickActionButton
-              icon={<FileText className="h-6 w-6" />}
+              icon={<FileText className="h-5 w-5 md:h-6 md:w-6" />}
               label="Generate Reports"
               onClick={() => navigate('/reports')}
+              className="min-w-[140px] md:min-w-0 flex-shrink-0 md:flex-shrink"
             />
             <QuickActionButton
-              icon={<Download className="h-6 w-6" />}
+              icon={<Download className="h-5 w-5 md:h-6 md:w-6" />}
               label="Export Data"
               onClick={() => navigate('/reports')}
+              className="min-w-[140px] md:min-w-0 flex-shrink-0 md:flex-shrink"
             />
           </div>
         </CardContent>
       </Card>
       
       {/* Students Needing Attention */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6">
         {/* Left column - Students that need attention */}
         <Card>
           <CardHeader className="pb-2">

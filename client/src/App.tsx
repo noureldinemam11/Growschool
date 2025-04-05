@@ -18,6 +18,7 @@ import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
 import { CelebrationProvider } from "./hooks/use-celebration";
 import AppHeader from "@/components/ui/AppHeader";
+import MobileNavbar from "@/components/layout/MobileNavbar";
 import AwardPointsModal from "@/components/modals/AwardPointsModal";
 import DeductPointsModal from "@/components/modals/DeductPointsModal";
 
@@ -152,14 +153,20 @@ function App() {
     };
   }, []);
   
+  // Don't show mobile navigation on auth page
+  const hideMobileNav = location.startsWith('/auth');
+
   return (
     <AuthProvider>
       <CelebrationProvider>
         <div className="app-container">
           {!hideGlobalHeader && <AppHeader />}
-          <div className="app-content">
+          <div className="app-content pb-16 md:pb-0">
             <Router />
           </div>
+          
+          {/* Mobile Navigation Bar */}
+          {!hideMobileNav && <MobileNavbar />}
           
           {/* Modals for awarding and deducting points */}
           <Dialog open={awardPointsOpen} onOpenChange={setAwardPointsOpen}>
