@@ -360,13 +360,13 @@ const StudentDetail: FC<StudentDetailProps> = ({ student, points, isLoading }) =
         </Card>
       </div>
       
-      {/* Achievement Timeline - Modern Visualization */}
+      {/* Point Trends Chart */}
       <Card className="overflow-hidden">
-        <CardHeader className="pb-2 bg-gradient-to-r from-indigo-50 to-blue-50 border-b">
+        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white border-b">
           <div className="flex justify-between items-center">
             <CardTitle className="text-sm flex items-center">
-              <Award className="h-5 w-5 mr-1.5 text-primary" />
-              Achievement Timeline
+              <BarChart2 className="h-4 w-4 mr-1.5 text-primary" />
+              Point Trends
             </CardTitle>
             <div className="flex bg-white rounded-full p-0.5 shadow-sm border">
               <Button 
@@ -397,140 +397,85 @@ const StudentDetail: FC<StudentDetailProps> = ({ student, points, isLoading }) =
           </div>
         </CardHeader>
         <CardContent className="p-6 pt-4">
-          {trendData.length > 0 ? (
-            <div className="space-y-3">
-              {/* Achievement Timeline */}
-              <div className="relative">
-                {/* Timeline line */}
-                <div className="absolute left-4 top-3 bottom-3 w-0.5 bg-gradient-to-b from-indigo-400 via-blue-400 to-sky-300"></div>
-                
-                {/* Timeline entries */}
-                {trendData.map((data, index) => {
-                  // Skip entries with no points
-                  if (data.value === 0) return null;
+          <div className="h-64 relative">
+            {/* Chart grid */}
+            <div className="absolute inset-0 flex flex-col justify-between pb-8">
+              <div className="border-b border-gray-100"></div>
+              <div className="border-b border-gray-100"></div>
+              <div className="border-b border-gray-100"></div>
+              <div className="border-b border-gray-100"></div>
+            </div>
+            
+            {/* Chart bars */}
+            <div className="absolute inset-0 flex items-end justify-between gap-2 pb-8">
+              {trendData.length > 0 ? (
+                trendData.map((data, index) => {
+                  // Calculate the max value to properly scale the bars
+                  const maxValue = Math.max(10, ...trendData.map(d => Math.abs(d.value)));
                   
-                  const isPositive = data.value > 0;
-                  const dotColor = isPositive ? 'bg-gradient-to-br from-green-400 to-emerald-600' : 'bg-gradient-to-br from-red-400 to-rose-600';
-                  const bgColor = isPositive ? 'bg-gradient-to-r from-green-50 to-emerald-50' : 'bg-gradient-to-r from-red-50 to-rose-50';
-                  const borderColor = isPositive ? 'border-green-200' : 'border-red-200';
+                  // Calculate height percentage (max 80%)
+                  const heightPercent = data.value 
+                    ? Math.max(5, Math.min(80, (Math.abs(data.value) / maxValue) * 80)) 
+                    : 2;
                   
-                  // Get the categories for this time period
-                  const periodCategories = {};
-                  const periodStartTime = new Date();
-                  
-                  if (chartPeriod === 'week') {
-                    // This requires knowing the actual date range for each day shown in trend data
-                    // For simplistic implementation, we'll focus on which categories contributed to points
-                  } else if (chartPeriod === 'month') {
-                    // Similar approach for month view
-                  } else {
-                    // Year view
-                  }
-                  
+                  const barColor = data.value > 0 
+                    ? 'bg-gradient-to-t from-green-500 to-green-400' 
+                    : data.value < 0 
+                      ? 'bg-gradient-to-t from-red-500 to-red-400' 
+                      : 'bg-gray-200';
+                      
                   return (
-                    <div key={index} className="flex items-start mb-4 relative group">
-                      {/* Timeline dot */}
-                      <div className={`relative flex-shrink-0 w-8 h-8 rounded-full ${dotColor} shadow-md z-10 flex items-center justify-center text-white font-medium mr-4`}>
-                        {isPositive ? (
-                          <TrendingUp className="w-4 h-4" />
-                        ) : (
-                          <TrendingDown className="w-4 h-4" />
-                        )}
-                        
-                        {/* Pulse animation for recent entries */}
-                        {index === 0 && (
-                          <span className="absolute inset-0 rounded-full animate-ping opacity-20 bg-white"></span>
-                        )}
+                    <div key={index} className="flex-1 flex flex-col items-center justify-end group relative">
+                      {/* Bar */}
+                      <div 
+                        className={`w-full rounded-t-md ${barColor} group-hover:opacity-90 transition-all duration-300`}
+                        style={{ 
+                          height: `${heightPercent}%`,
+                          minHeight: '4px',
+                        }}
+                      >
+                        {/* Shine effect */}
+                        <div className="absolute inset-0 overflow-hidden rounded-t-md">
+                          <div className="absolute inset-0 bg-white opacity-30 transform -skew-x-12"></div>
+                        </div>
                       </div>
                       
-                      {/* Content card */}
-                      <div className={`flex-grow ${bgColor} border ${borderColor} rounded-lg p-3 shadow-sm transition-all duration-300 group-hover:shadow-md`}>
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h4 className="font-medium text-neutral-dark">
-                              {data.date}
-                            </h4>
-                            <p className={`text-sm mt-0.5 ${isPositive ? 'text-green-600' : 'text-red-600'} font-mono font-medium`}>
-                              {isPositive ? '+' : ''}{data.value} points
-                            </p>
-                          </div>
-                          
-                          {/* Category badge or icon - would be better with actual category data */}
-                          {isPositive && (
-                            <Badge variant="outline" className="bg-white/80 border-green-200 text-green-700 flex items-center gap-1">
-                              <Star className="h-3 w-3" /> 
-                              Top Performer
-                            </Badge>
-                          )}
-                          {!isPositive && (
-                            <Badge variant="outline" className="bg-white/80 border-red-200 text-red-700 flex items-center gap-1">
-                              <Minus className="h-3 w-3" /> 
-                              Needs Improvement
-                            </Badge>
-                          )}
-                        </div>
-                        
-                        {/* Details section - shows top categories or specific points events */}
-                        <div className="mt-2 pt-2 border-t border-dashed border-gray-200 text-xs text-neutral-dark">
-                          {/* If we had actual category data for this time period, we could show it here */}
-                          <div className="flex items-center">
-                            <div className={`w-2 h-2 rounded-full ${isPositive ? 'bg-green-400' : 'bg-red-400'} mr-1.5`}></div>
-                            <span className="font-medium">
-                              {isPositive ? 'Earned through' : 'Lost through'}: 
-                            </span>
-                            <span className="ml-1 italic">
-                              {isPositive ? 'Academic Excellence, Cooperation' : 'Classroom Disruption'}
-                            </span>
-                          </div>
-                          <div className="mt-1 flex items-center text-neutral-dark/80">
-                            <Clock className="h-3 w-3 mr-1.5" />
-                            <span>
-                              {chartPeriod === 'week' ? 'During this week' : 
-                               chartPeriod === 'month' ? 'During this month period' : 
-                               'During this month'}
-                            </span>
-                          </div>
-                        </div>
+                      {/* Value tooltip */}
+                      <div className="absolute bottom-full mb-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap text-xs font-medium bg-black text-white px-2 py-1 rounded-md -translate-x-1/2 left-1/2 shadow-lg">
+                        {data.value > 0 ? '+' : ''}{data.value}
+                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-black rotate-45"></div>
+                      </div>
+                      
+                      {/* Label */}
+                      <div className="text-xs text-neutral-dark mt-2 font-medium">
+                        {data.date}
                       </div>
                     </div>
                   );
-                }).filter(Boolean)}
-                
-                {/* End of timeline marker */}
-                <div className="flex items-center ml-4 mt-6 text-xs text-neutral-dark">
-                  <div className="w-4 h-0.5 bg-neutral-200 mr-2"></div>
-                  <span>Timeline Start</span>
+                })
+              ) : (
+                <div className="w-full flex flex-col items-center justify-center">
+                  <BarChart2 className="h-10 w-10 text-neutral/20 mb-2" />
+                  <p className="text-neutral-dark text-sm font-medium">No data available for this time period</p>
                 </div>
-              </div>
+              )}
             </div>
-          ) : (
-            <div className="min-h-40 flex flex-col items-center justify-center p-6 text-center">
-              <div className="bg-blue-50 rounded-full p-4 mb-4">
-                <Award className="h-8 w-8 text-primary/50" />
-              </div>
-              <h3 className="text-lg font-medium text-neutral-dark mb-1">No Achievement Data</h3>
-              <p className="text-sm text-neutral-dark/70 max-w-md">
-                There are no points recorded for this time period. Points will appear here as they are earned.
-              </p>
+            
+            {/* X-axis */}
+            <div className="absolute bottom-0 left-0 right-0 h-px bg-gray-200"></div>
+          </div>
+
+          {/* Chart legend */}
+          <div className="flex justify-center mt-4 text-xs text-neutral-dark">
+            <div className="flex items-center mr-4">
+              <div className="w-3 h-3 rounded-sm bg-gradient-to-t from-green-500 to-green-400 mr-1"></div>
+              <span>Positive Points</span>
             </div>
-          )}
-          
-          {/* Contextual insight panel */}
-          {trendData.some(d => d.value !== 0) && (
-            <div className="mt-4 bg-blue-50 rounded-lg p-3 border border-blue-100 flex items-start">
-              <div className="bg-white rounded-full p-1.5 mr-3 text-primary">
-                <LineChart className="h-4 w-4" />
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-neutral-dark">Performance Insight</h4>
-                <p className="text-xs text-neutral-dark/80 mt-0.5">
-                  {trendData.reduce((sum, d) => sum + d.value, 0) > 0
-                    ? "Consistently earning more positive than negative points. Great progress!"
-                    : "More focus needed on positive behaviors to improve point balance."}
-                </p>
-              </div>
+            <div className="flex items-center">
+              <div className="w-3 h-3 rounded-sm bg-gradient-to-t from-red-500 to-red-400 mr-1"></div>
+              <span>Negative Points</span>
             </div>
-          )}
+          </div>
         </CardContent>
         
         {/* CSS animations handled in global styles */}
