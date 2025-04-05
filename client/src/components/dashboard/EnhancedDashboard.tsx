@@ -50,6 +50,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
 import { House, BehaviorCategory, User as UserType } from '@shared/schema';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -202,25 +203,44 @@ function AdminDashboard() {
   const [, navigate] = useLocation();
   
   // Fetch necessary data
-  const { data: houses = [] } = useQuery<House[]>({
+  const { 
+    data: houses = [], 
+    isLoading: isLoadingHouses 
+  } = useQuery<House[]>({
     queryKey: ['/api/houses'],
   });
   
-  const { data: students = [] } = useQuery<UserType[]>({
+  const { 
+    data: students = [], 
+    isLoading: isLoadingStudents 
+  } = useQuery<UserType[]>({
     queryKey: ['/api/users/role/student'],
   });
   
-  const { data: teachers = [] } = useQuery<UserType[]>({
+  const { 
+    data: teachers = [], 
+    isLoading: isLoadingTeachers 
+  } = useQuery<UserType[]>({
     queryKey: ['/api/users/role/teacher'],
   });
   
-  const { data: allBehaviorPoints = [] } = useQuery<BehaviorPoint[]>({
+  const { 
+    data: allBehaviorPoints = [], 
+    isLoading: isLoadingPoints 
+  } = useQuery<BehaviorPoint[]>({
     queryKey: ['/api/behavior-points/recent'],
   });
   
-  const { data: behaviorCategories = [] } = useQuery<BehaviorCategory[]>({
+  const { 
+    data: behaviorCategories = [], 
+    isLoading: isLoadingCategories 
+  } = useQuery<BehaviorCategory[]>({
     queryKey: ['/api/behavior-categories'],
   });
+  
+  // Overall loading state
+  const isLoading = isLoadingHouses || isLoadingStudents || isLoadingTeachers || 
+                   isLoadingPoints || isLoadingCategories;
   
   // Calculate admin metrics
   const totalStudents = students.length;
@@ -369,6 +389,71 @@ function AdminDashboard() {
       .slice(0, 4);
   }, [allBehaviorPoints, students]);
   
+  // Display loading skeleton when data is being fetched
+  if (isLoading) {
+    return (
+      <div className="space-y-8">
+        {/* Executive Overview skeleton */}
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex justify-between items-center">
+                  <div className="space-y-2">
+                    <div className="h-4 w-24 bg-neutral/20 rounded animate-pulse"></div>
+                    <div className="h-7 w-16 bg-neutral/20 rounded animate-pulse"></div>
+                  </div>
+                  <div className="rounded-full w-12 h-12 bg-neutral/20 animate-pulse"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        
+        {/* Quick Actions skeleton */}
+        <Card>
+          <CardHeader>
+            <div className="h-6 w-40 bg-neutral/20 rounded animate-pulse mb-2"></div>
+            <div className="h-4 w-60 bg-neutral/20 rounded animate-pulse"></div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="bg-neutral/10 rounded-lg h-24 animate-pulse"></div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Students Cards skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {[1, 2].map((i) => (
+            <Card key={i}>
+              <CardHeader className="pb-2">
+                <div className="h-6 w-48 bg-neutral/20 rounded animate-pulse mb-2"></div>
+                <div className="h-4 w-60 bg-neutral/20 rounded animate-pulse"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {[1, 2, 3].map((j) => (
+                    <div key={j} className="flex items-center space-x-3 pb-3 border-b">
+                      <div className="rounded-full w-8 h-8 bg-neutral/20 animate-pulse"></div>
+                      <div className="flex-1">
+                        <div className="h-4 w-32 bg-neutral/20 rounded animate-pulse mb-2"></div>
+                        <div className="h-3 w-24 bg-neutral/20 rounded animate-pulse"></div>
+                      </div>
+                      <div className="h-8 w-16 bg-neutral/20 rounded animate-pulse"></div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       {/* Executive Overview */}
@@ -901,27 +986,46 @@ function TeacherDashboard() {
   const { user } = useAuth();
   
   // Fetch necessary data
-  const { data: houses = [] } = useQuery<House[]>({
+  const { 
+    data: houses = [], 
+    isLoading: isLoadingHouses 
+  } = useQuery<House[]>({
     queryKey: ['/api/houses'],
   });
   
-  const { data: recentPoints = [] } = useQuery<BehaviorPoint[]>({ 
+  const { 
+    data: recentPoints = [], 
+    isLoading: isLoadingRecentPoints 
+  } = useQuery<BehaviorPoint[]>({ 
     queryKey: ['/api/behavior-points/recent'],
     refetchInterval: 10000 // Refresh data every 10 seconds
   });
   
-  const { data: teacherPoints = [] } = useQuery<BehaviorPoint[]>({
+  const { 
+    data: teacherPoints = [], 
+    isLoading: isLoadingTeacherPoints 
+  } = useQuery<BehaviorPoint[]>({
     queryKey: [`/api/behavior-points/teacher/${user?.id}`],
     enabled: !!user && !!user.id
   });
   
-  const { data: students = [] } = useQuery<UserType[]>({
+  const { 
+    data: students = [], 
+    isLoading: isLoadingStudents 
+  } = useQuery<UserType[]>({
     queryKey: ['/api/users/role/student'],
   });
   
-  const { data: behaviorCategories = [] } = useQuery<BehaviorCategory[]>({
+  const { 
+    data: behaviorCategories = [],
+    isLoading: isLoadingCategories
+  } = useQuery<BehaviorCategory[]>({
     queryKey: ['/api/behavior-categories'],
   });
+  
+  // Overall loading state
+  const isLoading = isLoadingHouses || isLoadingRecentPoints || isLoadingTeacherPoints || 
+                   isLoadingStudents || isLoadingCategories;
   
   // Calculate metrics
   const totalPointsGiven = teacherPoints.reduce((sum, point) => sum + Math.abs(point.points), 0) || 0;
@@ -1014,6 +1118,117 @@ function TeacherDashboard() {
     };
   }).reverse();
   
+  // Loading state for teacher dashboard
+  if (isLoading) {
+    return (
+      <div className="space-y-8">
+        {/* Teacher Stats Overview skeleton */}
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} className="p-6 space-y-2">
+              <Skeleton className="h-5 w-24" />
+              <div className="flex justify-between items-center mt-2">
+                <Skeleton className="h-9 w-20" />
+                <Skeleton className="h-8 w-8 rounded-full" />
+              </div>
+            </Card>
+          ))}
+        </div>
+        
+        {/* Quick Actions skeleton */}
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-32" />
+            <Skeleton className="h-4 w-48" />
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <Skeleton key={i} className="h-20 w-full rounded" />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Main dashboard skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-40" />
+                <Skeleton className="h-4 w-52" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-[250px] w-full" />
+              </CardContent>
+            </Card>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[...Array(2)].map((_, i) => (
+                <Card key={i}>
+                  <CardHeader>
+                    <Skeleton className="h-6 w-36" />
+                    <Skeleton className="h-4 w-48" />
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {[...Array(3)].map((_, j) => (
+                      <div key={j} className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-4 w-6" />
+                        </div>
+                        <Skeleton className="h-2 w-full" />
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+          
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-4 w-28" />
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Skeleton className="h-5 w-20" />
+                      <Skeleton className="h-6 w-8" />
+                    </div>
+                    <Skeleton className="h-2 w-full" />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-4 w-40" />
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="flex items-center space-x-3 pb-3 border-b last:border-0 last:pb-0">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <div className="flex-1 space-y-1">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-3 w-32" />
+                    </div>
+                    <Skeleton className="h-8 w-16 rounded" />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       {/* Teacher Stats Overview */}

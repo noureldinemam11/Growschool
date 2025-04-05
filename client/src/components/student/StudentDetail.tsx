@@ -79,8 +79,30 @@ const StudentDetail: FC<StudentDetailProps> = ({ student, points, isLoading }) =
   if (isLoading) {
     return (
       <Card>
-        <CardContent className="pt-6 flex justify-center items-center h-32">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <CardContent className="pt-6 flex flex-col gap-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
+            <div className="flex items-center">
+              <div className="relative">
+                <div className="flex-shrink-0 h-16 w-16 rounded-full bg-neutral/20 animate-pulse"></div>
+              </div>
+              <div className="ml-4">
+                <div className="h-5 w-32 bg-neutral/20 rounded animate-pulse mb-2"></div>
+                <div className="h-4 w-24 bg-neutral/20 rounded animate-pulse"></div>
+              </div>
+            </div>
+          
+            <div className="mt-4 md:mt-0 flex items-center gap-3 bg-neutral-light p-4 rounded-lg">
+              <div>
+                <div className="h-4 w-24 bg-neutral/20 rounded animate-pulse mb-2"></div>
+                <div className="h-8 w-16 bg-neutral/20 rounded animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-4">
+            <div className="h-4 w-full bg-neutral/20 rounded animate-pulse mb-2"></div>
+            <div className="h-2 w-full bg-neutral/20 rounded animate-pulse"></div>
+          </div>
         </CardContent>
       </Card>
     );
