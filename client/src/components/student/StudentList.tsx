@@ -397,48 +397,7 @@ const StudentList: FC<StudentListProps> = ({ students, selectedStudentId, onSele
                 </div>
               </div>
               
-              {/* Points and mini progress bar */}
-              <div className="mt-2">
-                <div className="flex justify-between items-center text-xs mb-1">
-                  <span className="text-neutral-dark">Total Points</span>
-                  {student.id && studentPoints[student.id] ? (
-                    <span className={cn(
-                      "font-mono font-semibold",
-                      studentPoints[student.id].total > 0 
-                        ? "text-green-600" 
-                        : studentPoints[student.id].total < 0 
-                          ? "text-red-600" 
-                          : "text-neutral-dark"
-                    )}>
-                      {studentPoints[student.id].total > 0 && '+'}
-                      {studentPoints[student.id].total}
-                    </span>
-                  ) : (
-                    <span className="text-neutral-dark">
-                      No points
-                    </span>
-                  )}
-                </div>
-                
-                {student.id && studentPoints[student.id] ? (
-                  <div className="flex gap-1 h-1">
-                    <div 
-                      className="bg-green-500 rounded-full" 
-                      style={{ 
-                        width: `${Math.min(100, (studentPoints[student.id].positive / (studentPoints[student.id].positive + studentPoints[student.id].negative || 1)) * 100)}%` 
-                      }}
-                    ></div>
-                    <div 
-                      className="bg-red-500 rounded-full" 
-                      style={{ 
-                        width: `${Math.min(100, (studentPoints[student.id].negative / (studentPoints[student.id].positive + studentPoints[student.id].negative || 1)) * 100)}%` 
-                      }}
-                    ></div>
-                  </div>
-                ) : (
-                  <div className="h-1 bg-neutral-light rounded-full"></div>
-                )}
-              </div>
+              {/* No points data shown */}
               
               {/* House indicator */}
               {houses && student.houseId && (
