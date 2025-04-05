@@ -335,31 +335,7 @@ const StudentList: FC<StudentListProps> = ({ students, selectedStudentId, onSele
                 </div>
               </div>
               
-              {/* Points indicator */}
-              {student.id && studentPoints[student.id] ? (
-                <div className={cn(
-                  "text-sm font-mono font-semibold",
-                  student.id === selectedStudentId 
-                    ? "text-white" 
-                    : studentPoints[student.id].total > 0 
-                      ? "text-green-600" 
-                      : studentPoints[student.id].total < 0 
-                        ? "text-red-600" 
-                        : "text-neutral-dark"
-                )}>
-                  {studentPoints[student.id].total > 0 && '+'}
-                  {studentPoints[student.id].total}
-                </div>
-              ) : (
-                <div className={cn(
-                  "text-xs",
-                  student.id === selectedStudentId 
-                    ? "text-white text-opacity-80" 
-                    : "text-neutral-dark"
-                )}>
-                  No points
-                </div>
-              )}
+              {/* Points indicator removed */}
             </div>
           ))}
         </div>

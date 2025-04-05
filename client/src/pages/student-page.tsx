@@ -98,17 +98,17 @@ export default function StudentPage() {
                 <div className="lg:col-span-3">
                   {selectedStudent ? (
                     <Tabs defaultValue="overview" className="w-full">
-                      <TabsList className="w-full justify-start bg-white mb-4 p-1 rounded-lg">
-                        <TabsTrigger value="overview" className="font-medium text-sm flex items-center gap-1.5 mr-2 data-[state=active]:bg-primary data-[state=active]:text-white">
-                          <UserCircle className="h-4 w-4" />
+                      <TabsList className="bg-white mb-4 p-1 rounded-lg inline-flex h-10 items-center justify-center">
+                        <TabsTrigger value="overview" className="inline-flex items-center justify-center px-4 py-1.5 text-sm font-medium mr-1 rounded-md data-[state=active]:bg-primary data-[state=active]:text-white">
+                          <UserCircle className="h-4 w-4 mr-1.5" />
                           <span>Overview</span>
                         </TabsTrigger>
-                        <TabsTrigger value="behavior" className="font-medium text-sm flex items-center gap-1.5 mr-2 data-[state=active]:bg-primary data-[state=active]:text-white">
-                          <FileText className="h-4 w-4" />
+                        <TabsTrigger value="behavior" className="inline-flex items-center justify-center px-4 py-1.5 text-sm font-medium mx-1 rounded-md data-[state=active]:bg-primary data-[state=active]:text-white">
+                          <FileText className="h-4 w-4 mr-1.5" />
                           <span>Behavior Records</span>
                         </TabsTrigger>
-                        <TabsTrigger value="rewards" className="font-medium text-sm flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-white">
-                          <Award className="h-4 w-4" />
+                        <TabsTrigger value="rewards" className="inline-flex items-center justify-center px-4 py-1.5 text-sm font-medium ml-1 rounded-md data-[state=active]:bg-primary data-[state=active]:text-white">
+                          <Award className="h-4 w-4 mr-1.5" />
                           <span>Rewards</span>
                         </TabsTrigger>
                       </TabsList>

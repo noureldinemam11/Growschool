@@ -319,27 +319,54 @@ const StudentDetail: FC<StudentDetailProps> = ({ student, points, isLoading }) =
           </div>
         </CardHeader>
         <CardContent className="pb-2">
-          {/* Simple chart visualization */}
-          <div className="h-44 flex items-end justify-between gap-1">
-            {trendData.map((data, index) => {
-              const height = data.value ? Math.max(10, Math.min(100, (data.value / 20) * 100)) : 5;
-              const opacity = data.value > 0 ? 1 : (data.value < 0 ? 0.8 : 0.2);
-              return (
-                <div key={index} className="flex flex-col items-center justify-end flex-1">
-                  <div 
-                    className={`w-full rounded-t-sm ${data.value >= 0 ? 'bg-success' : 'bg-error'}`}
-                    style={{ 
-                      height: `${height}%`, 
-                      opacity: opacity,
-                      minHeight: '5px'
-                    }}
-                  ></div>
-                  <div className="text-xs text-neutral-dark mt-1 truncate w-full text-center">
-                    {data.date}
+          {/* Enhanced chart visualization */}
+          <div className="h-44 flex items-end justify-between gap-1 mt-3">
+            {trendData.length > 0 ? (
+              trendData.map((data, index) => {
+                // Find the maximum value to scale properly
+                const maxValue = Math.max(10, ...trendData.map(d => Math.abs(d.value)));
+                // Scale height between 5% and 90% of the container
+                const height = data.value 
+                  ? Math.max(5, Math.min(90, (Math.abs(data.value) / maxValue) * 90)) 
+                  : 5;
+                
+                return (
+                  <div key={index} className="flex flex-col items-center justify-end flex-1 group relative">
+                    {/* Tooltip */}
+                    <div className="absolute bottom-full mb-1 -translate-x-1/2 left-1/2 bg-black text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                      {data.date}: {data.value > 0 ? '+' : ''}{data.value} points
+                    </div>
+                    
+                    {/* Bar */}
+                    <div className="w-full rounded-t-sm flex flex-col items-center">
+                      {/* Value label */}
+                      <div className="text-xs font-mono font-semibold mb-1">
+                        {data.value > 0 ? '+' : ''}{data.value}
+                      </div>
+                      
+                      {/* Actual bar */}
+                      <div 
+                        className={`w-full rounded-md ${data.value >= 0 ? 'bg-success' : 'bg-error'}`}
+                        style={{ 
+                          height: `${height}%`,
+                          minHeight: '5px',
+                          transition: 'height 0.3s ease'
+                        }}
+                      ></div>
+                    </div>
+                    
+                    {/* Date label */}
+                    <div className="text-xs text-neutral-dark mt-1 truncate w-full text-center">
+                      {data.date}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            ) : (
+              <div className="w-full flex flex-col items-center justify-center h-44">
+                <p className="text-neutral-dark">No data available for this time period</p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
