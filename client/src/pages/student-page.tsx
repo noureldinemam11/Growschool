@@ -80,11 +80,11 @@ export default function StudentPage() {
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : displayStudents && displayStudents.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="md:col-span-1">
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <div className="lg:col-span-1">
                   <div className="bg-white rounded-lg shadow-sm p-4">
                     <h2 className="font-heading font-semibold text-lg mb-4">
-                      {user?.role === 'parent' ? 'My Children' : 'Student List'}
+                      {user?.role === 'parent' ? 'My Children' : 'Student Directory'}
                     </h2>
                     <StudentList 
                       students={displayStudents}
@@ -94,25 +94,25 @@ export default function StudentPage() {
                   </div>
                 </div>
 
-                <div className="md:col-span-3">
+                <div className="lg:col-span-3">
                   {selectedStudent ? (
                     <Tabs defaultValue="overview" className="w-full">
-                      <TabsList>
-                        <TabsTrigger value="overview" className="font-medium text-sm flex items-center gap-1.5 mr-4">
+                      <TabsList className="w-full justify-start bg-white mb-4 p-1 rounded-lg">
+                        <TabsTrigger value="overview" className="font-medium text-sm flex items-center gap-1.5 mr-2 data-[state=active]:bg-primary data-[state=active]:text-white">
                           <UserCircle className="h-4 w-4" />
                           <span>Overview</span>
                         </TabsTrigger>
-                        <TabsTrigger value="behavior" className="font-medium text-sm flex items-center gap-1.5 mr-4">
+                        <TabsTrigger value="behavior" className="font-medium text-sm flex items-center gap-1.5 mr-2 data-[state=active]:bg-primary data-[state=active]:text-white">
                           <FileText className="h-4 w-4" />
                           <span>Behavior Records</span>
                         </TabsTrigger>
-                        <TabsTrigger value="rewards" className="font-medium text-sm flex items-center gap-1.5">
+                        <TabsTrigger value="rewards" className="font-medium text-sm flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-white">
                           <Award className="h-4 w-4" />
                           <span>Rewards</span>
                         </TabsTrigger>
                       </TabsList>
                       
-                      <TabsContent value="overview" className="space-y-4">
+                      <TabsContent value="overview" className="space-y-4 mt-0">
                         <StudentDetail 
                           student={selectedStudent} 
                           points={selectedStudentPoints || []}
@@ -120,9 +120,24 @@ export default function StudentPage() {
                         />
                       </TabsContent>
                       
-                      <TabsContent value="behavior" className="space-y-4">
+                      <TabsContent value="behavior" className="space-y-4 mt-0">
                         <div className="bg-white rounded-lg shadow-sm p-6">
-                          <h3 className="font-heading font-semibold text-lg mb-4">Behavior History</h3>
+                          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
+                            <h3 className="font-heading font-semibold text-lg">Behavior History</h3>
+                            
+                            {/* Behavior history filters */}
+                            <div className="flex flex-wrap gap-2 mt-2 md:mt-0">
+                              <Button variant="outline" size="sm" className="h-8">
+                                <Calendar className="h-3.5 w-3.5 mr-1" />
+                                This Semester
+                              </Button>
+                              <Button variant="outline" size="sm" className="h-8">
+                                <Filter className="h-3.5 w-3.5 mr-1" />
+                                All Types
+                              </Button>
+                            </div>
+                          </div>
+                          
                           {isLoadingPoints ? (
                             <div className="flex items-center justify-center h-32">
                               <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -141,12 +156,12 @@ export default function StudentPage() {
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
                                   {selectedStudentPoints.map(point => (
-                                    <tr key={point.id}>
+                                    <tr key={point.id} className={point.points > 0 ? 'bg-green-50/30' : point.points < 0 ? 'bg-red-50/30' : ''}>
                                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-darker">
                                         {new Date(point.timestamp).toLocaleDateString()}
                                       </td>
                                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-darker">
-                                        {/* Placeholder - would fetch category name in a real implementation */}
+                                        {/* We'll use the useQuery hook to get categories later */}
                                         Category ID: {point.categoryId}
                                       </td>
                                       <td className="px-6 py-4 whitespace-nowrap">
@@ -157,7 +172,7 @@ export default function StudentPage() {
                                         </div>
                                       </td>
                                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-darker">
-                                        {/* Placeholder - would fetch teacher name in a real implementation */}
+                                        {/* We'll use the useQuery hook to get teachers later */}
                                         Teacher ID: {point.teacherId}
                                       </td>
                                       <td className="px-6 py-4 text-sm text-neutral-darker">
@@ -169,14 +184,46 @@ export default function StudentPage() {
                               </table>
                             </div>
                           ) : (
-                            <p className="text-neutral-dark">No behavior records found for this student.</p>
+                            <div className="flex flex-col items-center justify-center text-center h-32">
+                              <FileText className="h-10 w-10 text-gray-300 mb-2" />
+                              <p className="text-neutral-dark">No behavior records found for this student.</p>
+                              {user?.role === 'teacher' || user?.role === 'admin' ? (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="mt-3"
+                                  onClick={() => {
+                                    localStorage.setItem('batchSelectedStudentIds', JSON.stringify([selectedStudent.id]));
+                                    window.location.href = '/points';
+                                  }}
+                                >
+                                  <Plus className="h-3.5 w-3.5 mr-1" />
+                                  Add First Record
+                                </Button>
+                              ) : null}
+                            </div>
                           )}
                         </div>
                       </TabsContent>
                       
-                      <TabsContent value="rewards" className="space-y-4">
+                      <TabsContent value="rewards" className="space-y-4 mt-0">
                         <div className="bg-white rounded-lg shadow-sm p-6">
-                          <h3 className="font-heading font-semibold text-lg mb-4">Reward Redemptions</h3>
+                          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
+                            <h3 className="font-heading font-semibold text-lg">Reward Redemptions</h3>
+                            
+                            {/* Rewards history filters */}
+                            <div className="flex flex-wrap gap-2 mt-2 md:mt-0">
+                              <Button variant="outline" size="sm" className="h-8">
+                                <Calendar className="h-3.5 w-3.5 mr-1" />
+                                All Time
+                              </Button>
+                              <Button variant="outline" size="sm" className="h-8">
+                                <Filter className="h-3.5 w-3.5 mr-1" />
+                                All Status
+                              </Button>
+                            </div>
+                          </div>
+                          
                           {isLoadingRedemptions ? (
                             <div className="flex items-center justify-center h-32">
                               <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -211,8 +258,8 @@ export default function StudentPage() {
                                       </td>
                                       <td className="px-6 py-4 whitespace-nowrap">
                                         <Badge className={
-                                          redemption.status === 'approved' ? 'bg-success' :
-                                          redemption.status === 'delivered' ? 'bg-accent' :
+                                          redemption.status === 'approved' ? 'bg-success text-white' :
+                                          redemption.status === 'delivered' ? 'bg-accent text-white' :
                                           'bg-secondary'
                                         }>
                                           {redemption.status.charAt(0).toUpperCase() + redemption.status.slice(1)}
@@ -227,14 +274,29 @@ export default function StudentPage() {
                             <div className="flex flex-col items-center justify-center text-center p-8 gap-3">
                               <Gift className="h-12 w-12 text-gray-300" />
                               <p className="text-neutral-dark">No reward redemptions found for this student.</p>
+                              <Button 
+                                size="sm"
+                                variant="outline"
+                                className="mt-2"
+                                onClick={() => {
+                                  window.location.href = '/rewards';
+                                }}
+                              >
+                                <Award className="h-3.5 w-3.5 mr-1" />
+                                View Available Rewards
+                              </Button>
                             </div>
                           )}
                         </div>
                       </TabsContent>
                     </Tabs>
                   ) : (
-                    <div className="bg-white rounded-lg shadow-sm p-6 flex items-center justify-center h-64">
-                      <p className="text-neutral-dark">Select a student to view their details</p>
+                    <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col items-center justify-center h-64 text-center">
+                      <UserCircle className="h-12 w-12 text-gray-300 mb-3" />
+                      <p className="text-neutral-dark mb-2">Select a student to view their details</p>
+                      <p className="text-xs text-muted-foreground">
+                        You can filter and search for students in the directory on the left
+                      </p>
                     </div>
                   )}
                 </div>
