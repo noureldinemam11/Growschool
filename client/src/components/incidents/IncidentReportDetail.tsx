@@ -71,7 +71,7 @@ export default function IncidentReportDetail({ id, students }: IncidentReportDet
 
   // Find student details for the involved students
   const involvedStudents = students.filter(
-    student => report?.studentIds.includes(student.id)
+    student => report?.studentIds?.includes(student.id) || false
   );
 
   if (isReportLoading) {
@@ -159,7 +159,7 @@ export default function IncidentReportDetail({ id, students }: IncidentReportDet
         <div>
           <h3 className="text-sm font-medium flex items-center gap-2 mb-3 text-muted-foreground">
             <Users className="h-4 w-4" />
-            Students Involved ({report.studentIds.length})
+            Students Involved ({report.studentIds?.length || 0})
           </h3>
           <div className="space-y-2">
             {involvedStudents.length > 0 ? (
