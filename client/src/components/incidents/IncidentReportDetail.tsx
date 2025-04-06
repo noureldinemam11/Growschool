@@ -26,6 +26,8 @@ import { Loader2, Clock, AlertCircle, Pencil, Trash2, ChevronLeft } from "lucide
 import { useAuth } from "@/hooks/use-auth";
 import { useIncidentReports } from "@/hooks/incident-report-context";
 
+
+
 export default function IncidentReportDetail({ id }: { id: number }) {
   const [, navigate] = useLocation();
   const { user } = useAuth();
@@ -225,13 +227,45 @@ export default function IncidentReportDetail({ id }: { id: number }) {
                     {report.adminResponse}
                   </div>
                 ) : (
-                  <div className="p-4 border border-dashed rounded-md text-center text-muted-foreground">
-                    <p>No admin response has been added yet.</p>
-                    <Button variant="outline" size="sm" className="mt-2" asChild>
-                      <a href={`/incidents/${id}/edit`}>
-                        Add Response
-                      </a>
-                    </Button>
+                  <div className="border rounded-md p-4">
+                    <form onSubmit={async (e) => {
+                      e.preventDefault();
+                      const form = e.target as HTMLFormElement;
+                      const textarea = form.querySelector('textarea') as HTMLTextAreaElement;
+                      const response = textarea.value.trim();
+                      
+                      if (response) {
+                        setIsUpdating(true);
+                        try {
+                          await updateReport(id, { adminResponse: response });
+                          setIsUpdating(false);
+                        } catch (error) {
+                          console.error("Error submitting admin response:", error);
+                          setIsUpdating(false);
+                        }
+                      }
+                    }}>
+                      <textarea
+                        className="w-full h-24 p-2 border rounded-md mb-3"
+                        placeholder="Enter your response here..."
+                        required
+                      />
+                      <div className="flex justify-end">
+                        <Button 
+                          type="submit" 
+                          disabled={isUpdating}
+                        >
+                          {isUpdating ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Submitting...
+                            </>
+                          ) : (
+                            "Add Response"
+                          )}
+                        </Button>
+                      </div>
+                    </form>
                   </div>
                 )}
               </div>
