@@ -211,6 +211,7 @@ export default function IncidentReportDetail({ id, students }: IncidentReportDet
                       </div>
                       <p className="text-xs text-muted-foreground">
                         {student.gradeLevel ? `Grade ${student.gradeLevel}` : 'No grade specified'}
+                        {!student.houseId && ' • No house assigned'}
                       </p>
                     </div>
                   </div>
