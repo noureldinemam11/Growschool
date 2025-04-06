@@ -61,23 +61,38 @@ export function IncidentReportProvider({ children }: { children: ReactNode }) {
     queryKey: ['/api/incident-reports'],
   });
 
-  // Fetch users for reference
-  const studentsQuery = useUsers('student');
-  const teachersQuery = useUsers('teacher');
+  // Create state for students and teachers
+  const [students, setStudents] = useState<User[]>([]);
+  const [teachers, setTeachers] = useState<User[]>([]);
   
-  // Ensure we always have arrays even if the API returns null/undefined
-  const students = studentsQuery.data || [];
-  const teachers = teachersQuery.data || [];
-  
-  // Log any errors with fetching data
+  // Fetch users directly
   useEffect(() => {
-    if (studentsQuery.error) {
-      console.error("Error loading student data:", studentsQuery.error);
+    async function fetchUsers() {
+      try {
+        // Fetch students
+        const studentResponse = await fetch('/api/users/role/student');
+        if (studentResponse.ok) {
+          const studentData = await studentResponse.json();
+          setStudents(studentData);
+        } else {
+          console.error("Error loading student data:", await studentResponse.text());
+        }
+        
+        // Fetch teachers
+        const teacherResponse = await fetch('/api/users/role/teacher');
+        if (teacherResponse.ok) {
+          const teacherData = await teacherResponse.json();
+          setTeachers(teacherData);
+        } else {
+          console.error("Error loading teacher data:", await teacherResponse.text());
+        }
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
     }
-    if (teachersQuery.error) {
-      console.error("Error loading teacher data:", teachersQuery.error);
-    }
-  }, [studentsQuery.error, teachersQuery.error]);
+    
+    fetchUsers();
+  }, []);
 
   // Filter reports based on current filters
   const filteredReports = useMemo(() => {

@@ -58,24 +58,46 @@ interface IncidentReportFormProps {
 
 export default function IncidentReportForm({ report, onSuccess }: IncidentReportFormProps) {
   const { user } = useAuth();
-  const { createReport, updateReport, students } = useIncidentReports();
-  // Get students data from the incident report context instead
-  const { students: allStudents } = useIncidentReports();
-  
-  useEffect(() => {
-    console.log("Students loaded from context:", allStudents.length);
-  }, [allStudents.length]);
+  const { createReport, updateReport } = useIncidentReports();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedStudentIds, setSelectedStudentIds] = useState<number[]>(
     report?.studentIds || []
   );
   const [studentsPopoverOpen, setStudentsPopoverOpen] = useState(false);
+  const [students, setStudents] = useState<User[]>([]);
+  const [teachers, setTeachers] = useState<User[]>([]);
   
+  // Directly fetch students and teachers using fetch API
   useEffect(() => {
-    console.log("Available students:", allStudents.length, allStudents);
-    console.log("Context students:", students.length, students);
-  }, [allStudents, students]);
+    async function fetchUsers() {
+      try {
+        // Fetch students
+        const studentResponse = await fetch('/api/users/role/student');
+        if (studentResponse.ok) {
+          const studentData = await studentResponse.json();
+          console.log("Successfully loaded students:", studentData.length);
+          setStudents(studentData);
+        } else {
+          console.error("Failed to load students:", await studentResponse.text());
+        }
+        
+        // Fetch teachers
+        const teacherResponse = await fetch('/api/users/role/teacher');
+        if (teacherResponse.ok) {
+          const teacherData = await teacherResponse.json();
+          console.log("Successfully loaded teachers:", teacherData.length);
+          setTeachers(teacherData);
+        } else {
+          console.error("Failed to load teachers:", await teacherResponse.text());
+        }
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
+    }
+    
+    fetchUsers();
+  }, []);
   
   // Create a form schema based on our InsertIncidentReport type
   const formSchema = z.object({
@@ -265,7 +287,7 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
                         <CommandInput placeholder="Search students..." />
                         <CommandEmpty>No students found.</CommandEmpty>
                         <CommandGroup className="max-h-64 overflow-auto">
-                          {allStudents.map((student) => (
+                          {students.map((student) => (
                             <CommandItem
                               key={student.id}
                               value={student.id.toString()}
@@ -298,7 +320,7 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
                   {selectedStudentIds.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-2">
                       {selectedStudentIds.map(id => {
-                        const student = allStudents.find(s => s.id === id);
+                        const student = students.find(s => s.id === id);
                         return (
                           <Badge 
                             key={id} 
