@@ -103,22 +103,25 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
   }, []);
   
   // Filter students based on search query
-  useEffect(() => {
-    if (!searchQuery.trim()) {
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    
+    if (!query.trim()) {
       setFilteredStudents(students);
       return;
     }
     
-    const query = searchQuery.toLowerCase();
+    const normalizedQuery = query.toLowerCase();
     const filtered = students.filter(student => 
-      student.firstName?.toLowerCase().includes(query) || 
-      student.lastName?.toLowerCase().includes(query) ||
-      `${student.firstName} ${student.lastName}`.toLowerCase().includes(query) ||
-      (student.gradeLevel && student.gradeLevel.toLowerCase().includes(query))
+      student.firstName?.toLowerCase().includes(normalizedQuery) || 
+      student.lastName?.toLowerCase().includes(normalizedQuery) ||
+      `${student.firstName} ${student.lastName}`.toLowerCase().includes(normalizedQuery) ||
+      (student.gradeLevel && student.gradeLevel.toLowerCase().includes(normalizedQuery))
     );
     
+    console.log(`Filtering students with query "${query}": Found ${filtered.length} matches`);
     setFilteredStudents(filtered);
-  }, [searchQuery, students]);
+  };
   
   // Create a form schema based on our InsertIncidentReport type
   const formSchema = z.object({
@@ -308,7 +311,7 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
                         <CommandInput 
                           placeholder="Search students..." 
                           value={searchQuery}
-                          onValueChange={setSearchQuery}
+                          onValueChange={handleSearch}
                         />
                         <CommandEmpty>No students found.</CommandEmpty>
                         <CommandGroup className="max-h-64 overflow-auto">
