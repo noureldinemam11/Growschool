@@ -66,6 +66,8 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
   );
   const [studentsPopoverOpen, setStudentsPopoverOpen] = useState(false);
   const [students, setStudents] = useState<User[]>([]);
+  const [filteredStudents, setFilteredStudents] = useState<User[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [teachers, setTeachers] = useState<User[]>([]);
   
   // Directly fetch students and teachers using fetch API
@@ -78,6 +80,7 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
           const studentData = await studentResponse.json();
           console.log("Successfully loaded students:", studentData.length);
           setStudents(studentData);
+          setFilteredStudents(studentData); // Initialize filtered students with all students
         } else {
           console.error("Failed to load students:", await studentResponse.text());
         }
@@ -98,6 +101,24 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
     
     fetchUsers();
   }, []);
+  
+  // Filter students based on search query
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredStudents(students);
+      return;
+    }
+    
+    const query = searchQuery.toLowerCase();
+    const filtered = students.filter(student => 
+      student.firstName?.toLowerCase().includes(query) || 
+      student.lastName?.toLowerCase().includes(query) ||
+      `${student.firstName} ${student.lastName}`.toLowerCase().includes(query) ||
+      (student.gradeLevel && student.gradeLevel.toLowerCase().includes(query))
+    );
+    
+    setFilteredStudents(filtered);
+  }, [searchQuery, students]);
   
   // Create a form schema based on our InsertIncidentReport type
   const formSchema = z.object({
@@ -284,10 +305,14 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
                     </PopoverTrigger>
                     <PopoverContent className="w-full p-0">
                       <Command>
-                        <CommandInput placeholder="Search students..." />
+                        <CommandInput 
+                          placeholder="Search students..." 
+                          value={searchQuery}
+                          onValueChange={setSearchQuery}
+                        />
                         <CommandEmpty>No students found.</CommandEmpty>
                         <CommandGroup className="max-h-64 overflow-auto">
-                          {students.map((student) => (
+                          {filteredStudents.map((student) => (
                             <CommandItem
                               key={student.id}
                               value={student.id.toString()}
