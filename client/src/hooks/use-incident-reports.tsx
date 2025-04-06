@@ -19,7 +19,9 @@ export function useIncidentReports(): UseQueryResult<IncidentReport[], Error> {
 export function useIncidentReport(id: number): UseQueryResult<IncidentReport, Error> {
   return useQuery({
     queryKey: ['/api/incident-reports', id],
-    enabled: !!id,
+    enabled: !!id && id > 0, // Only run query if ID is valid
+    retry: 1, // Limit retries to avoid excessive API calls
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes to reduce API calls
   });
 }
 

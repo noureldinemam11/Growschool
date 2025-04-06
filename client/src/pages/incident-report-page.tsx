@@ -98,15 +98,7 @@ function NewIncidentReportPage() {
 
 function IncidentReportDetailPage({ id }: { id: number }) {
   const [, navigate] = useLocation();
-  const { data: students, isLoading: isStudentsLoading } = useUsers('student');
-
-  if (isStudentsLoading) {
-    return (
-      <div className="flex justify-center items-center h-48">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  const { data: students = [], isLoading: isStudentsLoading } = useUsers('student');
 
   return (
     <>
@@ -122,7 +114,13 @@ function IncidentReportDetailPage({ id }: { id: number }) {
         <h1 className="text-3xl font-bold tracking-tight">Incident Report Details</h1>
       </div>
       
-      <IncidentReportDetail id={id} students={students || []} />
+      {isStudentsLoading ? (
+        <div className="flex justify-center items-center h-48">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : (
+        <IncidentReportDetail id={id} students={students} />
+      )}
     </>
   );
 }
