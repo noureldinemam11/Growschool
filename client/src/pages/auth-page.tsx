@@ -12,7 +12,7 @@ import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { insertUserSchema, userRoles } from '@shared/schema';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Award, Trophy, Star, CheckCircle, Users, ChevronRight } from 'lucide-react';
 
 export default function AuthPage() {
   const [location] = useLocation();
@@ -92,43 +92,55 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral flex flex-col justify-center items-center p-4 sm:p-6 md:p-10">
-      <div className="max-w-6xl w-full mx-auto grid md:grid-cols-2 gap-8">
-        <div className="bg-white p-6 sm:p-8 rounded-lg shadow-md">
+    <div className="min-h-screen flex flex-col justify-center items-center overflow-hidden relative bg-gradient-to-b from-primary/5 to-primary/10">
+      {/* Background decorative elements */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-gradient-to-br from-primary/20 to-transparent blur-3xl"></div>
+        <div className="absolute bottom-[-15%] left-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-primary/10 to-secondary/10 blur-3xl"></div>
+        <div className="absolute top-[20%] left-[30%] w-[300px] h-[300px] rounded-full bg-secondary/5 blur-3xl"></div>
+      </div>
+      
+      <div className="max-w-6xl w-full mx-auto grid md:grid-cols-2 gap-8 p-4 sm:p-8 z-10">
+        {/* Login Card Section */}
+        <div className="backdrop-blur-sm bg-white/80 p-6 sm:p-8 rounded-2xl shadow-xl border border-white/20">
           <div className="flex items-center mb-6">
-            <div className="bg-primary p-1 rounded">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="bg-gradient-to-r from-primary to-primary/80 p-2 rounded-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
               </svg>
             </div>
-            <span className="ml-2 text-xl font-heading font-bold text-primary">LiveSchool</span>
+            <span className="ml-3 text-2xl font-heading font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">GrowSchool</span>
           </div>
           
           <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="register">Register</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 mb-6 bg-secondary/10">
+              <TabsTrigger value="login" className="data-[state=active]:bg-primary data-[state=active]:text-white">Login</TabsTrigger>
+              <TabsTrigger value="register" className="data-[state=active]:bg-primary data-[state=active]:text-white">Register</TabsTrigger>
             </TabsList>
             
             <TabsContent value="login">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Login to Your Account</CardTitle>
-                  <CardDescription>
-                    Enter your credentials to access the school behavior management system.
+              <Card className="border-0 shadow-lg bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">Welcome Back</CardTitle>
+                  <CardDescription className="text-base">
+                    Enter your credentials to access the school behavior platform.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-5">
                   <Form {...loginForm}>
-                    <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
+                    <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-5">
                       <FormField
                         control={loginForm.control}
                         name="username"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Username</FormLabel>
+                            <FormLabel className="text-neutral-darker font-medium">Username</FormLabel>
                             <FormControl>
-                              <Input placeholder="Enter your username" {...field} />
+                              <Input 
+                                placeholder="Enter your username" 
+                                {...field} 
+                                className="h-11 border-neutral/30 focus:border-primary focus:ring-primary/20"
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -140,9 +152,14 @@ export default function AuthPage() {
                         name="password"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Password</FormLabel>
+                            <FormLabel className="text-neutral-darker font-medium">Password</FormLabel>
                             <FormControl>
-                              <Input type="password" placeholder="Enter your password" {...field} />
+                              <Input 
+                                type="password" 
+                                placeholder="Enter your password" 
+                                {...field} 
+                                className="h-11 border-neutral/30 focus:border-primary focus:ring-primary/20"
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -151,25 +168,26 @@ export default function AuthPage() {
                       
                       <Button 
                         type="submit" 
-                        className="w-full"
+                        className="w-full h-11 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-medium text-base"
                         disabled={loginMutation.isPending}
                       >
                         {loginMutation.isPending ? (
                           <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                             Logging in...
                           </>
                         ) : (
-                          'Login'
+                          <>Log In <ChevronRight className="ml-2 h-4 w-4" /></>
                         )}
                       </Button>
                     </form>
                   </Form>
                 </CardContent>
-                <CardFooter className="flex justify-center">
+                <CardFooter className="flex justify-center pt-2 pb-4">
                   <Button 
                     variant="link" 
                     onClick={() => setActiveTab("register")}
+                    className="text-primary hover:text-primary/80"
                   >
                     Don't have an account? Register
                   </Button>
@@ -178,25 +196,29 @@ export default function AuthPage() {
             </TabsContent>
             
             <TabsContent value="register">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Create an Account</CardTitle>
-                  <CardDescription>
-                    Sign up to access the school behavior management system.
+              <Card className="border-0 shadow-lg bg-white">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">Create an Account</CardTitle>
+                  <CardDescription className="text-base">
+                    Join the GrowSchool platform to manage student behavior.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-5">
                   <Form {...registerForm}>
-                    <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
+                    <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-5">
                       <div className="grid grid-cols-2 gap-4">
                         <FormField
                           control={registerForm.control}
                           name="firstName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>First Name</FormLabel>
+                              <FormLabel className="text-neutral-darker font-medium">First Name</FormLabel>
                               <FormControl>
-                                <Input placeholder="First name" {...field} />
+                                <Input 
+                                  placeholder="First name" 
+                                  {...field} 
+                                  className="h-11 border-neutral/30 focus:border-primary focus:ring-primary/20"
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -208,9 +230,13 @@ export default function AuthPage() {
                           name="lastName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Last Name</FormLabel>
+                              <FormLabel className="text-neutral-darker font-medium">Last Name</FormLabel>
                               <FormControl>
-                                <Input placeholder="Last name" {...field} />
+                                <Input 
+                                  placeholder="Last name" 
+                                  {...field} 
+                                  className="h-11 border-neutral/30 focus:border-primary focus:ring-primary/20"
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -223,9 +249,13 @@ export default function AuthPage() {
                         name="username"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Username</FormLabel>
+                            <FormLabel className="text-neutral-darker font-medium">Username</FormLabel>
                             <FormControl>
-                              <Input placeholder="Choose a username" {...field} />
+                              <Input 
+                                placeholder="Choose a username" 
+                                {...field} 
+                                className="h-11 border-neutral/30 focus:border-primary focus:ring-primary/20"
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -237,9 +267,14 @@ export default function AuthPage() {
                         name="email"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Email</FormLabel>
+                            <FormLabel className="text-neutral-darker font-medium">Email</FormLabel>
                             <FormControl>
-                              <Input type="email" placeholder="Enter your email" {...field} />
+                              <Input 
+                                type="email" 
+                                placeholder="Enter your email" 
+                                {...field} 
+                                className="h-11 border-neutral/30 focus:border-primary focus:ring-primary/20"
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -252,9 +287,14 @@ export default function AuthPage() {
                           name="password"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Password</FormLabel>
+                              <FormLabel className="text-neutral-darker font-medium">Password</FormLabel>
                               <FormControl>
-                                <Input type="password" placeholder="Create a password" {...field} />
+                                <Input 
+                                  type="password" 
+                                  placeholder="Create a password" 
+                                  {...field} 
+                                  className="h-11 border-neutral/30 focus:border-primary focus:ring-primary/20"
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -266,9 +306,14 @@ export default function AuthPage() {
                           name="confirmPassword"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Confirm Password</FormLabel>
+                              <FormLabel className="text-neutral-darker font-medium">Confirm Password</FormLabel>
                               <FormControl>
-                                <Input type="password" placeholder="Confirm password" {...field} />
+                                <Input 
+                                  type="password" 
+                                  placeholder="Confirm password" 
+                                  {...field} 
+                                  className="h-11 border-neutral/30 focus:border-primary focus:ring-primary/20"
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -281,13 +326,13 @@ export default function AuthPage() {
                         name="role"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Role</FormLabel>
+                            <FormLabel className="text-neutral-darker font-medium">Role</FormLabel>
                             <Select
                               onValueChange={field.onChange}
                               defaultValue={field.value}
                             >
                               <FormControl>
-                                <SelectTrigger>
+                                <SelectTrigger className="h-11 border-neutral/30 focus:ring-primary/20">
                                   <SelectValue placeholder="Select your role" />
                                 </SelectTrigger>
                               </FormControl>
@@ -311,9 +356,13 @@ export default function AuthPage() {
                             name="gradeLevel"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Grade Level</FormLabel>
+                                <FormLabel className="text-neutral-darker font-medium">Grade Level</FormLabel>
                                 <FormControl>
-                                  <Input placeholder="e.g. 8" {...field} />
+                                  <Input 
+                                    placeholder="e.g. 8" 
+                                    {...field} 
+                                    className="h-11 border-neutral/30 focus:border-primary focus:ring-primary/20"
+                                  />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -325,9 +374,13 @@ export default function AuthPage() {
                             name="section"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Section</FormLabel>
+                                <FormLabel className="text-neutral-darker font-medium">Section</FormLabel>
                                 <FormControl>
-                                  <Input placeholder="e.g. A" {...field} />
+                                  <Input 
+                                    placeholder="e.g. A" 
+                                    {...field} 
+                                    className="h-11 border-neutral/30 focus:border-primary focus:ring-primary/20"
+                                  />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -338,25 +391,26 @@ export default function AuthPage() {
                       
                       <Button 
                         type="submit" 
-                        className="w-full"
+                        className="w-full h-11 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-medium text-base"
                         disabled={registerMutation.isPending}
                       >
                         {registerMutation.isPending ? (
                           <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                             Creating account...
                           </>
                         ) : (
-                          'Register'
+                          <>Create Account <ChevronRight className="ml-2 h-4 w-4" /></>
                         )}
                       </Button>
                     </form>
                   </Form>
                 </CardContent>
-                <CardFooter className="flex justify-center">
+                <CardFooter className="flex justify-center pt-2 pb-4">
                   <Button 
                     variant="link" 
                     onClick={() => setActiveTab("login")}
+                    className="text-primary hover:text-primary/80"
                   >
                     Already have an account? Login
                   </Button>
@@ -366,48 +420,41 @@ export default function AuthPage() {
           </Tabs>
         </div>
         
-        <div className="hidden md:flex flex-col justify-center">
-          <h1 className="text-4xl font-heading font-bold text-primary mb-4">
-            School Behavior Management System
+        {/* Hero/Information Section */}
+        <div className="hidden md:flex flex-col justify-center relative">
+          <div className="absolute -left-10 top-1/2 -translate-y-1/2 w-20 h-80 bg-gradient-to-t from-transparent via-white/20 to-transparent blur-xl rounded-full"></div>
+          
+          <h1 className="text-5xl font-heading font-bold mb-4">
+            <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">GrowSchool</span>
+            <span className="block text-3xl mt-2 text-neutral-darker">Student Growth Platform</span>
           </h1>
-          <p className="text-lg text-neutral-dark mb-8">
-            Track student behavior, award points, and foster positive learning environments.
+          
+          <p className="text-lg text-neutral-dark mb-10 max-w-lg">
+            Engage students, track behavior, and create a positive learning environment with our comprehensive behavior management system.
           </p>
           
-          <div className="space-y-6">
-            <div className="flex items-start space-x-4">
-              <div className="bg-primary bg-opacity-10 p-3 rounded-lg">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-              </div>
+          <div className="grid grid-cols-1 gap-6">
+            <div className="flex p-6 rounded-xl bg-white/80 backdrop-blur-sm shadow-lg border border-white/20 transform transition-all hover:translate-y-[-5px]">
+              <Award className="h-14 w-14 text-primary mr-6 flex-shrink-0" />
               <div>
-                <h3 className="font-heading font-bold text-neutral-darker">Award Points</h3>
-                <p className="text-neutral-dark">Recognize and reinforce positive student behavior</p>
+                <h3 className="text-xl font-heading font-bold text-neutral-darker mb-2">Recognize Achievement</h3>
+                <p className="text-neutral-dark">Celebrate and reward positive student behavior with our customizable point system.</p>
               </div>
             </div>
             
-            <div className="flex items-start space-x-4">
-              <div className="bg-secondary bg-opacity-10 p-3 rounded-lg">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </div>
+            <div className="flex p-6 rounded-xl bg-white/80 backdrop-blur-sm shadow-lg border border-white/20 transform transition-all hover:translate-y-[-5px]">
+              <Trophy className="h-14 w-14 text-secondary mr-6 flex-shrink-0" />
               <div>
-                <h3 className="font-heading font-bold text-neutral-darker">House Competition</h3>
-                <p className="text-neutral-dark">Engage students with house point challenges</p>
+                <h3 className="text-xl font-heading font-bold text-neutral-darker mb-2">House Competition</h3>
+                <p className="text-neutral-dark">Foster school spirit and teamwork through engaging house-based competitions.</p>
               </div>
             </div>
             
-            <div className="flex items-start space-x-4">
-              <div className="bg-accent bg-opacity-10 p-3 rounded-lg">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-              </div>
+            <div className="flex p-6 rounded-xl bg-white/80 backdrop-blur-sm shadow-lg border border-white/20 transform transition-all hover:translate-y-[-5px]">
+              <CheckCircle className="h-14 w-14 text-accent mr-6 flex-shrink-0" />
               <div>
-                <h3 className="font-heading font-bold text-neutral-darker">Rewards Store</h3>
-                <p className="text-neutral-dark">Redeem points for meaningful rewards</p>
+                <h3 className="text-xl font-heading font-bold text-neutral-darker mb-2">Data-Driven Insights</h3>
+                <p className="text-neutral-dark">Access comprehensive analytics and reports to track student growth over time.</p>
               </div>
             </div>
           </div>

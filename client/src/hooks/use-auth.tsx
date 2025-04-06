@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.setQueryData(["/api/user"], user);
       toast({
         title: "Registration successful",
-        description: `Welcome to LiveSchool, ${user.firstName}!`,
+        description: `Welcome to GrowSchool, ${user.firstName}!`,
       });
       // Redirect to dashboard after registration
       window.location.href = "/";
