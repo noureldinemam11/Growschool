@@ -1,5 +1,7 @@
 import { useIncidentReport, useUpdateIncidentReport } from "@/hooks/use-incident-reports";
-import { incidentStatuses, type User } from "@shared/schema";
+import { useTeachers } from "@/hooks/use-teachers";
+import { incidentStatuses, type User, type House } from "@shared/schema";
+import { useQuery } from "@tanstack/react-query";
 import { 
   Card, 
   CardContent, 
@@ -39,6 +41,10 @@ interface IncidentReportDetailProps {
 
 export default function IncidentReportDetail({ id, students }: IncidentReportDetailProps) {
   const { data: report, isLoading: isReportLoading } = useIncidentReport(id);
+  const { data: teachers = [], isLoading: isTeachersLoading } = useTeachers();
+  const { data: houses = [], isLoading: isHousesLoading } = useQuery<House[]>({
+    queryKey: ['/api/houses'],
+  });
   const updateMutation = useUpdateIncidentReport(id);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
   const [newStatus, setNewStatus] = useState<string | null>(null);
@@ -77,7 +83,30 @@ export default function IncidentReportDetail({ id, students }: IncidentReportDet
     student => report?.studentIds?.includes(student.id) || false
   );
 
-  if (isReportLoading) {
+  // Find teacher details
+  const reportingTeacher = teachers.find(teacher => teacher.id === report?.teacherId);
+
+  // Find house details for each student
+  const getHouseBadge = (houseId: number | null) => {
+    if (!houseId) return null;
+    const house = houses.find(h => h.id === houseId);
+    if (!house) return null;
+    
+    return (
+      <span 
+        className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium" 
+        style={{ 
+          backgroundColor: `${house.color}20`, // Add transparency
+          color: house.color,
+          border: `1px solid ${house.color}40` // lighter border
+        }}
+      >
+        {house.name}
+      </span>
+    );
+  };
+
+  if (isReportLoading || isTeachersLoading || isHousesLoading) {
     return (
       <div className="flex justify-center items-center h-48">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -113,9 +142,13 @@ export default function IncidentReportDetail({ id, students }: IncidentReportDet
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle>Incident Report #{report.id}</CardTitle>
+            <CardTitle>Incident Report #{report.id || 'Unknown'}</CardTitle>
             <CardDescription>
-              {formatIncidentType(report.type)} • Reported on {report.createdAt ? format(new Date(report.createdAt), "PPP") : "Unknown date"}
+              {formatIncidentType(report.type)} • 
+              {report.incidentDate 
+                ? `Incident on ${format(new Date(report.incidentDate), "PPP")}` 
+                : "Unknown date"} • 
+              Reported on {report.createdAt ? format(new Date(report.createdAt), "PPP") : "Unknown date"}
             </CardDescription>
           </div>
           <Badge variant="outline" className={getStatusColor(report.status)}>
@@ -140,7 +173,9 @@ export default function IncidentReportDetail({ id, students }: IncidentReportDet
               Reported By
             </h3>
             <p className="text-base">
-              Teacher ID: {report.teacherId}
+              {reportingTeacher 
+                ? `${reportingTeacher.firstName} ${reportingTeacher.lastName}` 
+                : `Teacher ID: ${report.teacherId}`}
             </p>
           </div>
         </div>
@@ -169,11 +204,13 @@ export default function IncidentReportDetail({ id, students }: IncidentReportDet
               <div className="grid gap-2">
                 {involvedStudents.map(student => (
                   <div key={student.id} className="flex items-center p-2 bg-muted rounded-md">
-                    <div>
-                      <p className="font-medium">{student.firstName} {student.lastName}</p>
+                    <div className="w-full">
+                      <div className="flex justify-between items-center mb-1">
+                        <p className="font-medium">{student.firstName} {student.lastName}</p>
+                        {student.houseId ? getHouseBadge(student.houseId) : null}
+                      </div>
                       <p className="text-xs text-muted-foreground">
-                        {student.gradeLevel ? `Grade ${student.gradeLevel}` : 'No grade specified'} 
-                        {student.houseId ? ` • House ID: ${student.houseId}` : ''}
+                        {student.gradeLevel ? `Grade ${student.gradeLevel}` : 'No grade specified'}
                       </p>
                     </div>
                   </div>
