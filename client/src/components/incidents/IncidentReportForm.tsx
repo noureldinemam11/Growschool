@@ -1,17 +1,15 @@
-import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { useLocation } from "wouter";
+import { User } from "@shared/schema";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Loader2 } from "lucide-react";
+import { incidentTypes } from "@shared/schema";
 import {
   Select,
   SelectContent,
@@ -19,27 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { insertIncidentReportSchema, incidentTypes } from "@shared/schema";
-import { useCreateIncidentReport } from "@/hooks/use-incident-reports";
-import { useLocation } from "wouter";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { User } from "@shared/schema";
-import { Loader2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
-
-// Extend the schema to add custom validation but remove attachmentUrl
-const formSchema = insertIncidentReportSchema
-  .omit({ attachmentUrl: true })
-  .extend({
-    studentIds: z.array(z.number()).min(1, {
-      message: "At least one student must be selected",
-    }),
-  });
-
-type IncidentFormValues = z.infer<typeof formSchema>;
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface IncidentReportFormProps {
   students: User[];
@@ -48,97 +26,98 @@ interface IncidentReportFormProps {
 
 export default function IncidentReportForm({ students, onSuccess }: IncidentReportFormProps) {
   const [selectedStudents, setSelectedStudents] = useState<User[]>([]);
-  const createMutation = useCreateIncidentReport();
+  const [type, setType] = useState<string>("classroom_disruption");
+  const [description, setDescription] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Set up form with default values
-  const form = useForm<IncidentFormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      type: "classroom_disruption", // Default selection
-      description: "",
-      studentIds: [],
-      incidentDate: new Date(),
-    },
-  });
+  const handleStudentToggle = (student: User, checked: boolean) => {
+    if (checked) {
+      setSelectedStudents(prev => [...prev, student]);
+    } else {
+      setSelectedStudents(prev => prev.filter(s => s.id !== student.id));
+    }
+  };
 
-  // Check for form validation errors
-  useEffect(() => {
-    const subscription = form.watch(() => {
-      if (Object.keys(form.formState.errors).length) {
-        console.log("Form errors:", form.formState.errors);
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [form]);
-
-  // Handle form submission
-  const onSubmit = async (values: IncidentFormValues) => {
-    // Check if at least one student is selected
-    if (!values.studentIds || values.studentIds.length === 0) {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    console.log("Form submission started");
+    console.log("Current user:", user);
+    
+    // Validation
+    if (selectedStudents.length === 0) {
       toast({
-        title: "Form Error",
+        title: "Error",
         description: "Please select at least one student",
         variant: "destructive",
       });
       return;
     }
 
+    if (!description.trim()) {
+      toast({
+        title: "Error",
+        description: "Please provide a description of the incident",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!user?.id) {
+      toast({
+        title: "Authentication Error",
+        description: "You must be logged in to submit a report",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
     try {
-      // Get the current user's ID (teacher ID)
-      const teacherId = user?.id;
+      // Create the report data
+      const reportData = {
+        type,
+        description,
+        teacherId: user.id,
+        studentIds: selectedStudents.map(student => student.id),
+        incidentDate: new Date(),
+        attachmentUrl: "",
+      };
       
-      if (!teacherId) {
-        toast({
-          title: "Authentication Error",
-          description: "You must be logged in to submit a report",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      await createMutation.mutateAsync({
-        ...values,
-        teacherId, // Add teacherId from the logged-in user
-        attachmentUrl: "" // Add empty string for backend compatibility
+      console.log("Submitting report:", reportData);
+      
+      // Submit the report using the API directly
+      const res = await apiRequest("POST", "/api/incident-reports", reportData);
+      const data = await res.json();
+      
+      console.log("Submission result:", data);
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/incident-reports'] });
+      
+      toast({
+        title: "Success",
+        description: "Incident report has been submitted successfully",
       });
       
       if (onSuccess) {
         onSuccess();
       } else {
-        // Navigate back to the incidents list if no success callback is provided
         navigate("/incidents");
       }
     } catch (error) {
-      console.error("Error submitting incident report:", error);
+      console.error("Error submitting report:", error);
       toast({
         title: "Submission Error",
         description: error instanceof Error ? error.message : "Failed to submit report",
         variant: "destructive",
       });
-    }
-  };
-
-  // Handle student selection
-  const handleStudentToggle = (student: User, checked: boolean) => {
-    if (checked) {
-      // Add student to selection
-      setSelectedStudents(prev => [...prev, student]);
-      // Update form values
-      const currentStudentIds = form.getValues("studentIds");
-      form.setValue("studentIds", [...currentStudentIds, student.id]);
-      // Trigger validation
-      form.trigger("studentIds");
-    } else {
-      // Remove student from selection
-      setSelectedStudents(prev => prev.filter(s => s.id !== student.id));
-      // Update form values
-      const currentStudentIds = form.getValues("studentIds");
-      form.setValue("studentIds", currentStudentIds.filter(id => id !== student.id));
-      // Trigger validation
-      form.trigger("studentIds");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -151,119 +130,94 @@ export default function IncidentReportForm({ students, onSuccess }: IncidentRepo
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Incident Type</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select incident type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {incidentTypes.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type.charAt(0).toUpperCase() + type.slice(1).replace("_", " ")}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="incident-type">Incident Type</Label>
+            <Select 
+              value={type} 
+              onValueChange={setType}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select incident type" />
+              </SelectTrigger>
+              <SelectContent>
+                {incidentTypes.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type.charAt(0).toUpperCase() + type.slice(1).replace("_", " ")}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              placeholder="Provide details about the incident"
+              className="min-h-[100px]"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
             />
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Provide details about the incident"
-                      className="min-h-[100px]"
-                      {...field}
+            <p className="text-sm text-muted-foreground">
+              Include what happened, when, where, and any relevant context
+            </p>
+          </div>
+          
+          <div className="space-y-3">
+            <Label>Students Involved</Label>
+            <div className="border rounded-md p-4 max-h-[200px] overflow-y-auto">
+              <div className="space-y-2">
+                {students.map((student) => (
+                  <div key={student.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`student-${student.id}`}
+                      checked={selectedStudents.some(s => s.id === student.id)}
+                      onCheckedChange={(checked) => 
+                        handleStudentToggle(student, checked as boolean)
+                      }
                     />
-                  </FormControl>
-                  <FormDescription>
-                    Include what happened, when, where, and any relevant context
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="studentIds"
-              render={() => (
-                <FormItem>
-                  <FormLabel>Students Involved</FormLabel>
-                  <div className="border rounded-md p-4 max-h-[200px] overflow-y-auto">
-                    <div className="space-y-2">
-                      {students.map((student) => (
-                        <div key={student.id} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`student-${student.id}`}
-                            checked={selectedStudents.some(s => s.id === student.id)}
-                            onCheckedChange={(checked) => 
-                              handleStudentToggle(student, checked as boolean)
-                            }
-                          />
-                          <label
-                            htmlFor={`student-${student.id}`}
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                          >
-                            {student.firstName} {student.lastName}
-                            {student.gradeLevel && ` (Grade ${student.gradeLevel})`}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
+                    <label
+                      htmlFor={`student-${student.id}`}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      {student.firstName} {student.lastName}
+                      {student.gradeLevel && ` (Grade ${student.gradeLevel})`}
+                    </label>
                   </div>
-                  <FormDescription>
-                    Select all students involved in the incident
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="flex justify-end gap-4 mt-8">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate("/incidents")}
-                disabled={createMutation.isPending}
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="submit"
-                disabled={createMutation.isPending}
-                className="px-8"
-              >
-                {createMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Submitting...
-                  </>
-                ) : (
-                  "Submit Report"
-                )}
-              </Button>
+                ))}
+              </div>
             </div>
-          </form>
-        </Form>
+            <p className="text-sm text-muted-foreground">
+              Select all students involved in the incident
+            </p>
+          </div>
+          
+          <div className="flex justify-end gap-4 mt-8">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate("/incidents")}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit"
+              disabled={isSubmitting}
+              className="px-8"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                "Submit Report"
+              )}
+            </Button>
+          </div>
+        </form>
       </CardContent>
     </Card>
   );

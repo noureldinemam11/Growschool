@@ -37,8 +37,27 @@ export function useCreateIncidentReport(): UseMutationResult<IncidentReport, Err
 
   return useMutation({
     mutationFn: async (report: InsertIncidentReport) => {
-      const res = await apiRequest("POST", "/api/incident-reports", report);
-      return await res.json();
+      // Log what we're sending for debugging
+      console.log("Submitting incident report:", report);
+      
+      // Make sure teacherId is a number
+      const processedReport = {
+        ...report,
+        teacherId: Number(report.teacherId),
+        // Make sure studentIds is an array of numbers
+        studentIds: Array.isArray(report.studentIds) 
+          ? report.studentIds.map(id => Number(id)) 
+          : [Number(report.studentIds)],
+        // Set default attachment URL if not provided
+        attachmentUrl: report.attachmentUrl || ""
+      };
+      
+      console.log("Processed report:", processedReport);
+      
+      const res = await apiRequest("POST", "/api/incident-reports", processedReport);
+      const data = await res.json();
+      console.log("Response data:", data);
+      return data;
     },
     onSuccess: () => {
       // Invalidate the incident reports query to refetch the data
@@ -49,6 +68,7 @@ export function useCreateIncidentReport(): UseMutationResult<IncidentReport, Err
       });
     },
     onError: (error: Error) => {
+      console.error("Mutation error:", error);
       toast({
         title: "Failed to create incident report",
         description: error.message,
