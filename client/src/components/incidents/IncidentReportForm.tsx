@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -19,7 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { insertIncidentReportSchema, incidentTypes } from "@shared/schema";
@@ -28,13 +27,16 @@ import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { User } from "@shared/schema";
 import { Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
-// Extend the schema to add custom validation
-const formSchema = insertIncidentReportSchema.extend({
-  studentIds: z.array(z.number()).min(1, {
-    message: "At least one student must be selected",
-  }),
-});
+// Extend the schema to add custom validation but remove attachmentUrl
+const formSchema = insertIncidentReportSchema
+  .omit({ attachmentUrl: true })
+  .extend({
+    studentIds: z.array(z.number()).min(1, {
+      message: "At least one student must be selected",
+    }),
+  });
 
 type IncidentFormValues = z.infer<typeof formSchema>;
 
@@ -47,6 +49,7 @@ export default function IncidentReportForm({ students, onSuccess }: IncidentRepo
   const [selectedStudents, setSelectedStudents] = useState<User[]>([]);
   const createMutation = useCreateIncidentReport();
   const [, navigate] = useLocation();
+  const { toast } = useToast();
 
   // Set up form with default values
   const form = useForm<IncidentFormValues>({
@@ -56,14 +59,36 @@ export default function IncidentReportForm({ students, onSuccess }: IncidentRepo
       description: "",
       studentIds: [],
       incidentDate: new Date(),
-      attachmentUrl: "",
     },
   });
 
+  // Check for form validation errors
+  useEffect(() => {
+    const subscription = form.watch(() => {
+      if (Object.keys(form.formState.errors).length) {
+        console.log("Form errors:", form.formState.errors);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
+
   // Handle form submission
   const onSubmit = async (values: IncidentFormValues) => {
+    // Check if at least one student is selected
+    if (!values.studentIds || values.studentIds.length === 0) {
+      toast({
+        title: "Form Error",
+        description: "Please select at least one student",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      await createMutation.mutateAsync(values);
+      await createMutation.mutateAsync({
+        ...values,
+        attachmentUrl: "" // Add empty string for backend compatibility
+      });
       if (onSuccess) {
         onSuccess();
       } else {
@@ -72,6 +97,11 @@ export default function IncidentReportForm({ students, onSuccess }: IncidentRepo
       }
     } catch (error) {
       console.error("Error submitting incident report:", error);
+      toast({
+        title: "Submission Error",
+        description: error instanceof Error ? error.message : "Failed to submit report",
+        variant: "destructive",
+      });
     }
   };
 
@@ -83,12 +113,16 @@ export default function IncidentReportForm({ students, onSuccess }: IncidentRepo
       // Update form values
       const currentStudentIds = form.getValues("studentIds");
       form.setValue("studentIds", [...currentStudentIds, student.id]);
+      // Trigger validation
+      form.trigger("studentIds");
     } else {
       // Remove student from selection
       setSelectedStudents(prev => prev.filter(s => s.id !== student.id));
       // Update form values
       const currentStudentIds = form.getValues("studentIds");
       form.setValue("studentIds", currentStudentIds.filter(id => id !== student.id));
+      // Trigger validation
+      form.trigger("studentIds");
     }
   };
 
@@ -188,31 +222,7 @@ export default function IncidentReportForm({ students, onSuccess }: IncidentRepo
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="attachmentUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Attachment URL (Optional)</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="https://example.com/document.pdf"
-                      value={field.value || ''}
-                      onChange={field.onChange}
-                      onBlur={field.onBlur}
-                      name={field.name}
-                      ref={field.ref}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Provide a link to any relevant documents, images, or evidence
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <CardFooter className="px-0 pt-6 flex justify-end space-x-2">
+            <div className="flex justify-end gap-4 mt-8">
               <Button
                 type="button"
                 variant="outline"
@@ -224,6 +234,7 @@ export default function IncidentReportForm({ students, onSuccess }: IncidentRepo
               <Button 
                 type="submit"
                 disabled={createMutation.isPending}
+                className="px-8"
               >
                 {createMutation.isPending ? (
                   <>
@@ -234,7 +245,7 @@ export default function IncidentReportForm({ students, onSuccess }: IncidentRepo
                   "Submit Report"
                 )}
               </Button>
-            </CardFooter>
+            </div>
           </form>
         </Form>
       </CardContent>
