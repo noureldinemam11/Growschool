@@ -163,34 +163,34 @@ export default function AwardPointsModal({ onClose, preSelectedStudentId }: Awar
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="points">Points</Label>
+          <Label htmlFor="points">Points Multiplier (1-10)</Label>
           <div className="flex items-center">
             <Button 
               type="button" 
               variant="outline" 
-              className="rounded-r-none" 
+              className="rounded-r-none h-12 w-12 text-lg" 
               onClick={decrementPoints}
               disabled={points <= 1}
             >
-              <Minus className="h-4 w-4" />
+              <Minus className="h-5 w-5" />
             </Button>
             <Input 
               id="points" 
               type="number" 
               value={points} 
               onChange={(e) => setPoints(Math.max(1, Math.min(10, parseInt(e.target.value, 10) || 1)))} 
-              className="w-20 text-center rounded-none"
+              className="w-20 text-center rounded-none h-12 text-lg font-medium"
               min="1"
               max="10"
             />
             <Button 
               type="button" 
               variant="outline" 
-              className="rounded-l-none" 
+              className="rounded-l-none h-12 w-12 text-lg" 
               onClick={incrementPoints}
               disabled={points >= 10}
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-5 w-5" />
             </Button>
           </div>
         </div>
@@ -207,17 +207,20 @@ export default function AwardPointsModal({ onClose, preSelectedStudentId }: Awar
         </div>
       </div>
       
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+      {/* Mobile-friendly footer with sticky submit button */}
+      <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0 mt-4 pb-2">
+        <Button type="button" variant="outline" onClick={onClose} className="w-full sm:w-auto order-2 sm:order-1">
+          Cancel
+        </Button>
         <Button 
           type="button" 
           onClick={handleSubmit} 
           disabled={awardPointsMutation.isPending}
-          className="bg-primary text-white hover:bg-primary/90"
+          className="bg-primary text-white hover:bg-primary/90 w-full sm:w-auto order-1 sm:order-2 h-12 text-base font-medium"
         >
           {awardPointsMutation.isPending ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               Processing...
             </>
           ) : (

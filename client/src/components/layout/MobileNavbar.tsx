@@ -8,7 +8,8 @@ import {
   Award, 
   Settings, 
   Menu,
-  AlertTriangle
+  AlertTriangle,
+  Star
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -40,101 +41,118 @@ export default function MobileNavbar() {
 
   const isAdmin = user.role === 'admin';
 
+  // Helper function to determine if a nav item is active
+  const isActive = (path: string) => {
+    if (path === '/' && location === '/') return true;
+    if (path !== '/' && location.startsWith(path)) return true;
+    return false;
+  };
+
   return (
     <>
+      {/* Added extra bottom padding to accommodate the navbar */}
+      <div className="md:hidden pb-16"></div>
+      
       <div className="md:hidden bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-40 shadow-lg">
         <div className="grid grid-cols-5">
           <Link 
             href="/" 
             className={cn(
-              "flex flex-col items-center justify-center py-2",
-              location === '/' ? "text-primary font-semibold" : "text-neutral-dark"
+              "flex flex-col items-center justify-center py-2 touch-manipulation",
+              isActive('/') ? "text-primary font-semibold" : "text-neutral-dark"
             )}
           >
-            <Home className="h-5 w-5 mb-1" />
+            <Home className={cn(
+              "h-5 w-5 mb-1",
+              isActive('/') ? "text-primary" : "text-neutral-dark"
+            )} />
             <span className="text-xs">Home</span>
           </Link>
           
           <Link 
             href="/students" 
             className={cn(
-              "flex flex-col items-center justify-center py-2",
-              location === '/students' || location.startsWith('/student/') 
-                ? "text-primary font-semibold" 
-                : "text-neutral-dark"
+              "flex flex-col items-center justify-center py-2 touch-manipulation",
+              isActive('/students') ? "text-primary font-semibold" : "text-neutral-dark"
             )}
           >
-            <Users className="h-5 w-5 mb-1" />
+            <Users className={cn(
+              "h-5 w-5 mb-1",
+              isActive('/students') ? "text-primary" : "text-neutral-dark"
+            )} />
             <span className="text-xs">Students</span>
           </Link>
           
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex flex-col items-center justify-center py-2 text-neutral-dark"
+            className="flex flex-col items-center justify-center py-2 text-neutral-dark touch-manipulation"
+            aria-label="Award Points"
           >
-            <div className="bg-primary text-white rounded-full p-2 -mt-6 shadow-md">
-              <Plus className="h-6 w-6" />
+            <div className="bg-primary text-white rounded-full p-2.5 -mt-7 shadow-md">
+              <Plus className="h-5 w-5" />
             </div>
-            <span className="text-xs mt-1">Points</span>
+            <span className="text-xs mt-1.5">Points</span>
           </button>
           
           <Link 
-            href="/houses" 
+            href="/incidents" 
             className={cn(
-              "flex flex-col items-center justify-center py-2",
-              location === '/houses' || location.startsWith('/house/') 
-                ? "text-primary font-semibold" 
-                : "text-neutral-dark"
+              "flex flex-col items-center justify-center py-2 touch-manipulation",
+              isActive('/incidents') ? "text-primary font-semibold" : "text-neutral-dark"
             )}
           >
-            <BarChart className="h-5 w-5 mb-1" />
-            <span className="text-xs">Houses</span>
+            <AlertTriangle className={cn(
+              "h-5 w-5 mb-1",
+              isActive('/incidents') ? "text-primary" : "text-neutral-dark"
+            )} />
+            <span className="text-xs">Incidents</span>
           </Link>
           
           <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
             <DrawerTrigger asChild>
               <button
-                className="flex flex-col items-center justify-center py-2 text-neutral-dark"
+                className="flex flex-col items-center justify-center py-2 text-neutral-dark touch-manipulation"
+                aria-label="More Options"
               >
                 <Menu className="h-5 w-5 mb-1" />
                 <span className="text-xs">More</span>
               </button>
             </DrawerTrigger>
             <DrawerContent className="h-[85vh]">
-              <DrawerHeader>
-                <DrawerTitle>Menu</DrawerTitle>
-                <DrawerDescription>Quick access to features</DrawerDescription>
+              <DrawerHeader className="border-b pb-2">
+                <DrawerTitle className="text-xl text-primary">More Options</DrawerTitle>
+                <DrawerDescription>Access additional features</DrawerDescription>
               </DrawerHeader>
-              <div className="grid grid-cols-2 gap-2 p-4">
+              <div className="grid grid-cols-2 gap-3 p-4">
+                <Link href="/houses" onClick={() => setIsDrawerOpen(false)}>
+                  <Button variant="outline" className="w-full h-24 flex flex-col gap-2 items-center justify-center shadow-sm">
+                    <BarChart className="h-6 w-6 text-primary" />
+                    <span>Houses</span>
+                  </Button>
+                </Link>
                 <Link href="/rewards" onClick={() => setIsDrawerOpen(false)}>
-                  <Button variant="outline" className="w-full h-20 flex flex-col gap-2 items-center justify-center">
-                    <Award className="h-6 w-6 text-primary" />
+                  <Button variant="outline" className="w-full h-24 flex flex-col gap-2 items-center justify-center shadow-sm">
+                    <Star className="h-6 w-6 text-primary" />
                     <span>Rewards</span>
                   </Button>
                 </Link>
                 <Link href="/reports" onClick={() => setIsDrawerOpen(false)}>
-                  <Button variant="outline" className="w-full h-20 flex flex-col gap-2 items-center justify-center">
+                  <Button variant="outline" className="w-full h-24 flex flex-col gap-2 items-center justify-center shadow-sm">
                     <FileText className="h-6 w-6 text-primary" />
                     <span>Reports</span>
                   </Button>
                 </Link>
-                <Link href="/incidents" onClick={() => setIsDrawerOpen(false)}>
-                  <Button variant="outline" className="w-full h-20 flex flex-col gap-2 items-center justify-center">
-                    <AlertTriangle className="h-6 w-6 text-primary" />
-                    <span>Incidents</span>
-                  </Button>
-                </Link>
                 {isAdmin && (
                   <Link href="/admin" onClick={() => setIsDrawerOpen(false)}>
-                    <Button variant="outline" className="w-full h-20 flex flex-col gap-2 items-center justify-center">
+                    <Button variant="outline" className="w-full h-24 flex flex-col gap-2 items-center justify-center shadow-sm">
                       <Settings className="h-6 w-6 text-primary" />
                       <span>Admin</span>
                     </Button>
                   </Link>
                 )}
                 <Link href="/profile" onClick={() => setIsDrawerOpen(false)}>
-                  <Button variant="outline" className="w-full h-20 flex flex-col gap-2 items-center justify-center">
-                    <div className="h-6 w-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">
+                  <Button variant="outline" className="w-full h-24 flex flex-col gap-2 items-center justify-center shadow-sm">
+                    <div className="h-7 w-7 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold">
                       {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
                     </div>
                     <span>Profile</span>
@@ -143,7 +161,7 @@ export default function MobileNavbar() {
               </div>
               <DrawerFooter>
                 <DrawerClose asChild>
-                  <Button variant="outline">Close Menu</Button>
+                  <Button variant="outline" className="w-full">Close Menu</Button>
                 </DrawerClose>
               </DrawerFooter>
             </DrawerContent>

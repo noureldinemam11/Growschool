@@ -57,7 +57,7 @@ export default function AppHeader({
   };
 
   return (
-    <header className="bg-primary text-white py-3 px-4">
+    <header className="bg-primary text-white py-2 px-3 md:py-3 md:px-4">
       <div className="flex justify-between items-center">
         {/* Left side with navigation */}
         <div className="flex items-center">
@@ -67,8 +67,8 @@ export default function AppHeader({
               className="p-0 h-8 text-white hover:bg-primary/20 hover:text-white focus:bg-primary/20"
               onClick={handleBackClick}
             >
-              <ArrowLeft className="h-5 w-5 mr-2" />
-              <span className="text-base">Back</span>
+              <ArrowLeft className="h-5 w-5" />
+              <span className="text-base ml-1 md:ml-2 hidden sm:inline">Back</span>
             </Button>
           )}
           
@@ -78,18 +78,18 @@ export default function AppHeader({
               className="p-0 h-8 text-white hover:bg-primary/20 hover:text-white focus:bg-primary/20 ml-2"
               onClick={handleHomeClick}
             >
-              <Home className="h-5 w-5 mr-1" />
-              <span className="text-base font-medium">Dashboard</span>
+              <Home className="h-5 w-5" />
+              <span className="text-base font-medium ml-1 md:ml-2 hidden sm:inline">Dashboard</span>
             </Button>
           )}
           
           {title && (
-            <h1 className="text-lg font-medium ml-4">{title}</h1>
+            <h1 className="text-base md:text-lg font-medium ml-2 md:ml-4 truncate max-w-[150px] sm:max-w-none">{title}</h1>
           )}
         </div>
         
         {/* Right side with Profile Dropdown */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center">
           <ProfileDropdown />
         </div>
       </div>
