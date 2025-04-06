@@ -52,6 +52,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { House, BehaviorCategory, User as UserType } from '@shared/schema';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Separator } from '@/components/ui/separator';
 import {
   BarChart as RechartsBarChart,
@@ -488,37 +489,89 @@ function AdminDashboard() {
         />
       </div>
       
-      {/* Quick Actions - Scrollable horizontally on mobile */}
+      {/* Administrative Actions - Mobile Carousel, Desktop Grid */}
       <Card>
         <CardHeader className="py-3 md:py-4">
           <CardTitle className="text-lg md:text-xl">Administrative Actions</CardTitle>
           <CardDescription>Quick access to administrative functions</CardDescription>
         </CardHeader>
         <CardContent className="p-3 md:p-6">
-          <div className="flex md:grid md:grid-cols-4 gap-2 md:gap-4 overflow-x-auto pb-2 md:pb-0 -mx-1 px-1">
+          {/* Mobile view with Carousel */}
+          <div className="block md:hidden w-full">
+            <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
+              <div className="min-w-[140px] flex-shrink-0">
+                <QuickActionButton
+                  icon={<PlusCircle className="h-5 w-5" />}
+                  label="Award Points"
+                  onClick={() => navigate('/points')}
+                  highlight={true}
+                  className="w-full h-full"
+                />
+              </div>
+              <div className="min-w-[140px] flex-shrink-0">
+                <QuickActionButton
+                  icon={<AlertTriangle className="h-5 w-5 text-amber-500" />}
+                  label="Incident Reports"
+                  onClick={() => navigate('/incidents')}
+                  highlight={true}
+                  className="w-full h-full"
+                />
+              </div>
+              <div className="min-w-[140px] flex-shrink-0">
+                <QuickActionButton
+                  icon={<Trophy className="h-5 w-5" />}
+                  label="House Points"
+                  onClick={() => navigate('/house/dashboard')}
+                  highlight={true}
+                  className="w-full h-full"
+                />
+              </div>
+              <div className="min-w-[140px] flex-shrink-0">
+                <QuickActionButton
+                  icon={<Settings className="h-5 w-5" />}
+                  label="Admin"
+                  onClick={() => {
+                    navigate('/admin');
+                    // Set activeTab to 'overview' through URL parameter
+                    setTimeout(() => { 
+                      const urlParams = new URLSearchParams(window.location.search);
+                      urlParams.set('tab', 'overview');
+                      window.history.replaceState({}, '', `${window.location.pathname}?${urlParams}`);
+                      // Trigger a reload to ensure tab change
+                      window.location.reload();
+                    }, 50);
+                  }}
+                  className="w-full h-full"
+                />
+              </div>
+            </div>
+          </div>
+          
+          {/* Desktop view with Grid */}
+          <div className="hidden md:grid md:grid-cols-4 gap-4">
             <QuickActionButton
-              icon={<PlusCircle className="h-5 w-5 md:h-6 md:w-6" />}
+              icon={<PlusCircle className="h-6 w-6" />}
               label="Award Points"
               onClick={() => navigate('/points')}
               highlight={true}
-              className="min-w-[140px] md:min-w-0 flex-shrink-0 md:flex-shrink"
+              className="w-full h-full"
             />
             <QuickActionButton
-              icon={<AlertTriangle className="h-5 w-5 md:h-6 md:w-6 text-amber-500" />}
+              icon={<AlertTriangle className="h-6 w-6 text-amber-500" />}
               label="Incident Reports"
               onClick={() => navigate('/incidents')}
               highlight={true}
-              className="min-w-[140px] md:min-w-0 flex-shrink-0 md:flex-shrink"
+              className="w-full h-full"
             />
             <QuickActionButton
-              icon={<Trophy className="h-5 w-5 md:h-6 md:w-6" />}
+              icon={<Trophy className="h-6 w-6" />}
               label="House Points"
               onClick={() => navigate('/house/dashboard')}
               highlight={true}
-              className="min-w-[140px] md:min-w-0 flex-shrink-0 md:flex-shrink"
+              className="w-full h-full"
             />
             <QuickActionButton
-              icon={<Settings className="h-5 w-5 md:h-6 md:w-6" />}
+              icon={<Settings className="h-6 w-6" />}
               label="Admin"
               onClick={() => {
                 navigate('/admin');
@@ -531,7 +584,7 @@ function AdminDashboard() {
                   window.location.reload();
                 }, 50);
               }}
-              className="min-w-[140px] md:min-w-0 flex-shrink-0 md:flex-shrink"
+              className="w-full h-full"
             />
           </div>
         </CardContent>
