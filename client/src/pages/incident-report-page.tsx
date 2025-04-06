@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { Route, Switch, useRoute, useLocation } from 'wouter';
+import { Route, Switch, useLocation } from 'wouter';
 import IncidentReportsList from '@/components/incidents/IncidentReportsList';
 import IncidentReportForm from '@/components/incidents/IncidentReportForm';
 import IncidentReportDetail from '@/components/incidents/IncidentReportDetail';
 import { useIncidentReport } from '@/hooks/use-incident-reports';
-import { useUsers } from '@/hooks/use-users';
+import { useUsers } from '../hooks/use-users';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

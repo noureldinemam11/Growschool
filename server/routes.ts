@@ -868,7 +868,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Unauthorized" });
     }
-
+    
     try {
       const userId = Number(req.params.id);
       
@@ -894,6 +894,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: user.id,
         firstName: user.firstName,
         lastName: user.lastName,
+        username: user.username,
         role: user.role,
         email: user.email,
         gradeLevel: user.gradeLevel,

@@ -1,5 +1,5 @@
 import { useIncidentReport, useUpdateIncidentReport } from "@/hooks/use-incident-reports";
-import { useTeachers } from "@/hooks/use-teachers";
+import { useTeachers } from "../../hooks/use-teachers";
 import { incidentStatuses, type User, type House } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
 import { 
