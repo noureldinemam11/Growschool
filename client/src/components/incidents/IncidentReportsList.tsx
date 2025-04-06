@@ -102,9 +102,6 @@ export default function IncidentReportsList() {
             <p className="mt-2 text-sm text-muted-foreground">
               {filteredReports.length === 0 ? "No incident reports match your current filters" : "No incident reports have been submitted yet."}
             </p>
-            <Button className="mt-4" asChild>
-              <Link href="/incidents/new">Submit New Report</Link>
-            </Button>
           </div>
         </CardContent>
       </Card>
@@ -114,14 +111,9 @@ export default function IncidentReportsList() {
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <div>
-            <CardTitle>Incident Reports</CardTitle>
-            <CardDescription>Showing {filteredReports.length} reports</CardDescription>
-          </div>
-          <Button asChild>
-            <Link href="/incidents/new">New Report</Link>
-          </Button>
+        <CardHeader className="pb-2">
+          <CardTitle>Incident Reports</CardTitle>
+          <CardDescription>Showing {filteredReports.length} reports</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">
