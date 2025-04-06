@@ -113,7 +113,22 @@ function Router() {
         allowedRoles={["admin"]}
       />
       <ProtectedRoute 
-        path="/incidents*" 
+        path="/incidents" 
+        component={IncidentReportPage}
+        allowedRoles={["admin", "teacher"]}
+      />
+      <ProtectedRoute 
+        path="/incidents/new" 
+        component={IncidentReportPage}
+        allowedRoles={["admin", "teacher"]}
+      />
+      <ProtectedRoute 
+        path="/incidents/:id" 
+        component={IncidentReportPage}
+        allowedRoles={["admin", "teacher"]}
+      />
+      <ProtectedRoute 
+        path="/incidents/:id/edit" 
         component={IncidentReportPage}
         allowedRoles={["admin", "teacher"]}
       />
