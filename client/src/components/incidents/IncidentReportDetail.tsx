@@ -56,11 +56,14 @@ export default function IncidentReportDetail({ id, students }: IncidentReportDet
     }
   };
 
-  const formatIncidentType = (type: string) => {
+  const formatIncidentType = (type: string | undefined) => {
+    if (!type) return 'Unknown';
     return type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, ' ');
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string | undefined) => {
+    if (!status) return "bg-gray-100 text-gray-800";
+    
     switch (status) {
       case "pending": return "bg-yellow-100 text-yellow-800";
       case "resolved": return "bg-green-100 text-green-800";
@@ -112,11 +115,11 @@ export default function IncidentReportDetail({ id, students }: IncidentReportDet
           <div>
             <CardTitle>Incident Report #{report.id}</CardTitle>
             <CardDescription>
-              {formatIncidentType(report.type)} • Reported on {format(new Date(report.createdAt), "PPP")}
+              {formatIncidentType(report.type)} • Reported on {report.createdAt ? format(new Date(report.createdAt), "PPP") : "Unknown date"}
             </CardDescription>
           </div>
           <Badge variant="outline" className={getStatusColor(report.status)}>
-            {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
+            {report.status ? report.status.charAt(0).toUpperCase() + report.status.slice(1) : "Unknown"}
           </Badge>
         </div>
       </CardHeader>
@@ -128,7 +131,7 @@ export default function IncidentReportDetail({ id, students }: IncidentReportDet
               Incident Date
             </h3>
             <p className="text-base">
-              {format(new Date(report.incidentDate), "PPPP")}
+              {report.incidentDate ? format(new Date(report.incidentDate), "PPPP") : "Unknown date"}
             </p>
           </div>
           <div>
