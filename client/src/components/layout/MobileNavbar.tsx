@@ -89,9 +89,9 @@ export default function MobileNavbar() {
             aria-label="Award Points"
           >
             <div className="bg-primary text-white rounded-full p-2.5 -mt-7 shadow-md">
-              <Plus className="h-5 w-5" />
+              <Award className="h-5 w-5" />
             </div>
-            <span className="text-xs mt-1.5">Points</span>
+            <span className="text-xs mt-1.5">Award Points</span>
           </button>
           
           <Link 
