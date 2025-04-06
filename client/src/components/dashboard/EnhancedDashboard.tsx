@@ -875,7 +875,7 @@ function AdminDashboard() {
           </div>
         </div>
         
-        {/* Right column - House Rankings & Student Spotlight */}
+        {/* Right column - House Rankings */}
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -916,48 +916,6 @@ function AdminDashboard() {
                 ))}
               </div>
             </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Student Spotlight</CardTitle>
-              <CardDescription>Top-performing students</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {topStudents.map((student, i) => (
-                  <div key={i} className="flex items-center justify-between pb-3 border-b last:border-0 last:pb-0">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        i === 0 ? 'bg-amber-100 text-amber-700' :
-                        i === 1 ? 'bg-slate-100 text-slate-700' :
-                        i === 2 ? 'bg-orange-100 text-orange-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>
-                        {i === 0 ? (
-                          <Trophy className="h-4 w-4" />
-                        ) : (
-                          <Star className="h-4 w-4" />
-                        )}
-                      </div>
-                      <div>
-                        <div className="font-medium">{student.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {student.points > 0 ? `+${student.points} points` : `${student.points} points`}
-                        </div>
-                      </div>
-                    </div>
-                    <Badge variant={i < 3 ? "default" : "outline"}>#{i+1}</Badge>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-            <CardFooter className="border-t px-6 py-4">
-              <Button variant="ghost" size="sm" className="w-full">
-                <Users className="h-4 w-4 mr-2" />
-                View All Students
-              </Button>
-            </CardFooter>
           </Card>
         </div>
       </div>
