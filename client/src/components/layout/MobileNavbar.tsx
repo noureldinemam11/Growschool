@@ -83,16 +83,19 @@ export default function MobileNavbar() {
             <span className="text-xs">Students</span>
           </Link>
           
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="flex flex-col items-center justify-center py-2 text-neutral-dark touch-manipulation"
+          <Link
+            href="/points"
+            className={cn(
+              "flex flex-col items-center justify-center py-2 touch-manipulation",
+              isActive('/points') ? "text-primary font-semibold" : "text-neutral-dark"
+            )}
             aria-label="Award Points"
           >
             <div className="bg-primary text-white rounded-full p-2.5 -mt-7 shadow-md">
               <Award className="h-5 w-5" />
             </div>
             <span className="text-xs mt-1.5">Award Points</span>
-          </button>
+          </Link>
           
           <Link 
             href="/incidents" 
