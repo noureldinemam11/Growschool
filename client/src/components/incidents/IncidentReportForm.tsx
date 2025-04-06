@@ -28,6 +28,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { User } from "@shared/schema";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 
 // Extend the schema to add custom validation but remove attachmentUrl
 const formSchema = insertIncidentReportSchema
@@ -50,6 +51,7 @@ export default function IncidentReportForm({ students, onSuccess }: IncidentRepo
   const createMutation = useCreateIncidentReport();
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   // Set up form with default values
   const form = useForm<IncidentFormValues>({
@@ -85,10 +87,24 @@ export default function IncidentReportForm({ students, onSuccess }: IncidentRepo
     }
 
     try {
+      // Get the current user's ID (teacher ID)
+      const teacherId = user?.id;
+      
+      if (!teacherId) {
+        toast({
+          title: "Authentication Error",
+          description: "You must be logged in to submit a report",
+          variant: "destructive",
+        });
+        return;
+      }
+
       await createMutation.mutateAsync({
         ...values,
+        teacherId, // Add teacherId from the logged-in user
         attachmentUrl: "" // Add empty string for backend compatibility
       });
+      
       if (onSuccess) {
         onSuccess();
       } else {
