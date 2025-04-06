@@ -168,7 +168,7 @@ export default function AuthPage() {
                       
                       <Button 
                         type="submit" 
-                        className="w-full h-11 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-medium text-base"
+                        className="w-full h-11 bg-gradient-to-r from-primary to-blue-600 hover:from-blue-700 hover:to-primary text-white font-medium text-base"
                         disabled={loginMutation.isPending}
                       >
                         {loginMutation.isPending ? (
@@ -391,7 +391,7 @@ export default function AuthPage() {
                       
                       <Button 
                         type="submit" 
-                        className="w-full h-11 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-medium text-base"
+                        className="w-full h-11 bg-gradient-to-r from-primary to-blue-600 hover:from-blue-700 hover:to-primary text-white font-medium text-base"
                         disabled={registerMutation.isPending}
                       >
                         {registerMutation.isPending ? (
@@ -435,7 +435,7 @@ export default function AuthPage() {
           
           <div className="grid grid-cols-1 gap-6">
             <div className="flex p-6 rounded-xl bg-white/80 backdrop-blur-sm shadow-lg border border-white/20 transform transition-all hover:translate-y-[-5px]">
-              <Award className="h-14 w-14 text-primary mr-6 flex-shrink-0" />
+              <Award className="h-14 w-14 text-blue-600 mr-6 flex-shrink-0" />
               <div>
                 <h3 className="text-xl font-heading font-bold text-neutral-darker mb-2">Recognize Achievement</h3>
                 <p className="text-neutral-dark">Celebrate and reward positive student behavior with our customizable point system.</p>
@@ -443,7 +443,7 @@ export default function AuthPage() {
             </div>
             
             <div className="flex p-6 rounded-xl bg-white/80 backdrop-blur-sm shadow-lg border border-white/20 transform transition-all hover:translate-y-[-5px]">
-              <Trophy className="h-14 w-14 text-secondary mr-6 flex-shrink-0" />
+              <Trophy className="h-14 w-14 text-indigo-600 mr-6 flex-shrink-0" />
               <div>
                 <h3 className="text-xl font-heading font-bold text-neutral-darker mb-2">House Competition</h3>
                 <p className="text-neutral-dark">Foster school spirit and teamwork through engaging house-based competitions.</p>
@@ -451,7 +451,7 @@ export default function AuthPage() {
             </div>
             
             <div className="flex p-6 rounded-xl bg-white/80 backdrop-blur-sm shadow-lg border border-white/20 transform transition-all hover:translate-y-[-5px]">
-              <CheckCircle className="h-14 w-14 text-accent mr-6 flex-shrink-0" />
+              <CheckCircle className="h-14 w-14 text-green-600 mr-6 flex-shrink-0" />
               <div>
                 <h3 className="text-xl font-heading font-bold text-neutral-darker mb-2">Data-Driven Insights</h3>
                 <p className="text-neutral-dark">Access comprehensive analytics and reports to track student growth over time.</p>
