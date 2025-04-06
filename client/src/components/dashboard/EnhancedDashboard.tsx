@@ -495,11 +495,18 @@ function AdminDashboard() {
           <CardDescription>Quick access to administrative functions</CardDescription>
         </CardHeader>
         <CardContent className="p-3 md:p-6">
-          <div className="flex md:grid md:grid-cols-3 gap-2 md:gap-4 overflow-x-auto pb-2 md:pb-0 -mx-1 px-1">
+          <div className="flex md:grid md:grid-cols-4 gap-2 md:gap-4 overflow-x-auto pb-2 md:pb-0 -mx-1 px-1">
             <QuickActionButton
               icon={<PlusCircle className="h-5 w-5 md:h-6 md:w-6" />}
               label="Award Points"
               onClick={() => navigate('/points')}
+              highlight={true}
+              className="min-w-[140px] md:min-w-0 flex-shrink-0 md:flex-shrink"
+            />
+            <QuickActionButton
+              icon={<AlertTriangle className="h-5 w-5 md:h-6 md:w-6 text-amber-500" />}
+              label="Incident Reports"
+              onClick={() => navigate('/incidents')}
               highlight={true}
               className="min-w-[140px] md:min-w-0 flex-shrink-0 md:flex-shrink"
             />
@@ -1213,11 +1220,17 @@ function TeacherDashboard() {
           <CardDescription>Frequently used tools and shortcuts</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <QuickActionButton
               icon={<PlusCircle className="h-6 w-6" />}
               label="Award Points"
               onClick={() => navigate('/points')}
+              highlight={true}
+            />
+            <QuickActionButton
+              icon={<AlertTriangle className="h-6 w-6 text-amber-500" />}
+              label="Incident Reports"
+              onClick={() => navigate('/incidents')}
               highlight={true}
             />
             <QuickActionButton
