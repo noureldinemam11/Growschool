@@ -185,9 +185,9 @@ export default function AuthPage() {
                 </CardContent>
                 <CardFooter className="flex justify-center pt-2 pb-4">
                   <Button 
-                    variant="link" 
+                    variant="outline"
                     onClick={() => setActiveTab("register")}
-                    className="text-primary hover:text-primary/80"
+                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-300 font-medium"
                   >
                     Don't have an account? Register
                   </Button>
@@ -408,9 +408,9 @@ export default function AuthPage() {
                 </CardContent>
                 <CardFooter className="flex justify-center pt-2 pb-4">
                   <Button 
-                    variant="link" 
+                    variant="outline"
                     onClick={() => setActiveTab("login")}
-                    className="text-primary hover:text-primary/80"
+                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-300 font-medium"
                   >
                     Already have an account? Login
                   </Button>
