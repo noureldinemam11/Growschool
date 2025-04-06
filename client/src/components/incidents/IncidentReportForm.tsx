@@ -38,7 +38,7 @@ import { CalendarIcon, Check, ChevronsUpDown, Loader2, AlertCircle, Search } fro
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { IncidentReport, InsertIncidentReport, User, incidentTypes } from "@shared/schema";
+import { IncidentReport, InsertIncidentReport, User, incidentTypes, actionTakenOptions } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { useIncidentReports } from "@/hooks/incident-report-context";
 import { Badge } from "@/components/ui/badge";
@@ -121,6 +121,7 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
     description: z.string().min(10, "Description must be at least 10 characters"),
     incidentDate: z.date().max(new Date(), "Incident date cannot be in the future"),
     studentIds: z.array(z.number()).min(1, "At least one student must be selected"),
+    actionTaken: z.string().optional(),
   });
   
   type FormValues = z.infer<typeof formSchema>;
@@ -131,6 +132,7 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
     description: report?.description || "",
     incidentDate: report ? new Date(report.incidentDate) : new Date(),
     studentIds: report?.studentIds || [],
+    actionTaken: report?.actionTaken || "",
   };
   
   const form = useForm<FormValues>({
@@ -394,6 +396,39 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
                   </FormControl>
                   <FormDescription>
                     Include relevant context and specific behaviors observed
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            {/* Action Taken by Teacher */}
+            <FormField
+              control={form.control}
+              name="actionTaken"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Action Taken by Teacher</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select action taken (if any)" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="none">No action taken</SelectItem>
+                      {actionTakenOptions.map(action => (
+                        <SelectItem key={action} value={action}>
+                          {action}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    What action did you take to address this behavior before escalating?
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

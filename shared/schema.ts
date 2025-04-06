@@ -102,6 +102,22 @@ export type IncidentStatus = typeof incidentStatuses[number];
 export const incidentTypes = ["disrespect", "fighting", "cheating", "bullying", "vandalism", "truancy", "classroom_disruption", "other"] as const;
 export type IncidentType = typeof incidentTypes[number];
 
+// Define action taken options based on incident types
+export const actionTakenOptions = [
+  "Verbal warning",
+  "Contacted parents",
+  "Detention assigned",
+  "In-class consequence",
+  "Behavior contract",
+  "Peer mediation",
+  "Counselor referral",
+  "Loss of privileges",
+  "Cooling off period",
+  "Restorative practice",
+  "Other"
+] as const;
+export type ActionTakenType = typeof actionTakenOptions[number];
+
 // Incident Reports
 export const incidentReports = pgTable("incident_reports", {
   id: serial("id").primaryKey(),
@@ -109,6 +125,7 @@ export const incidentReports = pgTable("incident_reports", {
   studentIds: jsonb("student_ids").notNull().$type<number[]>(), // Array of student IDs
   type: text("type", { enum: incidentTypes }).notNull(),
   description: text("description").notNull(),
+  actionTaken: text("action_taken"), // What action the teacher took before escalating
   status: text("status", { enum: incidentStatuses }).notNull().default("pending"),
   adminResponse: text("admin_response"),
   adminId: integer("admin_id").references(() => users.id),

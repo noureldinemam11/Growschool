@@ -1333,14 +1333,15 @@ export class DatabaseStorage implements IStorage {
         // Create the incident report using parameterized query
         const result = await client.query(
           `INSERT INTO incident_reports 
-           (teacher_id, student_ids, type, description, incident_date, attachment_url)
-           VALUES ($1, $2, $3, $4, $5, $6)
+           (teacher_id, student_ids, type, description, action_taken, incident_date, attachment_url)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
            RETURNING *`,
           [
             report.teacherId,
             JSON.stringify(report.studentIds),
             report.type,
             report.description,
+            report.actionTaken || null,
             report.incidentDate || new Date(),
             report.attachmentUrl || null
           ]
@@ -1397,6 +1398,7 @@ export class DatabaseStorage implements IStorage {
           studentIds: row.student_ids,
           type: row.type,
           description: row.description,
+          actionTaken: row.action_taken,
           status: row.status,
           adminResponse: row.admin_response,
           adminId: row.admin_id,
@@ -1433,6 +1435,7 @@ export class DatabaseStorage implements IStorage {
           studentIds: row.student_ids,
           type: row.type,
           description: row.description,
+          actionTaken: row.action_taken,
           status: row.status,
           adminResponse: row.admin_response,
           adminId: row.admin_id,
@@ -1469,6 +1472,7 @@ export class DatabaseStorage implements IStorage {
           studentIds: row.student_ids,
           type: row.type,
           description: row.description,
+          actionTaken: row.action_taken,
           status: row.status,
           adminResponse: row.admin_response,
           adminId: row.admin_id,
@@ -1503,6 +1507,7 @@ export class DatabaseStorage implements IStorage {
           studentIds: row.student_ids,
           type: row.type,
           description: row.description,
+          actionTaken: row.action_taken,
           status: row.status,
           adminResponse: row.admin_response,
           adminId: row.admin_id,
@@ -1544,6 +1549,7 @@ export class DatabaseStorage implements IStorage {
         if (reportUpdate.studentIds !== undefined) updateData.student_ids = reportUpdate.studentIds;
         if (reportUpdate.type !== undefined) updateData.type = reportUpdate.type;
         if (reportUpdate.description !== undefined) updateData.description = reportUpdate.description;
+        if (reportUpdate.actionTaken !== undefined) updateData.action_taken = reportUpdate.actionTaken;
         if (reportUpdate.status !== undefined) updateData.status = reportUpdate.status;
         if (reportUpdate.adminResponse !== undefined) updateData.admin_response = reportUpdate.adminResponse;
         if (reportUpdate.adminId !== undefined) updateData.admin_id = reportUpdate.adminId;
@@ -1575,6 +1581,7 @@ export class DatabaseStorage implements IStorage {
             studentIds: row.student_ids,
             type: row.type,
             description: row.description,
+            actionTaken: row.action_taken,
             status: row.status,
             adminResponse: row.admin_response,
             adminId: row.admin_id,
