@@ -23,6 +23,9 @@ import MobileNavbar from "@/components/layout/MobileNavbar";
 import AwardPointsModal from "@/components/modals/AwardPointsModal";
 import DeductPointsModal from "@/components/modals/DeductPointsModal";
 
+// Force cache refresh with version number
+console.log("App Version: 1.0.1 - Mobile UI Improvements");
+
 // Redirect component for simple routes
 function Redirect({ to }: { to: string }) {
   const [, navigate] = useLocation();
