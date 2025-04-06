@@ -3,7 +3,6 @@ import { IncidentReportProvider, useIncidentReports } from '@/hooks/incident-rep
 import IncidentReportsList from '@/components/incidents/IncidentReportsList';
 import IncidentReportForm from '@/components/incidents/IncidentReportForm';
 import IncidentReportDetail from '@/components/incidents/IncidentReportDetail';
-import { IncidentReportFilters, IncidentReportAnalytics } from '@/components/incidents/IncidentReportFilters';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
@@ -36,10 +35,6 @@ function IncidentReportsListPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Incident Reports</h1>
       </div>
-      
-      <IncidentReportFilters />
-      
-      {isAdmin && <IncidentReportAnalytics />}
       
       <IncidentReportsList />
     </>
