@@ -1,6 +1,4 @@
 import { useState } from "react";
-import { useIncidentReports, useDeleteIncidentReport } from "@/hooks/use-incident-reports";
-import { IncidentReport } from "@shared/schema";
 import { 
   Table, 
   TableBody, 
@@ -34,24 +32,33 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Eye, MoreVertical, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Eye, MoreVertical, Pencil, Trash2, Loader2, AlertCircle } from "lucide-react";
 import { Link } from "wouter";
 import { format } from "date-fns";
+import { useIncidentReports } from "@/hooks/incident-report-context";
 
 export default function IncidentReportsList() {
-  const { data: reports, isLoading } = useIncidentReports();
-  const deleteIncidentMutation = useDeleteIncidentReport();
+  const { 
+    filteredReports, 
+    isLoading, 
+    deleteReport, 
+    getTeacherName, 
+    getStudentNames
+  } = useIncidentReports();
   
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
 
   const handleDelete = async () => {
     if (deleteId !== null) {
       try {
-        await deleteIncidentMutation.mutateAsync(deleteId);
+        setIsDeleting(true);
+        await deleteReport(deleteId);
       } catch (error) {
         console.error("Error deleting incident report:", error);
       } finally {
+        setIsDeleting(false);
         setShowDeleteAlert(false);
         setDeleteId(null);
       }
@@ -85,21 +92,19 @@ export default function IncidentReportsList() {
     );
   }
 
-  if (!reports || reports.length === 0) {
+  if (filteredReports.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Incident Reports</CardTitle>
-          <CardDescription>No incident reports found</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center p-8">
-            <p className="text-muted-foreground mb-4">
-              No incident reports have been submitted yet.
+      <Card className="border border-dashed">
+        <CardContent className="p-8">
+          <div className="text-center">
+            <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground" />
+            <h3 className="mt-4 text-lg font-semibold">No Incident Reports Found</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {filteredReports.length === 0 ? "No incident reports match your current filters" : "No incident reports have been submitted yet."}
             </p>
-            <Link href="/incidents/new">
-              <Button>Submit New Report</Button>
-            </Link>
+            <Button className="mt-4" asChild>
+              <Link href="/incidents/new">Submit New Report</Link>
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -109,14 +114,14 @@ export default function IncidentReportsList() {
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
           <div>
             <CardTitle>Incident Reports</CardTitle>
-            <CardDescription>View and manage student behavior incidents</CardDescription>
+            <CardDescription>Showing {filteredReports.length} reports</CardDescription>
           </div>
-          <Link href="/incidents/new">
-            <Button>New Report</Button>
-          </Link>
+          <Button asChild>
+            <Link href="/incidents/new">New Report</Link>
+          </Button>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">
@@ -132,23 +137,21 @@ export default function IncidentReportsList() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {reports.map((report) => (
+                {filteredReports.map((report) => (
                   <TableRow key={report.id}>
                     <TableCell>
                       {format(new Date(report.incidentDate), "MMM d, yyyy")}
                     </TableCell>
                     <TableCell>{formatIncidentType(report.type)}</TableCell>
                     <TableCell>
-                      <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
-                        {report.studentIds.length} student{report.studentIds.length !== 1 ? "s" : ""}
-                      </span>
+                      {getStudentNames(report.studentIds)}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={getStatusColor(report.status)}>
                         {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
                       </Badge>
                     </TableCell>
-                    <TableCell>Teacher ID: {report.teacherId}</TableCell>
+                    <TableCell>{getTeacherName(report.teacherId)}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -192,7 +195,7 @@ export default function IncidentReportsList() {
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the
-              incident report and remove it from our servers.
+              incident report and remove it from the database.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -200,9 +203,9 @@ export default function IncidentReportsList() {
             <AlertDialogAction 
               onClick={handleDelete}
               className="bg-red-600 hover:bg-red-700"
-              disabled={deleteIncidentMutation.isPending}
+              disabled={isDeleting}
             >
-              {deleteIncidentMutation.isPending ? (
+              {isDeleting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Deleting...
