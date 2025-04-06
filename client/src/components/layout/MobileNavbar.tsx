@@ -7,7 +7,8 @@ import {
   Plus, 
   Award, 
   Settings, 
-  Menu 
+  Menu,
+  AlertTriangle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -115,6 +116,12 @@ export default function MobileNavbar() {
                   <Button variant="outline" className="w-full h-20 flex flex-col gap-2 items-center justify-center">
                     <FileText className="h-6 w-6 text-primary" />
                     <span>Reports</span>
+                  </Button>
+                </Link>
+                <Link href="/incidents" onClick={() => setIsDrawerOpen(false)}>
+                  <Button variant="outline" className="w-full h-20 flex flex-col gap-2 items-center justify-center">
+                    <AlertTriangle className="h-6 w-6 text-primary" />
+                    <span>Incidents</span>
                   </Button>
                 </Link>
                 {isAdmin && (

@@ -41,6 +41,8 @@ export default function AppHeader({
         navigate('/rewards');
       } else if (location.includes('/reports/')) {
         navigate('/reports');
+      } else if (location.includes('/incidents/')) {
+        navigate('/incidents');
       } else if (location.includes('/admin/')) {
         navigate('/admin');
       } else {

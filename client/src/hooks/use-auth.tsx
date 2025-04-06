@@ -4,29 +4,48 @@ import {
   useMutation,
   UseMutationResult,
 } from "@tanstack/react-query";
-import { insertUserSchema, User as SelectUser, InsertUser } from "@shared/schema";
+import { User, insertUserSchema } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
 
 type AuthContextType = {
-  user: SelectUser | null;
+  user: User | null;
   isLoading: boolean;
   error: Error | null;
-  loginMutation: UseMutationResult<SelectUser, Error, LoginData>;
+  loginMutation: UseMutationResult<User, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
-  registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
+  registerMutation: UseMutationResult<User, Error, RegisterData>;
 };
 
-type LoginData = Pick<InsertUser, "username" | "password">;
+const loginSchema = z.object({
+  username: z.string().min(1, "Username is required"),
+  password: z.string().min(1, "Password is required"),
+});
+
+// Add the confirmPassword field to the registration schema
+const registerSchema = z.object({
+  ...insertUserSchema.shape,
+  confirmPassword: z.string().min(1, "Confirm password is required"),
+}).refine((data: z.infer<typeof insertUserSchema> & { confirmPassword: string }) => {
+  return data.password === data.confirmPassword;
+}, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+type LoginData = z.infer<typeof loginSchema>;
+type RegisterData = z.infer<typeof registerSchema>;
 
 export const AuthContext = createContext<AuthContextType | null>(null);
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const {
     data: user,
     error,
     isLoading,
-  } = useQuery<SelectUser | null, Error>({
+  } = useQuery<User | null, Error>({
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
@@ -34,44 +53,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
       const res = await apiRequest("POST", "/api/login", credentials);
-      return await res.json();
+      const data = await res.json();
+      return data;
     },
-    onSuccess: (user: SelectUser) => {
+    onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
       toast({
         title: "Login successful",
-        description: `Welcome back, ${user.firstName}!`,
+        description: `Welcome back, ${user.firstName || user.username}!`,
       });
-      // Redirect to dashboard after login
-      window.location.href = "/";
     },
     onError: (error: Error) => {
       toast({
         title: "Login failed",
-        description: error.message,
+        description: error.message || "Invalid username or password",
         variant: "destructive",
       });
     },
   });
 
   const registerMutation = useMutation({
-    mutationFn: async (credentials: InsertUser) => {
-      const res = await apiRequest("POST", "/api/register", credentials);
-      return await res.json();
+    mutationFn: async (credentials: RegisterData) => {
+      // Remove confirmPassword before sending to API
+      const { confirmPassword, ...userData } = credentials;
+      const res = await apiRequest("POST", "/api/register", userData);
+      const data = await res.json();
+      return data;
     },
-    onSuccess: (user: SelectUser) => {
+    onSuccess: (user: User) => {
       queryClient.setQueryData(["/api/user"], user);
       toast({
         title: "Registration successful",
-        description: `Welcome to GrowSchool, ${user.firstName}!`,
+        description: `Welcome, ${user.firstName || user.username}!`,
       });
-      // Redirect to dashboard after registration
-      window.location.href = "/";
     },
     onError: (error: Error) => {
       toast({
         title: "Registration failed",
-        description: error.message,
+        description: error.message || "Failed to create account",
         variant: "destructive",
       });
     },
@@ -87,8 +106,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Logged out",
         description: "You have been successfully logged out.",
       });
-      // Redirect to auth page
-      window.location.href = "/auth";
     },
     onError: (error: Error) => {
       toast({

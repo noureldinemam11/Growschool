@@ -1,5 +1,14 @@
-import { users, houses, behaviorCategories, behaviorPoints, rewards, rewardRedemptions } from "@shared/schema";
-import type { User, InsertUser, House, InsertHouse, BehaviorCategory, InsertBehaviorCategory, BehaviorPoint, InsertBehaviorPoint, Reward, InsertReward, RewardRedemption, InsertRewardRedemption, UserRole } from "@shared/schema";
+import { users, houses, behaviorCategories, behaviorPoints, rewards, rewardRedemptions, incidentReports } from "@shared/schema";
+import type { 
+  User, InsertUser, House, InsertHouse, 
+  BehaviorCategory, InsertBehaviorCategory, 
+  BehaviorPoint, InsertBehaviorPoint, 
+  Reward, InsertReward, 
+  RewardRedemption, InsertRewardRedemption, 
+  IncidentReport, InsertIncidentReport, 
+  IncidentStatus, IncidentType,
+  UserRole 
+} from "@shared/schema";
 import createMemoryStore from "memorystore";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
@@ -74,6 +83,15 @@ export interface IStorage {
   getRewardRedemptionsByStudentId(studentId: number): Promise<RewardRedemption[]>;
   updateRewardRedemptionStatus(id: number, status: "pending" | "approved" | "delivered"): Promise<RewardRedemption | undefined>;
   
+  // Incident reports
+  createIncidentReport(report: InsertIncidentReport): Promise<IncidentReport>;
+  getIncidentReport(id: number): Promise<IncidentReport | undefined>;
+  getIncidentReportsByTeacherId(teacherId: number): Promise<IncidentReport[]>;
+  getIncidentReportsByStudentId(studentId: number): Promise<IncidentReport[]>;
+  getAllIncidentReports(): Promise<IncidentReport[]>;
+  updateIncidentReport(id: number, report: Partial<IncidentReport>): Promise<IncidentReport | undefined>;
+  deleteIncidentReport(id: number): Promise<boolean>;
+  
   // Session store
   sessionStore: any; // Using any for session store type to avoid compatibility issues
 }
@@ -85,6 +103,7 @@ export class MemStorage implements IStorage {
   private behaviorPoints: Map<number, BehaviorPoint>;
   private rewards: Map<number, Reward>;
   private rewardRedemptions: Map<number, RewardRedemption>;
+  private incidentReports: Map<number, IncidentReport>;
   
   sessionStore: any; // Using any instead of session.SessionStore
   
@@ -94,6 +113,7 @@ export class MemStorage implements IStorage {
   private pointCurrentId: number;
   private rewardCurrentId: number;
   private redemptionCurrentId: number;
+  private incidentCurrentId: number;
 
   constructor() {
     this.users = new Map();
@@ -102,6 +122,7 @@ export class MemStorage implements IStorage {
     this.behaviorPoints = new Map();
     this.rewards = new Map();
     this.rewardRedemptions = new Map();
+    this.incidentReports = new Map();
     
     this.userCurrentId = 1;
     this.houseCurrentId = 1;
@@ -109,6 +130,7 @@ export class MemStorage implements IStorage {
     this.pointCurrentId = 1;
     this.rewardCurrentId = 1;
     this.redemptionCurrentId = 1;
+    this.incidentCurrentId = 1;
     
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000 // 24 hours
@@ -476,6 +498,69 @@ export class MemStorage implements IStorage {
     const updatedRedemption = { ...redemption, status };
     this.rewardRedemptions.set(id, updatedRedemption);
     return updatedRedemption;
+  }
+  
+  // Incident report methods
+  async createIncidentReport(report: InsertIncidentReport): Promise<IncidentReport> {
+    const id = this.incidentCurrentId++;
+    // Convert studentIds to proper array if needed
+    const studentIdsArray = Array.isArray(report.studentIds) ? report.studentIds : [];
+    
+    const newReport: IncidentReport = {
+      id,
+      teacherId: report.teacherId,
+      studentIds: studentIdsArray,
+      type: report.type,
+      description: report.description,
+      status: "pending",
+      adminResponse: null,
+      adminId: null,
+      incidentDate: report.incidentDate || new Date(),
+      attachmentUrl: report.attachmentUrl || null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.incidentReports.set(id, newReport);
+    return newReport;
+  }
+  
+  async getIncidentReport(id: number): Promise<IncidentReport | undefined> {
+    return this.incidentReports.get(id);
+  }
+  
+  async getIncidentReportsByTeacherId(teacherId: number): Promise<IncidentReport[]> {
+    return Array.from(this.incidentReports.values())
+      .filter(report => report.teacherId === teacherId)
+      .sort((a, b) => b.incidentDate.getTime() - a.incidentDate.getTime());
+  }
+  
+  async getIncidentReportsByStudentId(studentId: number): Promise<IncidentReport[]> {
+    return Array.from(this.incidentReports.values())
+      .filter(report => report.studentIds.includes(studentId))
+      .sort((a, b) => b.incidentDate.getTime() - a.incidentDate.getTime());
+  }
+  
+  async getAllIncidentReports(): Promise<IncidentReport[]> {
+    return Array.from(this.incidentReports.values())
+      .sort((a, b) => b.incidentDate.getTime() - a.incidentDate.getTime());
+  }
+  
+  async updateIncidentReport(id: number, reportUpdate: Partial<IncidentReport>): Promise<IncidentReport | undefined> {
+    const report = this.incidentReports.get(id);
+    if (!report) return undefined;
+    
+    const updatedReport = { 
+      ...report, 
+      ...reportUpdate, 
+      updatedAt: new Date() 
+    };
+    this.incidentReports.set(id, updatedReport);
+    return updatedReport;
+  }
+  
+  async deleteIncidentReport(id: number): Promise<boolean> {
+    if (!this.incidentReports.has(id)) return false;
+    return this.incidentReports.delete(id);
   }
 }
 
@@ -1232,6 +1317,301 @@ export class DatabaseStorage implements IStorage {
       .where(eq(rewardRedemptions.id, id))
       .returning();
     return result[0] as RewardRedemption | undefined;
+  }
+  
+  // Incident report methods
+  async createIncidentReport(report: InsertIncidentReport): Promise<IncidentReport> {
+    try {
+      // Ensure studentIds is properly formatted as a JSON array
+      if (!Array.isArray(report.studentIds)) {
+        throw new Error('studentIds must be an array');
+      }
+
+      // Use a client connection for direct SQL control
+      const client = await pool.connect();
+      try {
+        // Create the incident report using parameterized query
+        const result = await client.query(
+          `INSERT INTO incident_reports 
+           (teacher_id, student_ids, type, description, incident_date, attachment_url)
+           VALUES ($1, $2, $3, $4, $5, $6)
+           RETURNING *`,
+          [
+            report.teacherId,
+            JSON.stringify(report.studentIds),
+            report.type,
+            report.description,
+            report.incidentDate || new Date(),
+            report.attachmentUrl || null
+          ]
+        );
+        
+        if (result.rows.length === 0) {
+          throw new Error('Failed to create incident report');
+        }
+        
+        // Transform the result back to camelCase
+        const row = result.rows[0];
+        return {
+          id: row.id,
+          teacherId: row.teacher_id,
+          studentIds: row.student_ids,
+          type: row.type,
+          description: row.description,
+          status: row.status,
+          adminResponse: row.admin_response,
+          adminId: row.admin_id,
+          incidentDate: row.incident_date,
+          attachmentUrl: row.attachment_url,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at
+        } as IncidentReport;
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error('Error creating incident report:', error);
+      throw error;
+    }
+  }
+  
+  async getIncidentReport(id: number): Promise<IncidentReport | undefined> {
+    try {
+      // Use a client connection for direct SQL control
+      const client = await pool.connect();
+      try {
+        const result = await client.query(
+          'SELECT * FROM incident_reports WHERE id = $1',
+          [id]
+        );
+        
+        if (result.rows.length === 0) {
+          return undefined;
+        }
+        
+        // Transform the snake_case column names to camelCase
+        const row = result.rows[0];
+        return {
+          id: row.id,
+          teacherId: row.teacher_id,
+          studentIds: row.student_ids,
+          type: row.type,
+          description: row.description,
+          status: row.status,
+          adminResponse: row.admin_response,
+          adminId: row.admin_id,
+          incidentDate: row.incident_date,
+          attachmentUrl: row.attachment_url,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at
+        } as IncidentReport;
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error(`Error retrieving incident report with ID ${id}:`, error);
+      throw error;
+    }
+  }
+  
+  async getIncidentReportsByTeacherId(teacherId: number): Promise<IncidentReport[]> {
+    try {
+      // Use a client connection to get direct SQL control 
+      const client = await pool.connect();
+      try {
+        const result = await client.query(
+          `SELECT * FROM incident_reports 
+           WHERE teacher_id = $1
+           ORDER BY incident_date DESC`,
+          [teacherId]
+        );
+        
+        // Transform the snake_case column names to camelCase
+        return result.rows.map(row => ({
+          id: row.id,
+          teacherId: row.teacher_id,
+          studentIds: row.student_ids,
+          type: row.type,
+          description: row.description,
+          status: row.status,
+          adminResponse: row.admin_response,
+          adminId: row.admin_id,
+          incidentDate: row.incident_date,
+          attachmentUrl: row.attachment_url,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at
+        })) as IncidentReport[];
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error(`Error retrieving incident reports for teacher ${teacherId}:`, error);
+      throw error;
+    }
+  }
+  
+  async getIncidentReportsByStudentId(studentId: number): Promise<IncidentReport[]> {
+    try {
+      // This is a bit more complex since studentIds is a JSON array
+      // We'll need to use a raw SQL query with a JSON containment check
+      const client = await pool.connect();
+      try {
+        const result = await client.query(
+          `SELECT * FROM incident_reports 
+           WHERE student_ids @> '[${studentId}]'::jsonb
+           ORDER BY incident_date DESC`
+        );
+        
+        // Transform the snake_case column names to camelCase
+        return result.rows.map(row => ({
+          id: row.id,
+          teacherId: row.teacher_id,
+          studentIds: row.student_ids,
+          type: row.type,
+          description: row.description,
+          status: row.status,
+          adminResponse: row.admin_response,
+          adminId: row.admin_id,
+          incidentDate: row.incident_date,
+          attachmentUrl: row.attachment_url,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at
+        })) as IncidentReport[];
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error(`Error retrieving incident reports for student ${studentId}:`, error);
+      throw error;
+    }
+  }
+  
+  async getAllIncidentReports(): Promise<IncidentReport[]> {
+    try {
+      // Use a client connection to get direct SQL control
+      const client = await pool.connect();
+      try {
+        const result = await client.query(
+          `SELECT * FROM incident_reports 
+           ORDER BY incident_date DESC`
+        );
+        
+        // Transform the snake_case column names to camelCase
+        return result.rows.map(row => ({
+          id: row.id,
+          teacherId: row.teacher_id,
+          studentIds: row.student_ids,
+          type: row.type,
+          description: row.description,
+          status: row.status,
+          adminResponse: row.admin_response,
+          adminId: row.admin_id,
+          incidentDate: row.incident_date,
+          attachmentUrl: row.attachment_url,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at
+        })) as IncidentReport[];
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error('Error retrieving all incident reports:', error);
+      throw error;
+    }
+  }
+  
+  async updateIncidentReport(id: number, reportUpdate: Partial<IncidentReport>): Promise<IncidentReport | undefined> {
+    try {
+      // Use a client connection for direct SQL control
+      const client = await pool.connect();
+      try {
+        // Start by getting the existing record
+        const getResult = await client.query(
+          'SELECT * FROM incident_reports WHERE id = $1',
+          [id]
+        );
+        
+        if (getResult.rows.length === 0) {
+          return undefined;
+        }
+        
+        // Prepare the update data, converting camelCase to snake_case
+        const updateData: Record<string, any> = {
+          updated_at: new Date()
+        };
+        
+        if (reportUpdate.teacherId !== undefined) updateData.teacher_id = reportUpdate.teacherId;
+        if (reportUpdate.studentIds !== undefined) updateData.student_ids = reportUpdate.studentIds;
+        if (reportUpdate.type !== undefined) updateData.type = reportUpdate.type;
+        if (reportUpdate.description !== undefined) updateData.description = reportUpdate.description;
+        if (reportUpdate.status !== undefined) updateData.status = reportUpdate.status;
+        if (reportUpdate.adminResponse !== undefined) updateData.admin_response = reportUpdate.adminResponse;
+        if (reportUpdate.adminId !== undefined) updateData.admin_id = reportUpdate.adminId;
+        if (reportUpdate.incidentDate !== undefined) updateData.incident_date = reportUpdate.incidentDate;
+        if (reportUpdate.attachmentUrl !== undefined) updateData.attachment_url = reportUpdate.attachmentUrl;
+        
+        // Build the SET clause for the SQL update
+        const setClause = Object.entries(updateData)
+          .map(([key, _], index) => `${key} = $${index + 2}`)
+          .join(', ');
+        
+        const values = [id, ...Object.values(updateData)];
+        
+        // Execute the update
+        const result = await client.query(
+          `UPDATE incident_reports 
+           SET ${setClause}
+           WHERE id = $1
+           RETURNING *`,
+          values
+        );
+        
+        // Transform the result back to camelCase
+        if (result.rows.length > 0) {
+          const row = result.rows[0];
+          return {
+            id: row.id,
+            teacherId: row.teacher_id,
+            studentIds: row.student_ids,
+            type: row.type,
+            description: row.description,
+            status: row.status,
+            adminResponse: row.admin_response,
+            adminId: row.admin_id,
+            incidentDate: row.incident_date,
+            attachmentUrl: row.attachment_url,
+            createdAt: row.created_at,
+            updatedAt: row.updated_at
+          } as IncidentReport;
+        }
+        
+        return undefined;
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error(`Error updating incident report ${id}:`, error);
+      throw error;
+    }
+  }
+  
+  async deleteIncidentReport(id: number): Promise<boolean> {
+    try {
+      // Use a client connection for direct SQL control
+      const client = await pool.connect();
+      try {
+        const result = await client.query(
+          'DELETE FROM incident_reports WHERE id = $1 RETURNING id',
+          [id]
+        );
+        return result.rows.length > 0;
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error(`Error deleting incident report ${id}:`, error);
+      throw error;
+    }
   }
 }
 

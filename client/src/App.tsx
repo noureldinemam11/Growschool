@@ -14,6 +14,7 @@ import PointsPage from "@/pages/points-page";
 import ProfilePage from "@/pages/profile-page";
 import ChangePasswordPage from "@/pages/change-password-page";
 import DebugPage from "@/pages/debug-page";
+import IncidentReportPage from "@/pages/incident-report-page";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "./hooks/use-auth";
 import { CelebrationProvider } from "./hooks/use-celebration";
@@ -110,6 +111,11 @@ function Router() {
         path="/debug" 
         component={DebugPage}
         allowedRoles={["admin"]}
+      />
+      <ProtectedRoute 
+        path="/incidents*" 
+        component={IncidentReportPage}
+        allowedRoles={["admin", "teacher"]}
       />
       <Route component={NotFound} />
     </Switch>

@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, uniqueIndex, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -95,6 +95,39 @@ export const rewardRedemptions = pgTable("reward_redemptions", {
 
 export const insertRewardRedemptionSchema = createInsertSchema(rewardRedemptions).omit({ id: true, timestamp: true, status: true });
 
+// Incident Report types and status
+export const incidentStatuses = ["pending", "resolved", "escalated"] as const;
+export type IncidentStatus = typeof incidentStatuses[number];
+
+export const incidentTypes = ["disrespect", "fighting", "cheating", "bullying", "vandalism", "truancy", "classroom_disruption", "other"] as const;
+export type IncidentType = typeof incidentTypes[number];
+
+// Incident Reports
+export const incidentReports = pgTable("incident_reports", {
+  id: serial("id").primaryKey(),
+  teacherId: integer("teacher_id").notNull().references(() => users.id),
+  studentIds: jsonb("student_ids").notNull().$type<number[]>(), // Array of student IDs
+  type: text("type", { enum: incidentTypes }).notNull(),
+  description: text("description").notNull(),
+  status: text("status", { enum: incidentStatuses }).notNull().default("pending"),
+  adminResponse: text("admin_response"),
+  adminId: integer("admin_id").references(() => users.id),
+  incidentDate: timestamp("incident_date").notNull().defaultNow(),
+  attachmentUrl: text("attachment_url"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertIncidentReportSchema = createInsertSchema(incidentReports)
+  .omit({ 
+    id: true, 
+    adminResponse: true, 
+    adminId: true, 
+    createdAt: true, 
+    updatedAt: true, 
+    status: true 
+  });
+
 // Data Types
 export type User = typeof users.$inferSelect & { classId?: number | null };
 export type InsertUser = z.infer<typeof insertUserSchema> & { classId?: number | null };
@@ -113,3 +146,6 @@ export type InsertReward = z.infer<typeof insertRewardSchema>;
 
 export type RewardRedemption = typeof rewardRedemptions.$inferSelect;
 export type InsertRewardRedemption = z.infer<typeof insertRewardRedemptionSchema>;
+
+export type IncidentReport = typeof incidentReports.$inferSelect;
+export type InsertIncidentReport = z.infer<typeof insertIncidentReportSchema>;

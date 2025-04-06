@@ -1630,6 +1630,183 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Incident Reports
+  app.get("/api/incident-reports", async (req, res) => {
+    if (!req.isAuthenticated() || !["admin", "teacher"].includes(req.user.role)) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    try {
+      let reports;
+
+      // If admin, get all incident reports
+      if (req.user.role === "admin") {
+        reports = await storage.getAllIncidentReports();
+      } else {
+        // If teacher, get only their incident reports
+        reports = await storage.getIncidentReportsByTeacherId(req.user.id);
+      }
+
+      res.json(reports);
+    } catch (error) {
+      console.error("Error fetching incident reports:", error);
+      res.status(500).json({ 
+        error: "Failed to fetch incident reports",
+        details: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+
+  app.get("/api/incident-reports/:id", async (req, res) => {
+    if (!req.isAuthenticated() || !["admin", "teacher"].includes(req.user.role)) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const reportId = Number(req.params.id);
+      const report = await storage.getIncidentReport(reportId);
+
+      if (!report) {
+        return res.status(404).json({ error: "Incident report not found" });
+      }
+
+      // Teachers can only view their own reports
+      if (req.user.role === "teacher" && report.teacherId !== req.user.id) {
+        return res.status(403).json({ error: "Unauthorized to view this incident report" });
+      }
+
+      res.json(report);
+    } catch (error) {
+      console.error("Error fetching incident report:", error);
+      res.status(500).json({ 
+        error: "Failed to fetch incident report",
+        details: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+
+  app.get("/api/incident-reports/student/:studentId", async (req, res) => {
+    if (!req.isAuthenticated() || !["admin", "teacher"].includes(req.user.role)) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const studentId = Number(req.params.studentId);
+      const reports = await storage.getIncidentReportsByStudentId(studentId);
+      
+      // Teachers can only view reports they submitted
+      if (req.user.role === "teacher") {
+        const filteredReports = reports.filter(report => report.teacherId === req.user.id);
+        return res.json(filteredReports);
+      }
+
+      res.json(reports);
+    } catch (error) {
+      console.error(`Error fetching incident reports for student ${req.params.studentId}:`, error);
+      res.status(500).json({ 
+        error: "Failed to fetch incident reports",
+        details: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+
+  app.post("/api/incident-reports", async (req, res) => {
+    if (!req.isAuthenticated() || !["admin", "teacher"].includes(req.user.role)) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    try {
+      // Set the teacherId to the current user's ID
+      const reportData = {
+        ...req.body,
+        teacherId: req.user.id
+      };
+
+      // Validate student IDs exist
+      if (!reportData.studentIds || !Array.isArray(reportData.studentIds) || reportData.studentIds.length === 0) {
+        return res.status(400).json({ error: "At least one student must be involved in the incident" });
+      }
+
+      const report = await storage.createIncidentReport(reportData);
+      res.status(201).json(report);
+    } catch (error) {
+      console.error("Error creating incident report:", error);
+      res.status(500).json({ 
+        error: "Failed to create incident report",
+        details: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+
+  app.patch("/api/incident-reports/:id", async (req, res) => {
+    if (!req.isAuthenticated() || !["admin", "teacher"].includes(req.user.role)) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const reportId = Number(req.params.id);
+      const report = await storage.getIncidentReport(reportId);
+
+      if (!report) {
+        return res.status(404).json({ error: "Incident report not found" });
+      }
+
+      // Only the teacher who created the report or an admin can update it
+      if (req.user.role === "teacher" && report.teacherId !== req.user.id) {
+        return res.status(403).json({ error: "Unauthorized to update this incident report" });
+      }
+
+      // If the update includes admin response, only admins can do this
+      if ((req.body.adminResponse || req.body.status) && req.user.role !== "admin") {
+        return res.status(403).json({ error: "Only administrators can update admin responses or status" });
+      }
+
+      // If admin is responding, set the adminId
+      const updateData = {...req.body};
+      if (req.user.role === "admin" && (updateData.adminResponse || updateData.status !== report.status)) {
+        updateData.adminId = req.user.id;
+      }
+
+      const updatedReport = await storage.updateIncidentReport(reportId, updateData);
+      res.json(updatedReport);
+    } catch (error) {
+      console.error(`Error updating incident report ${req.params.id}:`, error);
+      res.status(500).json({ 
+        error: "Failed to update incident report",
+        details: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+
+  app.delete("/api/incident-reports/:id", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.status(403).json({ error: "Only administrators can delete incident reports" });
+    }
+
+    try {
+      const reportId = Number(req.params.id);
+      const report = await storage.getIncidentReport(reportId);
+
+      if (!report) {
+        return res.status(404).json({ error: "Incident report not found" });
+      }
+
+      const deleted = await storage.deleteIncidentReport(reportId);
+      
+      if (deleted) {
+        res.json({ success: true, message: "Incident report deleted successfully" });
+      } else {
+        res.status(500).json({ error: "Failed to delete incident report" });
+      }
+    } catch (error) {
+      console.error(`Error deleting incident report ${req.params.id}:`, error);
+      res.status(500).json({ 
+        error: "Failed to delete incident report",
+        details: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
