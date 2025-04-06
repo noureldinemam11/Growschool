@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -48,6 +48,7 @@ import { format } from "date-fns";
 import { IncidentReport, InsertIncidentReport, User, incidentTypes } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { useIncidentReports } from "@/hooks/incident-report-context";
+import { useUsers } from "@/hooks/use-users";
 import { Badge } from "@/components/ui/badge";
 
 interface IncidentReportFormProps {
@@ -58,12 +59,23 @@ interface IncidentReportFormProps {
 export default function IncidentReportForm({ report, onSuccess }: IncidentReportFormProps) {
   const { user } = useAuth();
   const { createReport, updateReport, students } = useIncidentReports();
+  // Get students data from the incident report context instead
+  const { students: allStudents } = useIncidentReports();
+  
+  useEffect(() => {
+    console.log("Students loaded from context:", allStudents.length);
+  }, [allStudents.length]);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedStudentIds, setSelectedStudentIds] = useState<number[]>(
     report?.studentIds || []
   );
   const [studentsPopoverOpen, setStudentsPopoverOpen] = useState(false);
+  
+  useEffect(() => {
+    console.log("Available students:", allStudents.length, allStudents);
+    console.log("Context students:", students.length, students);
+  }, [allStudents, students]);
   
   // Create a form schema based on our InsertIncidentReport type
   const formSchema = z.object({
@@ -253,7 +265,7 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
                         <CommandInput placeholder="Search students..." />
                         <CommandEmpty>No students found.</CommandEmpty>
                         <CommandGroup className="max-h-64 overflow-auto">
-                          {students.map((student) => (
+                          {allStudents.map((student) => (
                             <CommandItem
                               key={student.id}
                               value={student.id.toString()}
@@ -286,7 +298,7 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
                   {selectedStudentIds.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-2">
                       {selectedStudentIds.map(id => {
-                        const student = students.find(s => s.id === id);
+                        const student = allStudents.find(s => s.id === id);
                         return (
                           <Badge 
                             key={id} 

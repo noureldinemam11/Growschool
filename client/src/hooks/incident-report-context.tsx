@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext, useState, useMemo } from "react";
+import { createContext, ReactNode, useContext, useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, UseQueryResult } from "@tanstack/react-query";
 import { IncidentReport, InsertIncidentReport, User } from "@shared/schema";
 import { apiRequest, queryClient } from "../lib/queryClient";
@@ -62,8 +62,22 @@ export function IncidentReportProvider({ children }: { children: ReactNode }) {
   });
 
   // Fetch users for reference
-  const { data: students = [] } = useUsers('student');
-  const { data: teachers = [] } = useUsers('teacher');
+  const studentsQuery = useUsers('student');
+  const teachersQuery = useUsers('teacher');
+  
+  // Ensure we always have arrays even if the API returns null/undefined
+  const students = studentsQuery.data || [];
+  const teachers = teachersQuery.data || [];
+  
+  // Log any errors with fetching data
+  useEffect(() => {
+    if (studentsQuery.error) {
+      console.error("Error loading student data:", studentsQuery.error);
+    }
+    if (teachersQuery.error) {
+      console.error("Error loading teacher data:", teachersQuery.error);
+    }
+  }, [studentsQuery.error, teachersQuery.error]);
 
   // Filter reports based on current filters
   const filteredReports = useMemo(() => {
