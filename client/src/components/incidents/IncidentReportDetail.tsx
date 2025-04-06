@@ -33,11 +33,13 @@ export default function IncidentReportDetail({ id }: { id: number }) {
     getReportById, 
     isLoading, 
     deleteReport, 
+    updateReport,
     getTeacherName,
     students 
   } = useIncidentReports();
   
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   
   const report = getReportById(id);
@@ -66,6 +68,34 @@ export default function IncidentReportDetail({ id }: { id: number }) {
       console.error("Error deleting incident report:", error);
       setIsDeleting(false);
       setShowDeleteAlert(false);
+    }
+  };
+  
+  const handleResolve = async () => {
+    try {
+      setIsUpdating(true);
+      await updateReport(id, { 
+        status: "resolved",
+        adminId: user?.id
+      });
+      setIsUpdating(false);
+    } catch (error) {
+      console.error("Error resolving incident report:", error);
+      setIsUpdating(false);
+    }
+  };
+  
+  const handleEscalate = async () => {
+    try {
+      setIsUpdating(true);
+      await updateReport(id, { 
+        status: "escalated",
+        adminId: user?.id 
+      });
+      setIsUpdating(false);
+    } catch (error) {
+      console.error("Error escalating incident report:", error);
+      setIsUpdating(false);
     }
   };
   
@@ -202,15 +232,33 @@ export default function IncidentReportDetail({ id }: { id: number }) {
           
           {isAdmin && report.status === "pending" && (
             <div className="flex space-x-2">
-              <Button variant="outline" asChild>
-                <a href={`/incidents/${id}/edit`}>
-                  Mark as Resolved
-                </a>
+              <Button 
+                variant="outline" 
+                onClick={handleResolve}
+                disabled={isUpdating}
+              >
+                {isUpdating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  "Mark as Resolved"
+                )}
               </Button>
-              <Button variant="destructive" asChild>
-                <a href={`/incidents/${id}/edit`}>
-                  Escalate
-                </a>
+              <Button 
+                variant="destructive" 
+                onClick={handleEscalate}
+                disabled={isUpdating}
+              >
+                {isUpdating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  "Escalate"
+                )}
               </Button>
             </div>
           )}
