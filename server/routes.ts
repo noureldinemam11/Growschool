@@ -825,6 +825,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Users
+  // Handle requests without a role parameter
+  app.get("/api/users/role", async (req, res) => {
+    if (!req.isAuthenticated() || !["admin", "teacher"].includes(req.user.role)) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+    
+    return res.status(400).json({ error: "Role parameter is required" });
+  });
+  
   app.get("/api/users/role/:role", async (req, res) => {
     if (!req.isAuthenticated() || !["admin", "teacher"].includes(req.user.role)) {
       return res.status(403).json({ error: "Unauthorized" });

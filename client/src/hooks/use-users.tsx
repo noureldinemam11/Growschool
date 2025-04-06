@@ -7,7 +7,8 @@ import { User } from "@shared/schema";
 export function useUsers(role: 'admin' | 'teacher' | 'student' | 'parent' | string): UseQueryResult<User[], Error> {
   return useQuery({
     queryKey: ['/api/users/role', role],
-    enabled: !!role,
+    // Only enable the query if role is provided and is not empty
+    enabled: !!role && role.trim() !== '',
   });
 }
 
