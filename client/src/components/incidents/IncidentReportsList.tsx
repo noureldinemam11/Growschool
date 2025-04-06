@@ -138,7 +138,11 @@ export default function IncidentReportsList() {
               </TableHeader>
               <TableBody>
                 {filteredReports.map((report) => (
-                  <TableRow key={report.id}>
+                  <TableRow 
+                    key={report.id} 
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => window.location.href = `/incidents/${report.id}`}
+                  >
                     <TableCell>
                       {format(new Date(report.incidentDate), "MMM d, yyyy")}
                     </TableCell>
@@ -152,7 +156,7 @@ export default function IncidentReportsList() {
                       </Badge>
                     </TableCell>
                     <TableCell>{getTeacherName(report.teacherId)}</TableCell>
-                    <TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-8 w-8 p-0">

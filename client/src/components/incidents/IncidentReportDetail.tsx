@@ -199,6 +199,21 @@ export default function IncidentReportDetail({ id }: { id: number }) {
             </div>
           </div>
           
+          <div>
+            <h3 className="text-lg font-medium mb-2">Action Taken by Teacher</h3>
+            <div className="p-4 bg-muted rounded-md">
+              {report.actionTaken ? (
+                report.actionTaken === "none" ? (
+                  <span className="text-muted-foreground">No action was taken before escalation</span>
+                ) : (
+                  <span>{report.actionTaken}</span>
+                )
+              ) : (
+                <span className="text-muted-foreground">Not specified</span>
+              )}
+            </div>
+          </div>
+          
           {isAdmin && (
             <>
               <Separator />
