@@ -15,10 +15,18 @@ interface BehaviorCategoryGroupProps {
 }
 
 function BehaviorCategoryGroup({ title, children, onToggle, isHidden = false }: BehaviorCategoryGroupProps) {
+  // Determine if this group is for positive or negative behaviors
+  const isPositiveGroup = title.toLowerCase().includes('positive');
+  
+  // Set styles based on positive or negative group
+  const headerColor = isPositiveGroup ? 'text-green-700' : 'text-red-700';
+  const bgColor = isPositiveGroup ? 'bg-green-50' : 'bg-red-50';
+  const borderColor = isPositiveGroup ? 'border-green-200' : 'border-red-200';
+  
   return (
-    <div className="mb-8 bg-gray-50 p-4 rounded-lg">
+    <div className={`mb-8 ${bgColor} p-4 rounded-lg border ${borderColor}`}>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-base font-medium text-gray-700">{title}</h2>
+        <h2 className={`text-base font-medium ${headerColor}`}>{title}</h2>
         {onToggle && (
           <Button 
             variant="link" 
@@ -46,16 +54,30 @@ interface PointOptionProps {
   onClick: () => void;
   isSelected: boolean;
   categoryId: number;
+  isPositive: boolean;
 }
 
-function PointOption({ icon, title, points, description, onClick, isSelected, categoryId }: PointOptionProps) {
+function PointOption({ icon, title, points = 0, description, onClick, isSelected, categoryId, isPositive }: PointOptionProps) {
+  // Use green for positive categories and red for negative categories
+  const colorClasses = isPositive
+    ? {
+        ring: "focus:ring-green-300",
+        selected: "bg-green-500 text-white",
+        unselected: "bg-white border-2 border-green-500 text-green-500 hover:bg-green-50"
+      }
+    : {
+        ring: "focus:ring-red-300",
+        selected: "bg-red-500 text-white",
+        unselected: "bg-white border-2 border-red-500 text-red-500 hover:bg-red-50"
+      };
+
   return (
     <div className="flex flex-col items-center">
       <button 
-        className={`w-16 h-16 rounded-full flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-green-300 ${
+        className={`w-16 h-16 rounded-full flex items-center justify-center focus:outline-none focus:ring-2 ${colorClasses.ring} ${
           isSelected 
-            ? "bg-green-500 text-white" 
-            : "bg-white border-2 border-green-500 text-green-500 hover:bg-green-50"
+            ? colorClasses.selected 
+            : colorClasses.unselected
         }`}
         onClick={onClick}
       >
@@ -67,7 +89,9 @@ function PointOption({ icon, title, points, description, onClick, isSelected, ca
       </button>
       <div className="text-center mt-2">
         <div className="text-sm font-medium">{title}</div>
-        <div className="text-xs text-gray-500">{points} {points === 1 ? 'point' : 'points'}</div>
+        <div className={`text-xs ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+          {isPositive ? '+' : '-'}{Math.abs(points)} {Math.abs(points) === 1 ? 'point' : 'points'}
+        </div>
       </div>
     </div>
   );
@@ -97,50 +121,50 @@ export default function BehaviorCategoriesView({
     queryKey: ['/api/behavior-categories'],
   });
 
-  // Group categories by type - note: the API doesn't provide a type field yet, so we'll use a dummy implementation
+  // Group categories by positive or negative behavior
   const groupedCategories = categories?.reduce<{[key: string]: BehaviorCategory[]}>((groups, category) => {
-    // Since the behavior categories don't have a type field yet, we'll assign them to groups
-    // based on their name for demo purposes
-    let groupName = 'Other';
-    
-    if (category.name.toLowerCase().includes('academic')) {
-      groupName = 'Academic Excellence';
-    } else if (category.name.toLowerCase().includes('behavior')) {
-      groupName = 'Behavior';
-    } else if (category.name.toLowerCase().includes('transition')) {
-      groupName = 'Transitions';
-    }
+    // Group categories by positive and negative
+    const groupName = category.isPositive ? 'Positive Behaviors' : 'Negative Behaviors';
     
     if (!groups[groupName]) {
       groups[groupName] = [];
     }
-    groups[groupName].push(category);
+    
+    // Ensure 'isPositive' property is included
+    const categoryWithIsPositive = {
+      ...category,
+      isPositive: !!category.isPositive, // Ensure boolean type
+    };
+    
+    groups[groupName].push(categoryWithIsPositive);
     return groups;
   }, {}) || {};
   
-  // For demonstration, we'll use some example groups if we don't have proper categories with types
+  // Sort the categories so Positive Behaviors appears first
+  const sortedGroupedCategories: {[key: string]: BehaviorCategory[]} = {};
+  if (groupedCategories['Positive Behaviors']) {
+    sortedGroupedCategories['Positive Behaviors'] = groupedCategories['Positive Behaviors'];
+  }
+  if (groupedCategories['Negative Behaviors']) {
+    sortedGroupedCategories['Negative Behaviors'] = groupedCategories['Negative Behaviors'];
+  }
+  
+  // For demonstration purposes only, use example groups if categories are not available
   const demoGroups = {
-    'Transitions': [
-      { id: 101, name: '1 minute', points: 3, type: 'Transitions' },
-      { id: 102, name: '2 minutes', points: 2, type: 'Transitions' },
-      { id: 103, name: '3 minutes', points: 1, type: 'Transitions' },
-      { id: 104, name: 'Bonus Points', points: 2, type: 'Transitions' },
+    'Positive Behaviors': [
+      { id: 101, name: 'Academic Excellence', pointValue: 3, isPositive: true },
+      { id: 102, name: 'Helping Others', pointValue: 2, isPositive: true },
+      { id: 103, name: 'Great Effort', pointValue: 1, isPositive: true },
     ],
-    'Seated in the class and ready': [
-      { id: 201, name: '1 minute', points: 3, type: 'Seated' },
-      { id: 202, name: '2 minutes', points: 2, type: 'Seated' },
-      { id: 203, name: '3 minutes', points: 1, type: 'Seated' },
-      { id: 204, name: 'Bonus Points', points: 2, type: 'Seated' },
-    ],
-    'Achieve3000 Reading Competition': [
-      { id: 301, name: '75 percent or above', points: 2, type: 'Reading' },
-      { id: 302, name: 'Met target', points: 1, type: 'Reading' },
-      { id: 303, name: '90 percent', points: 3, type: 'Reading' },
-    ],
+    'Negative Behaviors': [
+      { id: 201, name: 'Disruptive Behavior', pointValue: -2, isPositive: false },
+      { id: 202, name: 'Late to Class', pointValue: -1, isPositive: false },
+      { id: 203, name: 'Missing Assignment', pointValue: -1, isPositive: false },
+    ]
   };
 
   // Use the API groups if available, otherwise fall back to demo groups
-  const displayGroups = Object.keys(groupedCategories).length > 0 ? groupedCategories : demoGroups;
+  const displayGroups = Object.keys(groupedCategories).length > 0 ? sortedGroupedCategories : demoGroups;
 
   const toggleCategoryGroup = (groupName: string) => {
     setSelectedCategoryGroups({
@@ -338,9 +362,9 @@ export default function BehaviorCategoriesView({
             : studentName}
         </h2>
         
-        {totalPoints > 0 && (
-          <div className="text-green-600 font-medium">
-            Selected: {totalPoints} points{isBatchMode ? ` × ${batchStudentCount} students` : ''}
+        {totalPoints !== 0 && (
+          <div className={`font-medium ${totalPoints > 0 ? 'text-green-600' : 'text-red-600'}`}>
+            Selected: {totalPoints > 0 ? '+' : ''}{totalPoints} points{isBatchMode ? ` × ${batchStudentCount} students` : ''}
           </div>
         )}
       </div>
@@ -358,9 +382,10 @@ export default function BehaviorCategoriesView({
               key={category.id}
               categoryId={category.id}
               title={category.name}
-              points={category.points}
+              points={category.pointValue || category.points}
               isSelected={!!selectedCategories[category.id]}
               onClick={() => toggleCategorySelection(category)}
+              isPositive={category.isPositive}
             />
           ))}
         </BehaviorCategoryGroup>
@@ -369,16 +394,18 @@ export default function BehaviorCategoriesView({
       {/* Fixed bottom toolbar - enhanced visibility for mobile */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 flex justify-center z-50">
         <Button 
-          variant="default"
+          variant={totalPoints < 0 ? "destructive" : "default"}
           size="lg"
-          className="w-full h-14 text-lg font-bold flex items-center justify-center shadow-lg"
+          className={`w-full h-14 text-lg font-bold flex items-center justify-center shadow-lg ${
+            totalPoints === 0 ? '' : (totalPoints > 0 ? 'bg-green-600 hover:bg-green-700' : '')
+          }`}
           onClick={handleSubmitAll}
           disabled={totalPoints === 0}
         >
           <Check className="mr-2 h-6 w-6" />
           <span>
-            {totalPoints > 0 
-              ? `Submit Points (${totalPoints} total)` 
+            {totalPoints !== 0 
+              ? `Submit Points (${totalPoints > 0 ? '+' : ''}${totalPoints} total)` 
               : "Submit Points"}
           </span>
         </Button>
