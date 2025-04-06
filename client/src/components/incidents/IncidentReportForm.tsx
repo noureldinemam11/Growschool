@@ -30,25 +30,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, Check, ChevronsUpDown, Loader2, AlertCircle } from "lucide-react";
+import { CalendarIcon, Check, ChevronsUpDown, Loader2, AlertCircle, Search } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { IncidentReport, InsertIncidentReport, User, incidentTypes } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { useIncidentReports } from "@/hooks/incident-report-context";
-import { useUsers } from "@/hooks/use-users";
 import { Badge } from "@/components/ui/badge";
 
 interface IncidentReportFormProps {
@@ -174,13 +166,17 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
   };
   
   const toggleStudent = (studentId: number) => {
-    if (selectedStudentIds.includes(studentId)) {
-      setSelectedStudentIds(selectedStudentIds.filter(id => id !== studentId));
-      form.setValue("studentIds", selectedStudentIds.filter(id => id !== studentId));
-    } else {
-      setSelectedStudentIds([...selectedStudentIds, studentId]);
-      form.setValue("studentIds", [...selectedStudentIds, studentId]);
-    }
+    setSelectedStudentIds(prevIds => {
+      if (prevIds.includes(studentId)) {
+        const newIds = prevIds.filter(id => id !== studentId);
+        form.setValue("studentIds", newIds);
+        return newIds;
+      } else {
+        const newIds = [...prevIds, studentId];
+        form.setValue("studentIds", newIds);
+        return newIds;
+      }
+    });
   };
   
   // Helper function to format incident type for display
@@ -307,40 +303,50 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
                       </FormControl>
                     </PopoverTrigger>
                     <PopoverContent className="w-full p-0">
-                      <Command>
-                        <CommandInput 
-                          placeholder="Search students..." 
-                          value={searchQuery}
-                          onValueChange={handleSearch}
-                        />
-                        <CommandEmpty>No students found.</CommandEmpty>
-                        <CommandGroup className="max-h-64 overflow-auto">
-                          {filteredStudents.map((student) => (
-                            <CommandItem
-                              key={student.id}
-                              value={student.id.toString()}
-                              onSelect={() => {
-                                toggleStudent(student.id);
-                              }}
-                            >
-                              <Check
+                      <div className="flex flex-col">
+                        <div className="flex items-center border-b px-3">
+                          <Search className="mr-2 h-4 w-4 opacity-50" />
+                          <input
+                            className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                            placeholder="Search students..."
+                            value={searchQuery}
+                            onChange={(e) => handleSearch(e.target.value)}
+                          />
+                        </div>
+                        
+                        {filteredStudents.length === 0 ? (
+                          <div className="py-6 text-center text-sm">No students found.</div>
+                        ) : (
+                          <div className="max-h-64 overflow-auto p-1">
+                            {filteredStudents.map((student) => (
+                              <div
+                                key={student.id}
                                 className={cn(
-                                  "mr-2 h-4 w-4",
-                                  selectedStudentIds.includes(student.id)
-                                    ? "opacity-100"
-                                    : "opacity-0"
+                                  "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none",
+                                  "hover:bg-accent hover:text-accent-foreground",
+                                  selectedStudentIds.includes(student.id) && "bg-accent/50"
                                 )}
-                              />
-                              {student.firstName} {student.lastName}
-                              {student.gradeLevel && (
-                                <span className="ml-2 text-muted-foreground text-xs">
-                                  (Grade: {student.gradeLevel})
-                                </span>
-                              )}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </Command>
+                                onClick={() => toggleStudent(student.id)}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    selectedStudentIds.includes(student.id)
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  )}
+                                />
+                                <span>{student.firstName} {student.lastName}</span>
+                                {student.gradeLevel && (
+                                  <span className="ml-2 text-muted-foreground text-xs">
+                                    (Grade: {student.gradeLevel})
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </PopoverContent>
                   </Popover>
                   
