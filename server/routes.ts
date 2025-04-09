@@ -148,8 +148,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Specific routes need to come before parameterized routes
   app.get("/api/classes", async (req, res) => {
     try {
-      const classes = await storage.getAllClasses();
-      res.json(classes);
+      const podId = req.query.podId ? parseInt(req.query.podId as string) : null;
+      
+      if (podId) {
+        // If podId provided, return classes for specific pod
+        const classes = await storage.getClassesByPodId(podId);
+        res.json(classes);
+      } else {
+        // Otherwise return all classes
+        const classes = await storage.getAllClasses();
+        res.json(classes);
+      }
     } catch (error) {
       console.error("Error fetching classes:", error);
       res.status(500).json({ error: "Failed to fetch classes" });

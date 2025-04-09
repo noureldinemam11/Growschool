@@ -61,11 +61,11 @@ export interface IStorage {
   
   // Class management
   getClass(id: number): Promise<Class | undefined>;
-  getClassesByPodId(podId: number): Promise<Class[]>;
   createClass(classObj: InsertClass): Promise<Class>;
   updateClass(id: number, classObj: Partial<Class>): Promise<Class | undefined>;
   deleteClass(id: number): Promise<boolean>;
   getAllClasses(): Promise<Class[]>;
+  getClassesByPodId(podId: number): Promise<Class[]>;
   getClassPoints(): Promise<Record<number, number>>;
   
   // Behavior categories
@@ -397,6 +397,12 @@ export class MemStorage implements IStorage {
   
   async getAllClasses(): Promise<Class[]> {
     return Array.from(this.classes.values());
+  }
+  
+  async getClassesByPodId(podId: number): Promise<Class[]> {
+    return Array.from(this.classes.values()).filter(cls => 
+      cls.podId === podId
+    );
   }
   
   async getClassPoints(): Promise<Record<number, number>> {
@@ -952,6 +958,17 @@ export class DatabaseStorage implements IStorage {
       return await db.select().from(classes);
     } catch (error) {
       console.error('Error in getAllClasses:', error);
+      throw error;
+    }
+  }
+  
+  async getClassesByPodId(podId: number): Promise<Class[]> {
+    try {
+      return await db.select()
+        .from(classes)
+        .where(eq(classes.podId, podId));
+    } catch (error) {
+      console.error(`Error in getClassesByPodId for podId ${podId}:`, error);
       throw error;
     }
   }

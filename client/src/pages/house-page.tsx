@@ -51,6 +51,54 @@ export default function PodPage() {
     refetchInterval: 2000, // Refresh every 2 seconds to keep data in sync
   });
   
+  // State for classes in the selected pod
+  const [classes, setClasses] = useState<any[]>([]);
+  const [isLoadingClasses, setIsLoadingClasses] = useState(true);
+  const [classPoints, setClassPoints] = useState<Record<number, number>>({});
+  const [isLoadingClassPoints, setIsLoadingClassPoints] = useState(true);
+  
+  // Get pod ID from URL query params
+  const params = new URLSearchParams(window.location.search);
+  const podId = params.get('pod') ? parseInt(params.get('pod') as string) : null;
+      
+  // Get the selected pod, if any
+  const selectedPod = podId && pods ? pods.find(p => p.id === podId) : null;
+  
+  // Fetch classes for the selected pod
+  useEffect(() => {
+    if (podId) {
+      setIsLoadingClasses(true);
+      fetch(`/api/classes?podId=${podId}`)
+        .then(res => res.json())
+        .then(data => {
+          setClasses(data);
+          setIsLoadingClasses(false);
+        })
+        .catch(err => {
+          console.error("Error fetching classes for pod:", err);
+          setIsLoadingClasses(false);
+        });
+    }
+  }, [podId]);
+  
+  // Fetch class points
+  useEffect(() => {
+    if (classes.length > 0) {
+      setIsLoadingClassPoints(true);
+      // Fetch class points from API
+      fetch(`/api/classes/points`)
+        .then(res => res.json())
+        .then(data => {
+          setClassPoints(data);
+          setIsLoadingClassPoints(false);
+        })
+        .catch(err => {
+          console.error("Error fetching class points:", err);
+          setIsLoadingClassPoints(false);
+        });
+    }
+  }, [classes]);
+  
   // Define an interface for the top student data
   interface TopStudentData {
     podId: number;
@@ -252,7 +300,11 @@ export default function PodPage() {
                             </button>
                           </div>
                         )}
-                        <h2 className="text-2xl font-bold text-gray-800">Pod Points Dashboard</h2>
+                        <h2 className="text-2xl font-bold text-gray-800">
+                          {selectedPod 
+                            ? `${selectedPod.name} - Classes Dashboard` 
+                            : "Pod Classes Dashboard"}
+                        </h2>
                       </div>
                       <button 
                         onClick={() => setIsFullscreen(!isFullscreen)}
@@ -266,84 +318,76 @@ export default function PodPage() {
                       </button>
                     </div>
                     
-                    {/* Colorful pods grid - Make cards larger when in fullscreen mode */}
+                    {/* Classes grid for selected pod - Make cards larger when in fullscreen mode */}
                     <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 ${isFullscreen ? 'lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6' : ''}`}>
-                      {pods?.map((pod, index) => {
-                        // Generate a vibrant color for each pod based on its index
-                        const colors = [
-                          'bg-gradient-to-br from-green-300 to-green-400',
-                          'bg-gradient-to-br from-pink-400 to-pink-500',
-                          'bg-gradient-to-br from-amber-300 to-amber-400',
-                          'bg-gradient-to-br from-yellow-300 to-yellow-400',
-                          'bg-gradient-to-br from-yellow-400 to-orange-400',
-                          'bg-gradient-to-br from-blue-300 to-blue-400',
-                          'bg-gradient-to-br from-red-400 to-red-500',
-                          'bg-gradient-to-br from-lime-300 to-lime-400',
-                          'bg-gradient-to-br from-purple-300 to-purple-400',
-                          'bg-gradient-to-br from-teal-300 to-teal-400',
-                          'bg-gradient-to-br from-cyan-300 to-cyan-400',
-                          'bg-gradient-to-br from-amber-600 to-amber-700',
-                        ];
-                        
-                        // Alternate colors based on index
-                        const colorClass = colors[index % colors.length];
-                        
-                        return (
-                          <div 
-                            key={pod.id} 
-                            className={`${colorClass} rounded-lg shadow p-6 flex flex-col items-center justify-center text-center aspect-[3/2] transition-transform hover:scale-105 cursor-pointer`}
-                          >
-                            <div className={`text-blue-900 font-bold text-3xl md:text-4xl ${isFullscreen ? 'text-5xl md:text-6xl lg:text-7xl' : 'lg:text-5xl'} mb-2`}>
-                              {new Intl.NumberFormat().format(pod.points)}
-                            </div>
-                            <div className={`text-blue-900 font-medium ${isFullscreen ? 'text-xl' : ''}`}>
-                              {pod.name}
-                            </div>
-                            <div className={`text-blue-900/70 text-xs ${isFullscreen ? 'text-sm' : ''} mt-1`}>
-                              Total from all educators
-                            </div>
-
-                            {/* Show top student if available */}
-                            {topStudentsByPod && topStudentsByPod.length > 0 && (
-                              <>
-                                {(() => {
-                                  const podData = topStudentsByPod.find(p => p.podId === pod.id);
-                                  if (podData?.topStudent) {
-                                    return (
-                                      <div className="mt-3 pt-2 border-t border-blue-900/20 w-full flex flex-col items-center">
-                                        <div className={`bg-blue-900/20 px-3 py-0.5 rounded-full ${isFullscreen ? 'text-sm' : 'text-xs'} uppercase text-blue-900 font-bold tracking-wide mb-1.5`}>
-                                          Star Student
-                                        </div>
-                                        <div className="relative">
-                                          <div className={`text-blue-900 font-semibold ${isFullscreen ? 'text-base' : 'text-sm'} flex items-center justify-center`}>
-                                            <span className={`inline-block bg-blue-900/10 ${isFullscreen ? 'w-6 h-6' : 'w-5 h-5'} rounded-full flex items-center justify-center mr-1`}>
-                                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={isFullscreen ? 'w-4 h-4' : 'w-3 h-3'}>
-                                                <path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clipRule="evenodd" />
-                                              </svg>
-                                            </span>
-                                            {podData.topStudent.firstName} {podData.topStudent.lastName.charAt(0)}.
-                                          </div>
-                                          <div className="flex items-center justify-center mt-0.5">
-                                            <span className={`inline-block bg-blue-900/10 ${isFullscreen ? 'w-5 h-5' : 'w-4 h-4'} rounded-full flex items-center justify-center mr-1`}>
-                                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={isFullscreen ? 'w-3 h-3' : 'w-2.5 h-2.5'}>
-                                                <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
-                                              </svg>
-                                            </span>
-                                            <span className={`${isFullscreen ? 'text-sm' : 'text-xs'} font-semibold text-blue-900`}>
-                                              {podData.topStudent.totalPoints} points
-                                            </span>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    );
-                                  }
-                                  return null;
-                                })()}
-                              </>
-                            )}
-                          </div>
-                        );
-                      })}
+                      {/* Classes display section */}
+                      {!podId ? (
+                        <div className="col-span-full text-center py-10">
+                          <h3 className="text-lg font-semibold text-gray-700 mb-2">No Pod Selected</h3>
+                          <p className="text-gray-500 mb-4">Please select a pod to see classes within it</p>
+                          <Button onClick={() => setLocation('/pods')}>
+                            View All Pods
+                          </Button>
+                        </div>
+                      ) : isLoadingClasses ? (
+                        <div className="col-span-full flex justify-center items-center py-10">
+                          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        </div>
+                      ) : classes.length === 0 ? (
+                        <div className="col-span-full text-center py-10">
+                          <h3 className="text-lg font-semibold text-gray-700 mb-2">No Classes Found</h3>
+                          <p className="text-gray-500 mb-4">This pod doesn't have any classes assigned to it yet</p>
+                          <Button onClick={() => setLocation('/admin')}>
+                            Manage Classes
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          {classes.map((classItem, index) => {
+                            // Generate vibrant colors for the classes
+                            const colors = [
+                              'bg-gradient-to-br from-green-300 to-green-400',
+                              'bg-gradient-to-br from-pink-400 to-pink-500',
+                              'bg-gradient-to-br from-amber-300 to-amber-400',
+                              'bg-gradient-to-br from-yellow-300 to-yellow-400',
+                              'bg-gradient-to-br from-yellow-400 to-orange-400',
+                              'bg-gradient-to-br from-blue-300 to-blue-400',
+                              'bg-gradient-to-br from-red-400 to-red-500',
+                              'bg-gradient-to-br from-lime-300 to-lime-400',
+                              'bg-gradient-to-br from-purple-300 to-purple-400',
+                              'bg-gradient-to-br from-teal-300 to-teal-400',
+                              'bg-gradient-to-br from-cyan-300 to-cyan-400',
+                              'bg-gradient-to-br from-amber-600 to-amber-700',
+                            ];
+                            
+                            const colorClass = colors[index % colors.length];
+                            const classPoint = classPoints[classItem.id] || 0;
+                            
+                            return (
+                              <div 
+                                key={classItem.id} 
+                                className={`${colorClass} rounded-lg shadow p-6 flex flex-col items-center justify-center text-center aspect-[3/2] transition-transform hover:scale-105 cursor-pointer`}
+                              >
+                                {isLoadingClassPoints ? (
+                                  <Loader2 className="h-6 w-6 animate-spin text-blue-900" />
+                                ) : (
+                                  <>
+                                    <div className={`text-blue-900 font-bold text-3xl md:text-4xl ${isFullscreen ? 'text-5xl md:text-6xl lg:text-7xl' : 'lg:text-5xl'} mb-2`}>
+                                      {new Intl.NumberFormat().format(classPoint)}
+                                    </div>
+                                    <div className={`text-blue-900 font-medium ${isFullscreen ? 'text-xl' : ''}`}>
+                                      Class {classItem.name}
+                                    </div>
+                                    <div className={`text-blue-900/70 text-xs ${isFullscreen ? 'text-sm' : ''} mt-1`}>
+                                      Grade {classItem.gradeLevel}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
