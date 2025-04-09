@@ -17,6 +17,7 @@ export default function PointsPage() {
   const [selectedStudents, setSelectedStudents] = useState<number[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filterPod, setFilterPod] = useState<string>('all');
+  const [filterClass, setFilterClass] = useState<string>('all');
   const [selectedStudentForPoints, setSelectedStudentForPoints] = useState<number | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<User | null>(null);
   
@@ -37,12 +38,23 @@ export default function PointsPage() {
   const { data: pods, isLoading: loadingPods } = useQuery<any[]>({
     queryKey: ['/api/pods'],
   });
+  
+  // Fetch classes
+  const { data: classes, isLoading: loadingClasses } = useQuery<any[]>({
+    queryKey: ['/api/classes'],
+  });
 
   const filteredStudents = students?.filter(student => {
     // Apply pod filter
     if (filterPod !== 'all' && student.podId !== Number(filterPod)) {
       return false;
     }
+    
+    // Apply class filter
+    if (filterClass !== 'all' && student.classId !== Number(filterClass)) {
+      return false;
+    }
+    
     return true;
   });
 
@@ -133,6 +145,16 @@ export default function PointsPage() {
       localStorage.setItem('selectedStudentId', selectedStudent.id.toString());
     }
   }, [selectedStudent]);
+  
+  // Reset class filter when pod filter changes
+  useEffect(() => {
+    setFilterClass('all');
+  }, [filterPod]);
+  
+  // Filter classes based on selected pod
+  const filteredClasses = filterPod === 'all' 
+    ? classes 
+    : classes?.filter(cls => cls.podId === Number(filterPod));
 
   if (location.includes('/categories') && selectedStudent) {
     return (
@@ -185,6 +207,21 @@ export default function PointsPage() {
                 {pods?.map(pod => (
                   <SelectItem key={pod.id} value={pod.id.toString()}>
                     {pod.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <Select value={filterClass} onValueChange={setFilterClass}>
+              <SelectTrigger className="w-[140px]">
+                <Grid className="mr-2 h-4 w-4" />
+                <SelectValue placeholder="All Classes" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Classes</SelectItem>
+                {filteredClasses?.map(cls => (
+                  <SelectItem key={cls.id} value={cls.id.toString()}>
+                    {cls.name}
                   </SelectItem>
                 ))}
               </SelectContent>
