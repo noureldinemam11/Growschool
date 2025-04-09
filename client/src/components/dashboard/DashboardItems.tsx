@@ -243,9 +243,9 @@ export default function DashboardItems() {
         />
         <DashboardItem 
           icon={<Trophy size={32} />} 
-          title="House Points" 
-          description="Monitor house competition standings"
-          onClick={() => navigate('/house-points')}
+          title="Pod Points" 
+          description="Monitor pod competition standings"
+          onClick={() => navigate('/pod-points')}
           delay={2}
         />
       </div>

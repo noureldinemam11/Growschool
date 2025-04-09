@@ -10,7 +10,7 @@ import BehaviorAnalytics from '@/components/analytics/BehaviorAnalytics';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BehaviorPoint, House, User } from '@shared/schema';
+import { BehaviorPoint, Pod, User } from '@shared/schema';
 import { Loader2, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -33,25 +33,25 @@ function StudentPoints({ studentId }: { studentId: number | undefined }) {
   return <span>{total}</span>;
 }
 
-// Simple component to display house information
-function StudentHouse({ houseId }: { houseId: number }) {
-  const { data: houses } = useQuery<House[]>({
-    queryKey: ['/api/houses'],
+// Simple component to display pod information
+function StudentPod({ podId }: { podId: number }) {
+  const { data: pods } = useQuery<Pod[]>({
+    queryKey: ['/api/pods'],
     refetchInterval: 5000, // Refresh every 5 seconds
   });
   
-  if (!houses) return <span>House #{houseId}</span>;
+  if (!pods) return <span>Pod #{podId}</span>;
   
-  const house = houses.find(h => h.id === houseId);
-  if (!house) return <span>House #{houseId}</span>;
+  const pod = pods.find(p => p.id === podId);
+  if (!pod) return <span>Pod #{podId}</span>;
   
   return (
     <div className="flex items-center">
       <div 
         className="w-3 h-3 rounded-full mr-2" 
-        style={{ backgroundColor: house.color }}
+        style={{ backgroundColor: pod.color }}
       ></div>
-      <span>{house.name}</span>
+      <span>{pod.name}</span>
     </div>
   );
 }
@@ -69,8 +69,8 @@ export default function ReportsPage() {
   // State to force refetch
   const [refreshCounter, setRefreshCounter] = useState(0);
   
-  const { data: houses, isLoading: isLoadingHouses } = useQuery<House[]>({
-    queryKey: ['/api/houses', refreshCounter],
+  const { data: pods, isLoading: isLoadingPods } = useQuery<Pod[]>({
+    queryKey: ['/api/pods', refreshCounter],
     refetchInterval: 5000, // Refresh every 5 seconds
   });
 
@@ -134,7 +134,7 @@ export default function ReportsPage() {
               <Tabs defaultValue="behavior" value={reportType} onValueChange={setReportType} className="w-full">
                 <TabsList className="mb-4">
                   <TabsTrigger value="behavior">Behavior Analytics</TabsTrigger>
-                  <TabsTrigger value="houses">House Competition</TabsTrigger>
+                  <TabsTrigger value="pods">Pod Competition</TabsTrigger>
                   <TabsTrigger value="students">Student Performance</TabsTrigger>
                 </TabsList>
                 
@@ -184,36 +184,36 @@ export default function ReportsPage() {
                   </div>
                 </TabsContent>
                 
-                <TabsContent value="houses" className="space-y-6">
+                <TabsContent value="pods" className="space-y-6">
                   <Card>
                     <CardHeader>
-                      <CardTitle>House Points Comparison</CardTitle>
+                      <CardTitle>Pod Points Comparison</CardTitle>
                     </CardHeader>
                     <CardContent className="h-80">
-                      {isLoadingHouses ? (
+                      {isLoadingPods ? (
                         <div className="flex items-center justify-center h-full">
                           <Loader2 className="h-8 w-8 animate-spin text-primary" />
                         </div>
-                      ) : houses && houses.length > 0 ? (
+                      ) : pods && pods.length > 0 ? (
                         <div className="space-y-4">
-                          {houses.map(house => (
-                            <div key={house.id} className="space-y-1">
+                          {pods.map(pod => (
+                            <div key={pod.id} className="space-y-1">
                               <div className="flex justify-between items-center">
                                 <div className="flex items-center">
                                   <div 
                                     className="w-4 h-4 rounded-full mr-2" 
-                                    style={{ backgroundColor: house.color }}
+                                    style={{ backgroundColor: pod.color }}
                                   ></div>
-                                  <span className="font-medium">{house.name}</span>
+                                  <span className="font-medium">{pod.name}</span>
                                 </div>
-                                <span className="font-mono">{house.points.toLocaleString()}</span>
+                                <span className="font-mono">{pod.points.toLocaleString()}</span>
                               </div>
                               <div className="w-full bg-neutral-light rounded-full h-2.5">
                                 <div 
                                   className="h-2.5 rounded-full" 
                                   style={{ 
-                                    width: `${(house.points / Math.max(...houses.map(h => h.points))) * 100}%`,
-                                    backgroundColor: house.color 
+                                    width: `${(pod.points / Math.max(...pods.map(p => p.points))) * 100}%`,
+                                    backgroundColor: pod.color 
                                   }}
                                 ></div>
                               </div>
@@ -222,7 +222,7 @@ export default function ReportsPage() {
                         </div>
                       ) : (
                         <div className="flex items-center justify-center h-full">
-                          <p className="text-neutral-dark">No houses available</p>
+                          <p className="text-neutral-dark">No pods available</p>
                         </div>
                       )}
                     </CardContent>
@@ -230,11 +230,11 @@ export default function ReportsPage() {
                   
                   <Card>
                     <CardHeader>
-                      <CardTitle>House Points Over Time</CardTitle>
+                      <CardTitle>Pod Points Over Time</CardTitle>
                     </CardHeader>
                     <CardContent className="h-80">
                       <div className="flex items-center justify-center h-full">
-                        <p className="text-neutral-dark">Historical house data will be available soon.</p>
+                        <p className="text-neutral-dark">Historical pod data will be available soon.</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -257,7 +257,7 @@ export default function ReportsPage() {
                               <tr>
                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-dark uppercase tracking-wider">Student</th>
                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-dark uppercase tracking-wider">Grade</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-dark uppercase tracking-wider">House</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-dark uppercase tracking-wider">Pod</th>
                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-dark uppercase tracking-wider">Points</th>
                               </tr>
                             </thead>
@@ -283,7 +283,7 @@ export default function ReportsPage() {
                                     {student.gradeLevel}{student.section}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-darker">
-                                    {student.houseId ? <StudentHouse houseId={student.houseId} /> : <span>-</span>}
+                                    {student.podId ? <StudentPod podId={student.podId} /> : <span>-</span>}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm font-mono font-semibold text-primary">
                                     {student.id && <StudentPoints studentId={student.id} />}

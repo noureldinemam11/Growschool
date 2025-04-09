@@ -520,8 +520,8 @@ function AdminDashboard() {
               <div className="min-w-[140px] flex-shrink-0">
                 <QuickActionButton
                   icon={<Trophy className="h-5 w-5" />}
-                  label="House Points"
-                  onClick={() => navigate('/house/dashboard')}
+                  label="Pod Points"
+                  onClick={() => navigate('/pods')}
                   highlight={true}
                   className="w-full h-full"
                 />
@@ -565,8 +565,8 @@ function AdminDashboard() {
             />
             <QuickActionButton
               icon={<Trophy className="h-6 w-6" />}
-              label="House Points"
-              onClick={() => navigate('/house/dashboard')}
+              label="Pod Points"
+              onClick={() => navigate('/pods')}
               highlight={true}
               className="w-full h-full"
             />
@@ -1293,8 +1293,8 @@ function TeacherDashboard() {
             />
             <QuickActionButton
               icon={<Trophy className="h-6 w-6" />}
-              label="House Standings"
-              onClick={() => navigate('/house/dashboard')}
+              label="Pod Standings"
+              onClick={() => navigate('/pods')}
             />
             <QuickActionButton
               icon={<List className="h-6 w-6" />}
@@ -1406,11 +1406,11 @@ function TeacherDashboard() {
           </div>
         </div>
         
-        {/* Right column - House Competition & Recent Activity */}
+        {/* Right column - Pod Competition & Recent Activity */}
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>House Competition</CardTitle>
+              <CardTitle>Pod Competition</CardTitle>
               <CardDescription>Current standings</CardDescription>
             </CardHeader>
             <CardContent>
@@ -1447,9 +1447,9 @@ function TeacherDashboard() {
               </div>
             </CardContent>
             <CardFooter className="border-t px-6 py-4">
-              <Button variant="ghost" size="sm" className="w-full" onClick={() => navigate('/house/dashboard')}>
+              <Button variant="ghost" size="sm" className="w-full" onClick={() => navigate('/pods')}>
                 <Trophy className="h-4 w-4 mr-2" />
-                View House Dashboard
+                View Pod Dashboard
               </Button>
             </CardFooter>
           </Card>
