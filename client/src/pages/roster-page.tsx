@@ -374,14 +374,21 @@ export default function RosterPage() {
                                   </TableCell>
                                   <TableCell>{student.section || 'Not assigned'}</TableCell>
                                   <TableCell>
-                                    {student.houseId ? (
+                                    {student.podId ? (
                                       <div className="flex items-center">
                                         <div 
                                           className="h-3 w-3 rounded-full mr-2" 
-                                          style={{ backgroundColor: houses?.find(h => h.id === student.houseId)?.color || '#ccc' }}
+                                          style={{ backgroundColor: pods?.find(p => p.id === student.podId)?.color || '#ccc' }}
                                         />
-                                        <span>{houses?.find(h => h.id === student.houseId)?.name || 'Unknown'}</span>
+                                        <span>{pods?.find(p => p.id === student.podId)?.name || 'Unknown'}</span>
                                       </div>
+                                    ) : (
+                                      'Not assigned'
+                                    )}
+                                  </TableCell>
+                                  <TableCell>
+                                    {student.classId ? (
+                                      <span>{classes?.find(c => c.id === student.classId)?.name || 'Unknown'}</span>
                                     ) : (
                                       'Not assigned'
                                     )}
@@ -467,14 +474,21 @@ export default function RosterPage() {
                                   </TableCell>
                                   <TableCell>{student.gradeLevel || 'Not assigned'}</TableCell>
                                   <TableCell>
-                                    {student.houseId ? (
+                                    {student.podId ? (
                                       <div className="flex items-center">
                                         <div 
                                           className="h-3 w-3 rounded-full mr-2" 
-                                          style={{ backgroundColor: houses?.find(h => h.id === student.houseId)?.color || '#ccc' }}
+                                          style={{ backgroundColor: pods?.find(p => p.id === student.podId)?.color || '#ccc' }}
                                         />
-                                        <span>{houses?.find(h => h.id === student.houseId)?.name || 'Unknown'}</span>
+                                        <span>{pods?.find(p => p.id === student.podId)?.name || 'Unknown'}</span>
                                       </div>
+                                    ) : (
+                                      'Not assigned'
+                                    )}
+                                  </TableCell>
+                                  <TableCell>
+                                    {student.classId ? (
+                                      <span>{classes?.find(c => c.id === student.classId)?.name || 'Unknown'}</span>
                                     ) : (
                                       'Not assigned'
                                     )}
