@@ -1072,29 +1072,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log("Fetching students roster for user:", user.id, user.username, user.role);
       
-      // Use direct database query with explicit column selection
-      const result = await db
-        .select({
-          id: users.id,
-          firstName: users.firstName,
-          lastName: users.lastName,
-          username: users.username,
-          email: users.email,
-          gradeLevel: users.gradeLevel,
-          section: users.section,
-          podId: users.podId,
-          classId: users.classId
-        })
-        .from(users)
-        .where(eq(users.role, "student"));
-      
-      if (!result || !Array.isArray(result)) {
-        console.error("Unexpected result format from database query:", result);
-        throw new Error("Failed to retrieve student data");
+      try {
+        // CRITICAL FIX: Do a direct pool query to avoid caching issues
+        const client = await pool.connect();
+        try {
+          const result = await client.query(`
+            SELECT id, first_name as "firstName", last_name as "lastName", 
+                   username, email, grade_level as "gradeLevel", 
+                   section, pod_id as "podId", class_id as "classId"
+            FROM users
+            WHERE role = 'student'
+          `);
+          
+          console.log("Student query successful. First 3 students:", JSON.stringify(result.rows.slice(0, 3), null, 2));
+          
+          return res.json(result.rows);
+        } finally {
+          client.release();
+        }
+      } catch (dbError) {
+        console.error("Database error fetching students:", dbError);
+        throw dbError;
       }
-      
-      console.log(`Retrieved ${result.length} students`);
-      return res.json(result);
     } catch (error: any) {
       console.error("Error fetching student roster:", error.message || 'Unknown error', error.stack);
       return res.status(500).json({ error: "Failed to fetch students roster" });
