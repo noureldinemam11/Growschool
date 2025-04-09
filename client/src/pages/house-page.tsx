@@ -311,10 +311,11 @@ export default function PodPage() {
                           </div>
                         )}
                         <h2 className="text-2xl font-bold text-gray-800">
-                          {selectedPod 
-                            ? `${selectedPod.name} — Classes Dashboard` 
-                            : "Pod Classes Dashboard"}
+                          Classes Dashboard
                         </h2>
+                        {selectedPod && (
+                          <p className="text-gray-600">{selectedPod.name}</p>
+                        )}
                       </div>
                       <button 
                         onClick={() => setIsFullscreen(!isFullscreen)}
@@ -328,8 +329,8 @@ export default function PodPage() {
                       </button>
                     </div>
                     
-                    {/* Classes grid for selected pod - styled to match the design */}
-                    <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 ${isFullscreen ? 'lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6' : ''}`}>
+                    {/* Bar chart container for classes */}
+                    <div className="bg-slate-50 p-4 rounded-lg relative"> 
                       {/* Classes display section */}
                       {!podId ? (
                         <div className="col-span-full text-center py-10">
@@ -353,28 +354,37 @@ export default function PodPage() {
                         </div>
                       ) : (
                         <>
-                          {/* Sort classes by points in descending order for proper ranking */}
-                          {classes
-                            .map(classItem => ({
-                              ...classItem,
-                              points: classPoints[classItem.id] || 0
-                            }))
-                            .sort((a, b) => b.points - a.points)
-                            .map((classItem, index) => {
-                              // Determine if the class is "gaining fast" (for the 4th class in the mockup)
-                              // This is just a placeholder - you may want to implement actual logic
-                              const isGaining = index === 3;
+                          <div className="flex items-end space-x-8 justify-around pt-16 pb-4 relative min-h-[300px]">
+                            {/* Calculate max points for scaling */}
+                            {(() => {
+                              const sortedClasses = classes
+                                .map(classItem => ({
+                                  ...classItem,
+                                  points: classPoints[classItem.id] || 0
+                                }))
+                                .sort((a, b) => b.points - a.points);
+                                
+                              const maxPoints = Math.max(
+                                sortedClasses[0]?.points || 0, 
+                                70 // Minimum scale for good visual appearance
+                              );
                               
-                              return (
+                              return sortedClasses.map((classItem, index) => (
                                 <ClassDashboardCard
                                   key={classItem.id}
                                   classItem={classItem}
                                   points={classItem.points}
                                   rank={index}
-                                  gaining={isGaining}
+                                  maxPoints={maxPoints}
                                 />
-                              );
-                            })}
+                              ));
+                            })()}
+                          </div>
+                          
+                          {/* Baseline with 0 label */}
+                          <div className="absolute bottom-0 left-0 right-0 border-t border-gray-300">
+                            <div className="absolute -top-4 left-4 text-gray-500">0</div>
+                          </div>
                         </>
                       )}
                     </div>
