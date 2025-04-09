@@ -1557,7 +1557,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     try {
-      const { names, classId, podId, gradeLevel } = req.body;
+      const { names, classId } = req.body;
       
       if (!Array.isArray(names)) {
         return res.status(400).json({
@@ -1605,8 +1605,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             email: email, // Placeholder email for database requirements
             role: 'student',
             classId: classId || null,
-            podId: podId || null,
-            gradeLevel: gradeLevel || null,
+            podId: classId && classId !== 'none' ? (await storage.getClass(parseInt(classId)))?.podId || null : null,
+            gradeLevel: classId && classId !== 'none' ? (await storage.getClass(parseInt(classId)))?.gradeLevel || null : null,
             section: null,
             parentId: null,
             confirmPassword: 'placeholder123' // Required by schema but not stored

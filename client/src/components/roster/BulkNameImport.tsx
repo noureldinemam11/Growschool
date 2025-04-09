@@ -38,7 +38,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 // Schema for the form
 const bulkImportSchema = z.object({
   studentNames: z.string().min(1, { message: "Please enter at least one student name" }),
-  classId: z.string(),
+  classId: z.string().optional(),
 });
 
 type BulkImportFormData = z.infer<typeof bulkImportSchema>;
@@ -86,8 +86,21 @@ export function BulkNameImport({ classes, pods }: BulkNameImportProps) {
         classId: data.classId && data.classId !== 'none' ? parseInt(data.classId) : undefined,
       };
 
-      const response = await apiRequest('POST', '/api/users/bulk-import-names', payload);
-      return response.json();
+      try {
+        const response = await apiRequest('POST', '/api/users/bulk-import-names', payload);
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.indexOf('application/json') !== -1) {
+          return response.json();
+        } else {
+          // Not JSON - log the actual response text to debug
+          const text = await response.text();
+          console.error('Expected JSON but got:', text);
+          throw new Error('Server returned non-JSON response: ' + text.substring(0, 100) + '...');
+        }
+      } catch (error) {
+        console.error('Error parsing response:', error);
+        throw error;
+      }
     },
     onSuccess: (data: ImportResult) => {
       // Invalidate queries to refresh data
