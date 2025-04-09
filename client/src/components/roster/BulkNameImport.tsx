@@ -83,7 +83,7 @@ export function BulkNameImport({ classes, pods }: BulkNameImportProps) {
 
       const payload = {
         names,
-        classId: data.classId && data.classId !== '' ? parseInt(data.classId) : undefined,
+        classId: data.classId && data.classId !== '' && data.classId !== 'none' ? parseInt(data.classId) : undefined,
       };
 
       try {
@@ -212,7 +212,7 @@ ALI HASAN ALI ABDULQADER ALKATHEERI"
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">None</SelectItem>
+                          <SelectItem value="none">None</SelectItem>
                           {classes.map((cls) => (
                             <SelectItem key={cls.id} value={cls.id.toString()}>
                               {cls.name} (Grade {cls.gradeLevel})
