@@ -55,7 +55,7 @@ export default function RosterPage() {
 
   // Fetch students
   const { data: students, isLoading: isLoadingStudents } = useQuery<Student[]>({
-    queryKey: ['/api/users/students'],
+    queryKey: ['/api/users/role/student'],
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
 
@@ -138,7 +138,7 @@ export default function RosterPage() {
     },
     onSuccess: () => {
       // Invalidate and refetch
-      queryClient.invalidateQueries({ queryKey: ['/api/users/students'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/users/role/student'] });
       toast({
         title: 'Roster Updated',
         description: 'Student roster information has been updated successfully.',
