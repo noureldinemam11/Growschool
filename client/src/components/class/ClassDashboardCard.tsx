@@ -14,18 +14,18 @@ const ClassDashboardCard: React.FC<ClassDashboardCardProps> = ({
   rank,
   maxPoints = 100 // Default max points for scale
 }) => {
-  // Define background colors based on design
+  // Define background colors based on the new design image
   const barColors = [
-    'bg-[#22D3B6]', // teal for 1st place
+    'bg-[#00D1B2]', // bright teal for 1st place
     'bg-[#FF69B4]', // bright pink for 2nd place
     'bg-[#FFCC00]', // yellow for 3rd place
     'bg-[#FFCC00]', // yellow for 4th place
     'bg-[#FFA500]'  // orange for 5th place
   ];
   
-  // Circle colors based on rank
+  // Circle colors based on rank - matching the design image
   const circleColors = [
-    'bg-[#22D3B6]', // teal for 1st
+    'bg-[#00D1B2]', // teal for 1st
     'bg-[#FF69B4]', // pink for 2nd
     'bg-[#FFCC00]', // yellow for 3rd/4th
     'bg-[#FFCC00]', // yellow for 3rd/4th
@@ -36,15 +36,15 @@ const ClassDashboardCard: React.FC<ClassDashboardCardProps> = ({
   const barColor = barColors[rank < barColors.length ? rank : barColors.length - 1];
   const circleColor = circleColors[rank < circleColors.length ? rank : circleColors.length - 1];
 
-  // Calculate bar height based on points (min 20% height even for 0 points)
-  const heightPercentage = Math.max(20, (points / maxPoints) * 100);
-  const barHeight = Math.max(60, heightPercentage * 2); // Scale it appropriately, min 60px
+  // Calculate bar height based on points (min 40px height even for 0 points)
+  const heightPercentage = Math.max(15, (points / maxPoints) * 100);
+  const barHeight = points === 0 ? 40 : Math.max(40, heightPercentage * 1.6); // Scale appropriately with minimum height
 
   return (
     <div className="flex flex-col items-center">
       {/* Points circle */}
       <div 
-        className={`${circleColor} w-16 h-16 rounded-full flex items-center justify-center mb-2 text-[#333333] font-bold text-2xl`}
+        className={`${circleColor} w-14 h-14 rounded-full flex items-center justify-center mb-1 text-gray-800 font-bold text-xl shadow-sm`}
       >
         {points}
       </div>
@@ -52,17 +52,14 @@ const ClassDashboardCard: React.FC<ClassDashboardCardProps> = ({
       {/* Bar chart column */}
       <div className="flex flex-col items-center">
         <div 
-          className={`${barColor} w-20 rounded-t-lg`} 
+          className={`${barColor} w-16 rounded-t-lg shadow-md`} 
           style={{ height: `${barHeight}px` }}
         />
         
-        {/* Class name and grade level */}
+        {/* Class name only */}
         <div className="text-center mt-2">
-          <div className="font-semibold text-gray-800">
-            Class {classItem.name}
-          </div>
-          <div className="text-sm text-gray-600">
-            Grade {classItem.gradeLevel}
+          <div className="font-semibold text-gray-700">
+            {classItem.name}
           </div>
         </div>
       </div>
