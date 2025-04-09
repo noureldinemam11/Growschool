@@ -1550,6 +1550,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bulk import students from names only (no email, username, password required)
+  app.post("/api/users/bulk-import-names", async (req, res) => {
+    if (!req.isAuthenticated() || !["admin", "teacher"].includes(req.user.role)) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+    
+    try {
+      const { names, classId, podId, gradeLevel } = req.body;
+      
+      if (!Array.isArray(names)) {
+        return res.status(400).json({
+          success: false,
+          error: "Invalid data format. Expected an array of names.",
+          message: "The names provided are not in the correct format.",
+          created: 0,
+          errors: []
+        });
+      }
+      
+      const createdStudents = [];
+      const errors = [];
+      
+      for (let i = 0; i < names.length; i++) {
+        const fullName = names[i].trim();
+        if (!fullName) continue;
+        
+        try {
+          // Split name into parts
+          const nameParts = fullName.split(' ');
+          
+          // Use first part as firstName and the rest as lastName
+          const firstName = nameParts[0];
+          const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+          
+          // Generate a placeholder unique username based on names
+          // This is just for system purposes since you don't want user logins for students
+          const timestamp = Date.now();
+          const randomSuffix = Math.floor(Math.random() * 10000);
+          const username = `${firstName.toLowerCase().replace(/[^a-z0-9]/g, '')}_${randomSuffix}_${timestamp}`;
+          
+          // Create student with minimal required fields
+          const newStudent = await storage.createUser({
+            firstName,
+            lastName,
+            username, // System-generated, not for login
+            password: 'placeholder', // Will be hashed but never used
+            email: '', // Empty email as per requirement
+            role: 'student',
+            classId: classId || null,
+            podId: podId || null,
+            gradeLevel: gradeLevel || null,
+            section: null,
+            parentId: null
+          });
+          
+          createdStudents.push(newStudent);
+        } catch (error) {
+          console.error(`Error creating student from name '${fullName}':`, error);
+          errors.push({
+            line: i + 1,
+            name: fullName,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          });
+        }
+      }
+      
+      return res.status(200).json({
+        success: errors.length === 0,
+        created: createdStudents.length,
+        errors,
+        message: `Successfully imported ${createdStudents.length} students${errors.length > 0 ? ` with ${errors.length} errors` : ''}.`
+      });
+    } catch (error) {
+      console.error("Error bulk importing students from names:", error);
+      return res.status(500).json({
+        success: false,
+        created: 0,
+        errors: [{ line: 0, name: '', error: error instanceof Error ? error.message : 'Server error processing the request' }],
+        message: "Failed to import students due to a server error."
+      });
+    }
+  });
+
   app.post("/api/users/bulk-import", async (req, res) => {
     if (!req.isAuthenticated() || !["admin", "teacher"].includes(req.user.role)) {
       return res.status(403).json({ error: "Unauthorized" });
