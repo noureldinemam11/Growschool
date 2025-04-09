@@ -81,9 +81,18 @@ export function BulkNameImport({ classes, pods }: BulkNameImportProps) {
         .map(line => line.trim())
         .filter(line => line.length > 0);
 
+      // Debug logging
+      console.log("Form submission with values:", data);
+      
+      const classIdValue = data.classId && data.classId !== '' && data.classId !== 'none' 
+        ? parseInt(data.classId) 
+        : undefined;
+      
+      console.log(`Parsed classId: ${classIdValue}`);
+      
       const payload = {
         names,
-        classId: data.classId && data.classId !== '' && data.classId !== 'none' ? parseInt(data.classId) : undefined,
+        classId: classIdValue,
       };
 
       try {

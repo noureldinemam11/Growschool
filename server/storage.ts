@@ -1112,6 +1112,28 @@ export class DatabaseStorage implements IStorage {
   
   async createUser(user: InsertUser): Promise<User> {
     try {
+      // Handle class and pod relationship
+      // If a class is assigned but no pod, get the pod from the class
+      if (user.classId && (!user.podId || user.podId === null)) {
+        try {
+          const classInfo = await this.getClass(user.classId);
+          if (classInfo && classInfo.podId) {
+            console.log(`Auto-assigning student to pod ${classInfo.podId} based on class ${user.classId}`);
+            user.podId = classInfo.podId;
+            
+            // Also set grade level if not specified
+            if (!user.gradeLevel && classInfo.gradeLevel) {
+              user.gradeLevel = classInfo.gradeLevel;
+              console.log(`Auto-assigning student to grade level ${classInfo.gradeLevel}`);
+            }
+          }
+        } catch (err) {
+          console.error(`Failed to get pod info for class ${user.classId}:`, err);
+        }
+      }
+      
+      console.log(`Creating user with classId=${user.classId}, podId=${user.podId}, gradeLevel=${user.gradeLevel}`);
+
       // Explicitly returning PostgreSQL table data with proper typing
       const result = await db.insert(users).values(user).returning({
         id: users.id,
@@ -1133,6 +1155,7 @@ export class DatabaseStorage implements IStorage {
       }
       
       const userResult = result[0];
+      console.log(`Successfully created user with ID ${userResult.id}, classId=${userResult.classId}, podId=${userResult.podId}`);
       
       // Use our helper function to ensure correct typing
       return ensureUserType(userResult);

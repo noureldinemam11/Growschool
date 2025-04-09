@@ -1597,6 +1597,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     try {
+      console.log("===== BULK IMPORT START =====");
       console.log("Received bulk import request:", JSON.stringify(req.body));
       const { names, classId } = req.body;
       
@@ -1640,8 +1641,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // First determine which class is assigned (if any)
           let targetClassId = null;
-          if (classId && classId !== 'none') {
-            targetClassId = parseInt(classId);
+          if (classId !== undefined && classId !== null && classId !== 'none') {
+            // Make sure we have a number
+            targetClassId = typeof classId === 'string' ? parseInt(classId) : classId;
+            console.log(`Parsed classId from ${classId} to ${targetClassId}`);
+          } else {
+            console.log(`No valid classId provided: ${classId}, using null`);
           }
           
           // Get pod and grade level information if class is assigned
@@ -1655,6 +1660,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               if (classInfo) {
                 podId = classInfo.podId; 
                 gradeLevel = classInfo.gradeLevel;
+                console.log(`Setting podId=${podId} and gradeLevel=${gradeLevel} based on class info`);
+              } else {
+                console.error(`No class found with ID ${targetClassId}`);
               }
             } catch (err) {
               console.error(`Failed to get class info for class ${targetClassId}:`, err);
