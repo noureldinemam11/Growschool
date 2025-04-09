@@ -87,18 +87,34 @@ export function BulkNameImport({ classes, pods }: BulkNameImportProps) {
       };
 
       try {
-        const response = await apiRequest('POST', '/api/users/bulk-import-names', payload);
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.indexOf('application/json') !== -1) {
-          return response.json();
-        } else {
-          // Not JSON - log the actual response text to debug
+        // Use direct fetch API with explicit content-type header
+        const response = await fetch('/api/users/bulk-import-names', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(payload),
+          credentials: 'include'
+        });
+        
+        // Check if response is ok
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('API error:', errorText);
+          throw new Error(`Server error: ${response.status} ${response.statusText}`);
+        }
+        
+        // Try to parse as JSON
+        try {
+          return await response.json();
+        } catch (parseError) {
           const text = await response.text();
-          console.error('Expected JSON but got:', text);
-          throw new Error('Server returned non-JSON response: ' + text.substring(0, 100) + '...');
+          console.error('Failed to parse response as JSON:', text);
+          throw new Error('Invalid JSON response from server');
         }
       } catch (error) {
-        console.error('Error parsing response:', error);
+        console.error('Error in bulk import:', error);
         throw error;
       }
     },

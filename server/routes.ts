@@ -1552,11 +1552,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Bulk import students from names only (no email, username, password required)
   app.post("/api/users/bulk-import-names", async (req, res) => {
-    if (!req.isAuthenticated() || !["admin", "teacher"].includes(req.user.role)) {
+    // Check authentication in a safer way
+    if (!req.user || !["admin", "teacher"].includes(req.user.role)) {
+      console.error("Unauthorized bulk import attempt");
       return res.status(403).json({ error: "Unauthorized" });
     }
     
     try {
+      console.log("Received bulk import request:", JSON.stringify(req.body));
       const { names, classId } = req.body;
       
       if (!Array.isArray(names)) {
