@@ -39,8 +39,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 const bulkImportSchema = z.object({
   studentNames: z.string().min(1, { message: "Please enter at least one student name" }),
   classId: z.string(),
-  podId: z.string(),
-  gradeLevel: z.string(),
 });
 
 type BulkImportFormData = z.infer<typeof bulkImportSchema>;
@@ -69,27 +67,10 @@ export function BulkNameImport({ classes, pods }: BulkNameImportProps) {
     defaultValues: {
       studentNames: '',
       classId: 'none',
-      podId: 'none',
-      gradeLevel: 'none',
     },
   });
 
-  // Handle class selection change
-  const handleClassChange = (classId: string) => {
-    if (!classId || classId === 'none') {
-      // User selected "None" - reset related fields to "none"
-      form.setValue('podId', 'none');
-      form.setValue('gradeLevel', 'none');
-      return;
-    }
-    
-    const selectedClass = classes.find(c => c.id.toString() === classId);
-    if (selectedClass) {
-      // Automatically set podId and gradeLevel based on selected class
-      form.setValue('podId', selectedClass.podId.toString());
-      form.setValue('gradeLevel', selectedClass.gradeLevel);
-    }
-  };
+  // No need for class change handler anymore since we only have the class field
 
   // Mutation for bulk importing students
   const bulkImportMutation = useMutation({
@@ -103,8 +84,6 @@ export function BulkNameImport({ classes, pods }: BulkNameImportProps) {
       const payload = {
         names,
         classId: data.classId && data.classId !== 'none' ? parseInt(data.classId) : undefined,
-        podId: data.podId && data.podId !== 'none' ? parseInt(data.podId) : undefined,
-        gradeLevel: data.gradeLevel && data.gradeLevel !== 'none' ? data.gradeLevel : undefined,
       };
 
       const response = await apiRequest('POST', '/api/users/bulk-import-names', payload);
@@ -187,7 +166,7 @@ ALI HASAN ALI ABDULQADER ALKATHEERI"
                 )}
               />
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <FormField
                   control={form.control}
                   name="classId"
@@ -195,10 +174,7 @@ ALI HASAN ALI ABDULQADER ALKATHEERI"
                     <FormItem>
                       <FormLabel>Assign to Class</FormLabel>
                       <Select 
-                        onValueChange={(value) => {
-                          field.onChange(value);
-                          handleClassChange(value);
-                        }}
+                        onValueChange={field.onChange}
                         value={field.value}
                       >
                         <FormControl>
@@ -217,76 +193,6 @@ ALI HASAN ALI ABDULQADER ALKATHEERI"
                       </Select>
                       <FormDescription>
                         Optional: Class assignment
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="podId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Assign to Pod</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select Pod" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="none">None</SelectItem>
-                          {pods.map((pod) => (
-                            <SelectItem key={pod.id} value={pod.id.toString()}>
-                              <div className="flex items-center gap-2">
-                                <div 
-                                  className="w-3 h-3 rounded-full" 
-                                  style={{ backgroundColor: pod.color }}
-                                ></div>
-                                {pod.name}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        Optional: Will be set automatically if class is selected
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="gradeLevel"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Grade Level</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select Grade" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="none">None</SelectItem>
-                          {Array.from({ length: 12 }, (_, i) => i + 1).map((grade) => (
-                            <SelectItem key={grade} value={grade.toString()}>
-                              Grade {grade}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        Optional: Will be set automatically if class is selected
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
