@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { User, House } from '@shared/schema';
+import { User, Pod, Class } from '@shared/schema';
 import { globalEventBus, apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
@@ -57,7 +57,7 @@ import {
 // Define schema for the bulk import form
 const bulkImportSchema = z.object({
   studentNames: z.string().min(1, { message: 'Please enter at least one student name' }),
-  houseId: z.string().min(1, { message: 'Please select a house' }),
+  classId: z.string().min(1, { message: 'Please select a class' }),
   gradeLevel: z.string().min(1, { message: 'Please enter a grade' }),
 });
 
@@ -67,7 +67,7 @@ type BulkImportFormData = z.infer<typeof bulkImportSchema>;
 const studentSchema = z.object({
   firstName: z.string().min(1, { message: 'First name is required' }),
   lastName: z.string().min(1, { message: 'Last name is required' }),
-  houseId: z.number().min(1, { message: 'House is required' }),
+  classId: z.number().min(1, { message: 'Class is required' }),
   gradeLevel: z.string().min(1, { message: 'Grade is required' }),
 });
 
@@ -79,9 +79,13 @@ export default function RosterManagement() {
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isAddStudentDialogOpen, setIsAddStudentDialogOpen] = useState(false);
 
-  // Fetch houses for dropdown
-  const { data: houses, isLoading: isLoadingHouses } = useQuery<House[]>({
-    queryKey: ['/api/houses'],
+  // Fetch pods and classes for dropdown
+  const { data: pods, isLoading: isLoadingPods } = useQuery<Pod[]>({
+    queryKey: ['/api/pods'],
+  });
+  
+  const { data: classes, isLoading: isLoadingClasses } = useQuery<Class[]>({
+    queryKey: ['/api/classes'],
   });
 
   // Fetch current students - use the `/api/users/role/student` endpoint which works correctly
@@ -94,7 +98,7 @@ export default function RosterManagement() {
     resolver: zodResolver(bulkImportSchema),
     defaultValues: {
       studentNames: '',
-      houseId: '',
+      classId: '',
       gradeLevel: '',
     },
   });
@@ -105,7 +109,7 @@ export default function RosterManagement() {
     defaultValues: {
       firstName: '',
       lastName: '',
-      houseId: 0,
+      classId: 0,
       gradeLevel: '',
     },
   });
@@ -150,10 +154,23 @@ export default function RosterManagement() {
           const sanitizedFirstName = firstName.toLowerCase().replace(/\s+/g, '');
           const sanitizedLastName = lastName.toLowerCase().replace(/\s+/g, '');
           
+          // Determine the classId and podId
+          const classIdValue = data.classId !== 'none' && data.classId ? parseInt(data.classId) : null;
+          
+          // Find the pod associated with the class
+          let podIdValue = null;
+          if (classIdValue) {
+            const selectedClass = classes?.find(c => c.id === classIdValue);
+            if (selectedClass && selectedClass.podId) {
+              podIdValue = selectedClass.podId;
+            }
+          }
+          
           return {
             firstName,
             lastName,
-            houseId: parseInt(data.houseId),
+            classId: classIdValue,
+            podId: podIdValue,
             gradeLevel: data.gradeLevel,
             role: 'student',
             // Generate a placeholder email since it's required by the database
@@ -205,9 +222,25 @@ export default function RosterManagement() {
       const sanitizedFirstName = data.firstName.toLowerCase().replace(/\s+/g, '');
       const sanitizedLastName = data.lastName.toLowerCase().replace(/\s+/g, '');
       
+      // Determine the classId and podId
+      const classIdValue = data.classId !== 0 ? data.classId : null;
+      
+      // Find the pod associated with the class
+      let podIdValue = null;
+      if (classIdValue) {
+        const selectedClass = classes?.find(c => c.id === classIdValue);
+        if (selectedClass && selectedClass.podId) {
+          podIdValue = selectedClass.podId;
+        }
+      }
+      
       // Generate placeholder email and username for the student (since they won't actually log in)
       const response = await apiRequest('POST', '/api/users', {
-        ...data,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        gradeLevel: data.gradeLevel,
+        classId: classIdValue,
+        podId: podIdValue,
         email: `${sanitizedFirstName}.${sanitizedLastName}@school.example`,
         username: `${sanitizedFirstName}${sanitizedLastName}`,
         password: 'no-login-required',
@@ -388,23 +421,24 @@ export default function RosterManagement() {
               />
               <FormField
                 control={singleStudentForm.control}
-                name="houseId"
+                name="classId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>House</FormLabel>
+                    <FormLabel>Class</FormLabel>
                     <Select
                       onValueChange={(value) => field.onChange(parseInt(value))}
                       defaultValue={field.value ? field.value.toString() : undefined}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a house" />
+                          <SelectValue placeholder="Select a class" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {houses?.map((house) => (
-                          <SelectItem key={house.id} value={house.id.toString()}>
-                            {house.name}
+                        <SelectItem value="none">No Class</SelectItem>
+                        {classes?.map((cls) => (
+                          <SelectItem key={cls.id} value={cls.id.toString()}>
+                            {cls.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -493,26 +527,27 @@ KHALED ABDULHAMEED MOHAMED AHMED ALHAMMADI"
                 />
                 <FormField
                   control={bulkImportForm.control}
-                  name="houseId"
+                  name="classId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>House</FormLabel>
+                      <FormLabel>Class</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select a house" />
+                            <SelectValue placeholder="Select a class" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {houses?.map((house) => (
-                            <SelectItem key={house.id} value={house.id.toString()}>
-                              {house.name}
+                          <SelectItem value="none">No Class</SelectItem>
+                          {classes?.map((cls) => (
+                            <SelectItem key={cls.id} value={cls.id.toString()}>
+                              {cls.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                       <FormDescription>
-                        All imported students will be assigned to this house.
+                        All imported students will be assigned to this class. Students will be automatically assigned to the appropriate pod.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

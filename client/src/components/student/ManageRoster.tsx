@@ -612,10 +612,28 @@ const ManageRoster: FC<ManageRosterProps> = () => {
                 <Select 
                   value={formData.classId?.toString() || 'none'} 
                   onValueChange={(value) => {
-                    setFormData({
-                      ...formData,
-                      classId: value && value !== 'none' ? parseInt(value) : null
-                    });
+                    if (value && value !== 'none') {
+                      const classId = parseInt(value);
+                      const selectedClass = classes?.find(c => c.id === classId);
+                      if (selectedClass && selectedClass.podId) {
+                        // Automatically update the pod to match the class's pod
+                        setFormData({
+                          ...formData,
+                          classId: classId,
+                          podId: selectedClass.podId
+                        });
+                      } else {
+                        setFormData({
+                          ...formData,
+                          classId: classId
+                        });
+                      }
+                    } else {
+                      setFormData({
+                        ...formData,
+                        classId: null
+                      });
+                    }
                   }}
                 >
                   <SelectTrigger>

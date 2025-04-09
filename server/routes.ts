@@ -1087,16 +1087,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       const studentId = Number(req.params.studentId);
-      const { gradeLevel, section, houseId } = req.body;
+      const { gradeLevel, section, classId, podId } = req.body;
       
       // Validate the data
       const updateSchema = z.object({
         gradeLevel: z.string().optional(),
         section: z.string().optional(),
-        houseId: z.number().nullable().optional(),
+        classId: z.number().nullable().optional(),
+        podId: z.number().nullable().optional(),
       });
       
       const validatedData = updateSchema.parse(req.body);
+      
+      // If classId is set, get the class to determine its pod
+      if (validatedData.classId !== undefined && validatedData.classId !== null) {
+        try {
+          // Get the class to find its pod
+          const classInfo = await storage.getClass(validatedData.classId);
+          if (classInfo && classInfo.podId) {
+            // Automatically assign the student to the pod that owns the class
+            validatedData.podId = classInfo.podId;
+            console.log(`Automatically assigning student ${studentId} to pod ${classInfo.podId} based on class ${validatedData.classId}`);
+          }
+        } catch (error) {
+          console.error(`Error fetching class info for auto pod assignment:`, error);
+          // Continue with update even if pod assignment fails
+        }
+      }
       
       // Update the student
       const updatedStudent = await storage.updateUser(studentId, validatedData);
@@ -1112,7 +1129,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastName: updatedStudent.lastName,
         gradeLevel: updatedStudent.gradeLevel,
         section: updatedStudent.section,
-        houseId: updatedStudent.houseId
+        podId: updatedStudent.podId,
+        classId: updatedStudent.classId
       };
       
       res.json(safeStudent);
