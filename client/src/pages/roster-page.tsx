@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { Loader2, UserPlus, UsersRound, School, Home, Edit } from 'lucide-react';
+import { Loader2, UserPlus, UsersRound, School, Home, Edit, FolderOpen } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getQueryFn, apiRequest } from '@/lib/queryClient';
@@ -24,16 +24,24 @@ interface Student {
   email: string;
   gradeLevel: string | null;
   section: string | null;
-  houseId: number | null;
+  podId: number | null;
+  classId: number | null;
 }
 
-interface House {
+interface Pod {
   id: number;
   name: string;
   color: string;
   description: string | null;
   logoUrl: string | null;
   points: number;
+}
+
+interface Class {
+  id: number;
+  name: string;
+  podId: number | null;
+  gradeLevel: string | null;
 }
 
 export default function RosterPage() {
@@ -51,9 +59,15 @@ export default function RosterPage() {
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
 
-  // Fetch houses
-  const { data: houses, isLoading: isLoadingHouses } = useQuery<House[]>({
-    queryKey: ['/api/houses'],
+  // Fetch pods
+  const { data: pods, isLoading: isLoadingPods } = useQuery<Pod[]>({
+    queryKey: ['/api/pods'],
+    queryFn: getQueryFn({ on401: "returnNull" }),
+  });
+  
+  // Fetch classes
+  const { data: classes, isLoading: isLoadingClasses } = useQuery<Class[]>({
+    queryKey: ['/api/classes'],
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
 
@@ -81,23 +95,43 @@ export default function RosterPage() {
       }, {})
     : {};
 
-  // Group students by house
-  const studentsByHouse = students
+  // Group students by pod
+  const studentsByPod = students
     ? students.reduce<Record<string, Student[]>>((acc, student) => {
-        const house = student.houseId
-          ? houses?.find(h => h.id === student.houseId)?.name || 'Unknown'
+        const pod = student.podId
+          ? pods?.find(p => p.id === student.podId)?.name || 'Unknown'
           : 'Unassigned';
-        if (!acc[house]) {
-          acc[house] = [];
+        if (!acc[pod]) {
+          acc[pod] = [];
         }
-        acc[house].push(student);
+        acc[pod].push(student);
+        return acc;
+      }, {})
+    : {};
+    
+  // Group students by class
+  const studentsByClass = students
+    ? students.reduce<Record<string, Student[]>>((acc, student) => {
+        const className = student.classId
+          ? classes?.find(c => c.id === student.classId)?.name || 'Unknown'
+          : 'Unassigned';
+        if (!acc[className]) {
+          acc[className] = [];
+        }
+        acc[className].push(student);
         return acc;
       }, {})
     : {};
 
   // Update student roster mutation
   const updateStudentRoster = useMutation({
-    mutationFn: async (values: { studentId: number; gradeLevel?: string; section?: string; houseId?: number | null }) => {
+    mutationFn: async (values: { 
+      studentId: number; 
+      gradeLevel?: string; 
+      section?: string; 
+      podId?: number | null;
+      classId?: number | null;
+    }) => {
       const { studentId, ...data } = values;
       const res = await apiRequest('PATCH', `/api/users/students/${studentId}/roster`, data);
       return await res.json();
@@ -132,7 +166,8 @@ export default function RosterPage() {
       studentId: editingStudent.id,
       gradeLevel: editingStudent.gradeLevel || undefined,
       section: editingStudent.section || undefined,
-      houseId: editingStudent.houseId,
+      podId: editingStudent.podId,
+      classId: editingStudent.classId,
     });
   };
 
@@ -165,7 +200,7 @@ export default function RosterPage() {
       <div className="flex flex-col space-y-4 md:flex-row md:justify-between md:items-center md:space-y-0 mb-6">
         <div>
           <h1 className="text-3xl font-bold">Student Roster Management</h1>
-          <p className="text-muted-foreground">Manage student assignments to grades, sections, and houses</p>
+          <p className="text-muted-foreground">Manage student assignments to grades, sections, pods, and classes</p>
         </div>
         
         <div className="flex items-center space-x-2">
@@ -193,9 +228,13 @@ export default function RosterPage() {
             <UserPlus className="h-4 w-4" />
             <span>By Section</span>
           </TabsTrigger>
-          <TabsTrigger value="houses" className="flex items-center gap-2">
+          <TabsTrigger value="pods" className="flex items-center gap-2 mr-4">
             <Home className="h-4 w-4" />
-            <span>By House</span>
+            <span>By Pod</span>
+          </TabsTrigger>
+          <TabsTrigger value="classes" className="flex items-center gap-2">
+            <FolderOpen className="h-4 w-4" />
+            <span>By Class</span>
           </TabsTrigger>
         </TabsList>
 
@@ -223,7 +262,8 @@ export default function RosterPage() {
                       <TableHead>Username</TableHead>
                       <TableHead>Grade</TableHead>
                       <TableHead>Section</TableHead>
-                      <TableHead>House</TableHead>
+                      <TableHead>Pod</TableHead>
+                      <TableHead>Class</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -237,14 +277,21 @@ export default function RosterPage() {
                         <TableCell>{student.gradeLevel || 'Not assigned'}</TableCell>
                         <TableCell>{student.section || 'Not assigned'}</TableCell>
                         <TableCell>
-                          {student.houseId ? (
+                          {student.podId ? (
                             <div className="flex items-center">
                               <div 
                                 className="h-3 w-3 rounded-full mr-2" 
-                                style={{ backgroundColor: houses?.find(h => h.id === student.houseId)?.color || '#ccc' }}
+                                style={{ backgroundColor: pods?.find(p => p.id === student.podId)?.color || '#ccc' }}
                               />
-                              <span>{houses?.find(h => h.id === student.houseId)?.name || 'Unknown'}</span>
+                              <span>{pods?.find(p => p.id === student.podId)?.name || 'Unknown'}</span>
                             </div>
+                          ) : (
+                            'Not assigned'
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {student.classId ? (
+                            <span>{classes?.find(c => c.id === student.classId)?.name || 'Unknown'}</span>
                           ) : (
                             'Not assigned'
                           )}
@@ -307,7 +354,8 @@ export default function RosterPage() {
                             <TableRow>
                               <TableHead>Name</TableHead>
                               <TableHead>Section</TableHead>
-                              <TableHead>House</TableHead>
+                              <TableHead>Pod</TableHead>
+                              <TableHead>Class</TableHead>
                               <TableHead>Actions</TableHead>
                             </TableRow>
                           </TableHeader>
@@ -399,7 +447,8 @@ export default function RosterPage() {
                             <TableRow>
                               <TableHead>Name</TableHead>
                               <TableHead>Grade</TableHead>
-                              <TableHead>House</TableHead>
+                              <TableHead>Pod</TableHead>
+                              <TableHead>Class</TableHead>
                               <TableHead>Actions</TableHead>
                             </TableRow>
                           </TableHeader>
@@ -453,43 +502,145 @@ export default function RosterPage() {
           </Card>
         </TabsContent>
 
-        {/* By House Tab */}
-        <TabsContent value="houses">
+        {/* By Pod Tab */}
+        <TabsContent value="pods">
           <Card>
             <CardHeader>
-              <CardTitle>Students by House</CardTitle>
-              <CardDescription>View students organized by assigned house</CardDescription>
+              <CardTitle>Students by Pod</CardTitle>
+              <CardDescription>View students organized by assigned pod</CardDescription>
             </CardHeader>
             <CardContent>
-              {isLoadingStudents || isLoadingHouses ? (
+              {isLoadingStudents || isLoadingPods ? (
                 <div className="flex justify-center items-center h-40">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
-              ) : Object.keys(studentsByHouse).length === 0 ? (
+              ) : Object.keys(studentsByPod).length === 0 ? (
                 <div className="text-center p-8 text-muted-foreground">
                   No students found. Try adjusting your search or add new students.
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {Object.entries(studentsByHouse)
-                    .sort(([houseA], [houseB]) => {
-                      if (houseA === 'Unassigned') return 1;
-                      if (houseB === 'Unassigned') return -1;
-                      return houseA.localeCompare(houseB);
+                  {Object.entries(studentsByPod)
+                    .sort(([podA], [podB]) => {
+                      if (podA === 'Unassigned') return 1;
+                      if (podB === 'Unassigned') return -1;
+                      return podA.localeCompare(podB);
                     })
-                    .map(([houseName, studentsInHouse]) => {
-                      const house = houses?.find(h => h.name === houseName);
+                    .map(([podName, studentsInPod]) => {
+                      const pod = pods?.find(p => p.name === podName);
                       return (
-                        <div key={houseName} className="space-y-2">
+                        <div key={podName} className="space-y-2">
                           <div className="flex items-center justify-between">
                             <h3 className="text-lg font-semibold flex items-center">
-                              {house ? (
-                                <div className="h-5 w-5 rounded-full mr-2" style={{ backgroundColor: house.color }} />
+                              {pod ? (
+                                <div className="h-5 w-5 rounded-full mr-2" style={{ backgroundColor: pod.color }} />
                               ) : (
                                 <Home className="h-5 w-5 mr-2 text-primary" />
                               )}
-                              {houseName}
-                              <Badge className="ml-2">{studentsInHouse.length} students</Badge>
+                              {podName}
+                              <Badge className="ml-2">{studentsInPod.length} students</Badge>
+                            </h3>
+                          </div>
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Name</TableHead>
+                                <TableHead>Grade</TableHead>
+                                <TableHead>Section</TableHead>
+                                <TableHead>Class</TableHead>
+                                <TableHead>Actions</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {studentsInPod
+                                .filter(student => 
+                                  searchTerm === '' ||
+                                  student.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                  student.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                  student.username.toLowerCase().includes(searchTerm.toLowerCase())
+                                )
+                                .map(student => (
+                                  <TableRow key={student.id}>
+                                    <TableCell className="font-medium">
+                                      {student.firstName} {student.lastName}
+                                    </TableCell>
+                                    <TableCell>{student.gradeLevel || 'Not assigned'}</TableCell>
+                                    <TableCell>{student.section || 'Not assigned'}</TableCell>
+                                    <TableCell>
+                                      {student.classId 
+                                        ? classes?.find(c => c.id === student.classId)?.name || 'Unknown' 
+                                        : 'Not assigned'}
+                                    </TableCell>
+                                    <TableCell>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        onClick={() => handleEditStudent(student)}
+                                        className="flex items-center gap-1"
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                        <span>Edit</span>
+                                      </Button>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        {/* By Class Tab */}
+        <TabsContent value="classes">
+          <Card>
+            <CardHeader>
+              <CardTitle>Students by Class</CardTitle>
+              <CardDescription>View students organized by assigned class</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingStudents || isLoadingClasses ? (
+                <div className="flex justify-center items-center h-40">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : Object.keys(studentsByClass).length === 0 ? (
+                <div className="text-center p-8 text-muted-foreground">
+                  No students found. Try adjusting your search or add new students.
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {Object.entries(studentsByClass)
+                    .sort(([classA], [classB]) => {
+                      if (classA === 'Unassigned') return 1;
+                      if (classB === 'Unassigned') return -1;
+                      return classA.localeCompare(classB);
+                    })
+                    .map(([className, studentsInClass]) => {
+                      const classObj = classes?.find(c => c.name === className);
+                      const pod = classObj?.podId ? pods?.find(p => p.id === classObj.podId) : null;
+                      
+                      return (
+                        <div key={className} className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-semibold flex items-center">
+                              <FolderOpen className="h-5 w-5 mr-2 text-primary" />
+                              {className}
+                              <Badge className="ml-2">{studentsInClass.length} students</Badge>
+                              
+                              {pod && (
+                                <div className="ml-3 flex items-center text-sm text-muted-foreground">
+                                  <span>Pod:</span>
+                                  <div 
+                                    className="w-3 h-3 rounded-full mx-1" 
+                                    style={{ backgroundColor: pod.color }}
+                                  />
+                                  <span>{pod.name}</span>
+                                </div>
+                              )}
                             </h3>
                           </div>
                           <Table>
@@ -502,7 +653,7 @@ export default function RosterPage() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {studentsInHouse
+                              {studentsInClass
                                 .filter(student => 
                                   searchTerm === '' ||
                                   student.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -547,7 +698,7 @@ export default function RosterPage() {
           <DialogHeader>
             <DialogTitle>Edit Student Roster Assignment</DialogTitle>
             <DialogDescription>
-              Update {editingStudent?.firstName} {editingStudent?.lastName}'s grade, section, and house assignment.
+              Update {editingStudent?.firstName} {editingStudent?.lastName}'s grade, section, pod, and class assignment.
             </DialogDescription>
           </DialogHeader>
           
@@ -580,30 +731,69 @@ export default function RosterPage() {
               </div>
               
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="house" className="text-right">
-                  House
+                <Label htmlFor="pod" className="text-right">
+                  Pod
                 </Label>
                 <Select
-                  value={editingStudent.houseId?.toString() || ''}
+                  value={editingStudent.podId?.toString() || ''}
                   onValueChange={(value) => 
                     setEditingStudent({
                       ...editingStudent, 
-                      houseId: value ? parseInt(value) : null
+                      podId: value ? parseInt(value) : null
                     })}
                 >
                   <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select a house" />
+                    <SelectValue placeholder="Select a pod" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No house assigned</SelectItem>
-                    {houses?.map(house => (
-                      <SelectItem key={house.id} value={house.id.toString()}>
+                    <SelectItem value="">No pod assigned</SelectItem>
+                    {pods?.map(pod => (
+                      <SelectItem key={pod.id} value={pod.id.toString()}>
                         <div className="flex items-center">
                           <div 
                             className="h-3 w-3 rounded-full mr-2" 
-                            style={{ backgroundColor: house.color }}
+                            style={{ backgroundColor: pod.color }}
                           />
-                          <span>{house.name}</span>
+                          <span>{pod.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="class" className="text-right">
+                  Class
+                </Label>
+                <Select
+                  value={editingStudent.classId?.toString() || ''}
+                  onValueChange={(value) => 
+                    setEditingStudent({
+                      ...editingStudent, 
+                      classId: value ? parseInt(value) : null
+                    })}
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Select a class" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No class assigned</SelectItem>
+                    {classes?.map(classObj => (
+                      <SelectItem key={classObj.id} value={classObj.id.toString()}>
+                        <div className="flex items-center">
+                          {classObj.podId && pods?.find(p => p.id === classObj.podId) ? (
+                            <div 
+                              className="h-3 w-3 rounded-full mr-2" 
+                              style={{ backgroundColor: pods?.find(p => p.id === classObj.podId)?.color || '#ccc' }}
+                            />
+                          ) : null}
+                          <span>{classObj.name}</span>
+                          {classObj.gradeLevel ? (
+                            <span className="ml-1 text-muted-foreground">
+                              (Grade {classObj.gradeLevel})
+                            </span>
+                          ) : null}
                         </div>
                       </SelectItem>
                     ))}

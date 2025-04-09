@@ -26,14 +26,20 @@ interface StudentListProps {
 
 const StudentList: FC<StudentListProps> = ({ students, selectedStudentId, onSelectStudent }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedHouse, setSelectedHouse] = useState<number | 'all'>('all');
+  const [selectedPod, setSelectedPod] = useState<number | 'all'>('all');
+  const [selectedClass, setSelectedClass] = useState<number | 'all'>('all');
   const [selectedGrade, setSelectedGrade] = useState<string | 'all'>('all');
   const [sortOrder, setSortOrder] = useState<'name' | 'points-high' | 'points-low'>('name');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   
-  // Get houses for filtering
-  const { data: houses } = useQuery<any[]>({
-    queryKey: ['/api/houses'],
+  // Get pods for filtering
+  const { data: pods } = useQuery<any[]>({
+    queryKey: ['/api/pods'],
+  });
+  
+  // Get classes for filtering
+  const { data: classes } = useQuery<any[]>({
+    queryKey: ['/api/classes'],
   });
 
   // Get a mapping of studentId to points
@@ -70,13 +76,16 @@ const StudentList: FC<StudentListProps> = ({ students, selectedStudentId, onSele
     const fullName = `${student.firstName || ''} ${student.lastName || ''}`.toLowerCase();
     const nameMatch = fullName.includes(searchQuery.toLowerCase());
     
-    // Apply house filter
-    const houseMatch = selectedHouse === 'all' || student.houseId === selectedHouse;
+    // Apply pod filter
+    const podMatch = selectedPod === 'all' || student.podId === selectedPod;
+    
+    // Apply class filter
+    const classMatch = selectedClass === 'all' || student.classId === selectedClass;
     
     // Apply grade filter
     const gradeMatch = selectedGrade === 'all' || student.gradeLevel === selectedGrade;
     
-    return nameMatch && houseMatch && gradeMatch;
+    return nameMatch && podMatch && classMatch && gradeMatch;
   }).sort((a, b) => {
     // Apply sorting
     if (sortOrder === 'name') {
@@ -97,7 +106,8 @@ const StudentList: FC<StudentListProps> = ({ students, selectedStudentId, onSele
   // Reset all filters
   const clearFilters = () => {
     setSearchQuery('');
-    setSelectedHouse('all');
+    setSelectedPod('all');
+    setSelectedClass('all');
     setSelectedGrade('all');
     setSortOrder('name');
   };
@@ -125,36 +135,68 @@ const StudentList: FC<StudentListProps> = ({ students, selectedStudentId, onSele
         </div>
         
         <div className="flex flex-wrap gap-2 items-center">
-          {/* House filter */}
+          {/* Pod filter */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="h-8 gap-1">
                 <Filter className="h-3.5 w-3.5" />
-                House
+                Pod
                 <ChevronDown className="h-3.5 w-3.5" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuLabel>Filter by House</DropdownMenuLabel>
+              <DropdownMenuLabel>Filter by Pod</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuCheckboxItem
-                checked={selectedHouse === 'all'}
-                onCheckedChange={() => setSelectedHouse('all')}
+                checked={selectedPod === 'all'}
+                onCheckedChange={() => setSelectedPod('all')}
               >
-                All Houses
+                All Pods
               </DropdownMenuCheckboxItem>
-              {houses?.map(house => (
+              {pods?.map(pod => (
                 <DropdownMenuCheckboxItem
-                  key={house.id}
-                  checked={selectedHouse === house.id}
-                  onCheckedChange={() => setSelectedHouse(house.id)}
+                  key={pod.id}
+                  checked={selectedPod === pod.id}
+                  onCheckedChange={() => setSelectedPod(pod.id)}
                 >
                   <div className="flex items-center">
                     <div 
                       className="w-3 h-3 rounded-full mr-2" 
-                      style={{ backgroundColor: house.color }}
+                      style={{ backgroundColor: pod.color }}
                     ></div>
-                    {house.name}
+                    {pod.name}
+                  </div>
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          {/* Class filter */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8 gap-1">
+                <Filter className="h-3.5 w-3.5" />
+                Class
+                <ChevronDown className="h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuLabel>Filter by Class</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuCheckboxItem
+                checked={selectedClass === 'all'}
+                onCheckedChange={() => setSelectedClass('all')}
+              >
+                All Classes
+              </DropdownMenuCheckboxItem>
+              {classes?.map(cls => (
+                <DropdownMenuCheckboxItem
+                  key={cls.id}
+                  checked={selectedClass === cls.id}
+                  onCheckedChange={() => setSelectedClass(cls.id)}
+                >
+                  <div className="flex items-center">
+                    {cls.name}
                   </div>
                 </DropdownMenuCheckboxItem>
               ))}
@@ -246,7 +288,7 @@ const StudentList: FC<StudentListProps> = ({ students, selectedStudentId, onSele
         </div>
         
         {/* Active filters */}
-        {(searchQuery || selectedHouse !== 'all' || selectedGrade !== 'all') && (
+        {(searchQuery || selectedPod !== 'all' || selectedClass !== 'all' || selectedGrade !== 'all') && (
           <div className="flex flex-wrap gap-2 pt-1">
             {searchQuery && (
               <Badge variant="secondary" className="flex items-center gap-1">
@@ -254,10 +296,16 @@ const StudentList: FC<StudentListProps> = ({ students, selectedStudentId, onSele
                 <X className="h-3 w-3 cursor-pointer" onClick={() => setSearchQuery('')} />
               </Badge>
             )}
-            {selectedHouse !== 'all' && (
+            {selectedPod !== 'all' && (
               <Badge variant="secondary" className="flex items-center gap-1">
-                House: {houses?.find(h => h.id === selectedHouse)?.name || selectedHouse}
-                <X className="h-3 w-3 cursor-pointer" onClick={() => setSelectedHouse('all')} />
+                Pod: {pods?.find(p => p.id === selectedPod)?.name || selectedPod}
+                <X className="h-3 w-3 cursor-pointer" onClick={() => setSelectedPod('all')} />
+              </Badge>
+            )}
+            {selectedClass !== 'all' && (
+              <Badge variant="secondary" className="flex items-center gap-1">
+                Class: {classes?.find(c => c.id === selectedClass)?.name || selectedClass}
+                <X className="h-3 w-3 cursor-pointer" onClick={() => setSelectedClass('all')} />
               </Badge>
             )}
             {selectedGrade !== 'all' && (
@@ -322,14 +370,21 @@ const StudentList: FC<StudentListProps> = ({ students, selectedStudentId, onSele
                     ? `Grade ${student.gradeLevel}${student.section}` 
                     : ''}
                   
-                  {houses && student.houseId && (
+                  {pods && student.podId && (
                     <span className="flex items-center">
                       •
                       <div 
                         className="w-2 h-2 rounded-full mx-1" 
-                        style={{ backgroundColor: houses.find(h => h.id === student.houseId)?.color || '#ccc' }}
+                        style={{ backgroundColor: pods.find(p => p.id === student.podId)?.color || '#ccc' }}
                       ></div>
-                      {houses.find(h => h.id === student.houseId)?.name}
+                      {pods.find(p => p.id === student.podId)?.name}
+                    </span>
+                  )}
+                  
+                  {classes && student.classId && (
+                    <span className="flex items-center ml-2">
+                      •
+                      {classes.find(c => c.id === student.classId)?.name || 'Unknown Class'}
                     </span>
                   )}
                 </div>
@@ -375,14 +430,21 @@ const StudentList: FC<StudentListProps> = ({ students, selectedStudentId, onSele
               
               {/* No points data shown */}
               
-              {/* House indicator */}
-              {houses && student.houseId && (
+              {/* Pod indicator */}
+              {pods && student.podId && (
                 <div className="mt-2 flex items-center text-xs text-neutral-dark">
                   <div 
                     className="w-2 h-2 rounded-full mr-1" 
-                    style={{ backgroundColor: houses.find(h => h.id === student.houseId)?.color || '#ccc' }}
+                    style={{ backgroundColor: pods.find(p => p.id === student.podId)?.color || '#ccc' }}
                   ></div>
-                  {houses.find(h => h.id === student.houseId)?.name}
+                  {pods.find(p => p.id === student.podId)?.name}
+                </div>
+              )}
+              
+              {/* Class indicator */}
+              {classes && student.classId && (
+                <div className="mt-1 flex items-center text-xs text-neutral-dark">
+                  Class: {classes.find(c => c.id === student.classId)?.name || 'Unknown Class'}
                 </div>
               )}
             </div>
