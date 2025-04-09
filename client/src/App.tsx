@@ -142,6 +142,11 @@ function Router() {
         allowedRoles={["admin", "teacher"]}
       />
       <ProtectedRoute 
+        path="/roster/manage" 
+        component={RosterPage}
+        allowedRoles={["admin", "teacher"]}
+      />
+      <ProtectedRoute 
         path="/add-student" 
         component={RosterPage}
         allowedRoles={["admin", "teacher"]}

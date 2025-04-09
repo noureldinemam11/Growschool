@@ -579,11 +579,11 @@ const ManageRoster: FC<ManageRosterProps> = () => {
               <div className="space-y-2">
                 <Label htmlFor="podId">Pod</Label>
                 <Select 
-                  value={formData.podId?.toString() || '0'} 
+                  value={formData.podId?.toString() || 'none'} 
                   onValueChange={(value) => {
                     setFormData({
                       ...formData,
-                      podId: value && value !== '0' ? parseInt(value) : null
+                      podId: value && value !== 'none' ? parseInt(value) : null
                     });
                   }}
                 >
@@ -591,7 +591,7 @@ const ManageRoster: FC<ManageRosterProps> = () => {
                     <SelectValue placeholder="Select a pod" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="0">No Pod</SelectItem>
+                    <SelectItem value="none">No Pod</SelectItem>
                     {pods?.map(pod => (
                       <SelectItem key={pod.id} value={pod.id.toString()}>
                         <div className="flex items-center gap-2">
@@ -610,11 +610,11 @@ const ManageRoster: FC<ManageRosterProps> = () => {
               <div className="space-y-2">
                 <Label htmlFor="classId">Class</Label>
                 <Select 
-                  value={formData.classId?.toString() || '0'} 
+                  value={formData.classId?.toString() || 'none'} 
                   onValueChange={(value) => {
                     setFormData({
                       ...formData,
-                      classId: value && value !== '0' ? parseInt(value) : null
+                      classId: value && value !== 'none' ? parseInt(value) : null
                     });
                   }}
                 >
@@ -622,7 +622,7 @@ const ManageRoster: FC<ManageRosterProps> = () => {
                     <SelectValue placeholder="Select a class" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="0">No Class</SelectItem>
+                    <SelectItem value="none">No Class</SelectItem>
                     {classes?.map(cls => (
                       <SelectItem key={cls.id} value={cls.id.toString()}>
                         {cls.name}
