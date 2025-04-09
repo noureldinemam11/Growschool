@@ -66,6 +66,7 @@ export interface IStorage {
   updateClass(id: number, classObj: Partial<Class>): Promise<Class | undefined>;
   deleteClass(id: number): Promise<boolean>;
   getAllClasses(): Promise<Class[]>;
+  getClassPoints(): Promise<Record<number, number>>;
   
   // Behavior categories
   getBehaviorCategory(id: number): Promise<BehaviorCategory | undefined>;
@@ -396,6 +397,33 @@ export class MemStorage implements IStorage {
   
   async getAllClasses(): Promise<Class[]> {
     return Array.from(this.classes.values());
+  }
+  
+  async getClassPoints(): Promise<Record<number, number>> {
+    const classPoints: Record<number, number> = {};
+    
+    // Initialize all classes with 0 points
+    Array.from(this.classes.values()).forEach(cls => {
+      classPoints[cls.id] = 0;
+    });
+    
+    // Get all students
+    const students = Array.from(this.users.values()).filter(user => 
+      user.role === 'student' && user.classId !== null
+    );
+    
+    // Get all behavior points
+    const points = Array.from(this.behaviorPoints.values());
+    
+    // Calculate points for each class based on student's behavior points
+    points.forEach(point => {
+      const student = students.find(s => s.id === point.studentId);
+      if (student && student.classId) {
+        classPoints[student.classId] = (classPoints[student.classId] || 0) + point.points;
+      }
+    });
+    
+    return classPoints;
   }
 
   // Behavior category methods
@@ -925,6 +953,44 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error in getAllClasses:', error);
       throw error;
+    }
+  }
+  
+  async getClassPoints(): Promise<Record<number, number>> {
+    try {
+      const classPoints: Record<number, number> = {};
+      
+      // Get all classes to initialize with zero points
+      const allClasses = await this.getAllClasses();
+      allClasses.forEach(cls => {
+        classPoints[cls.id] = 0;
+      });
+      
+      // Calculate points for each class using SQL
+      const client = await pool.connect();
+      try {
+        // Get students with their behavior points and class assignments
+        const result = await client.query(`
+          SELECT c.id as class_id, SUM(bp.points) as total_points
+          FROM classes c
+          JOIN users u ON u.class_id = c.id
+          JOIN behavior_points bp ON bp.student_id = u.id
+          WHERE u.role = 'student'
+          GROUP BY c.id
+        `);
+        
+        // Update class points map with actual values
+        result.rows.forEach(row => {
+          classPoints[row.class_id] = Number(row.total_points);
+        });
+        
+        return classPoints;
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      console.error("Error in getClassPoints:", error);
+      return {};
     }
   }
   

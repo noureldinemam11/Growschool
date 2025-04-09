@@ -145,6 +145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Classes
+  // Specific routes need to come before parameterized routes
   app.get("/api/classes", async (req, res) => {
     try {
       const classes = await storage.getAllClasses();
@@ -154,7 +155,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch classes" });
     }
   });
-
+  
+  app.get("/api/classes/points", async (req, res) => {
+    try {
+      const classPoints = await storage.getClassPoints();
+      res.json(classPoints);
+    } catch (error) {
+      console.error("Error fetching class points:", error);
+      res.status(500).json({ error: "Failed to fetch class points" });
+    }
+  });
+  
   app.get("/api/classes/:id", async (req, res) => {
     try {
       const classId = Number(req.params.id);
