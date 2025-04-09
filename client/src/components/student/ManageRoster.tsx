@@ -1,5 +1,5 @@
 import { FC, useState, useEffect } from 'react';
-import { User } from '@shared/schema';
+import { User, Pod, Class } from '@shared/schema';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { cn } from '@/lib/utils';
@@ -91,9 +91,14 @@ const ManageRoster: FC<ManageRosterProps> = () => {
     queryKey: ['/api/users/role/student'],
   });
 
-  // Get houses for dropdown
-  const { data: houses, isLoading: isLoadingHouses } = useQuery<House[]>({
-    queryKey: ['/api/houses'],
+  // Get pods for dropdown
+  const { data: pods, isLoading: isLoadingPods } = useQuery<Pod[]>({
+    queryKey: ['/api/pods'],
+  });
+  
+  // Get classes for dropdown
+  const { data: classes, isLoading: isLoadingClasses } = useQuery<Class[]>({
+    queryKey: ['/api/classes'],
   });
 
   // Handle selecting all students
@@ -231,7 +236,8 @@ const ManageRoster: FC<ManageRosterProps> = () => {
       email: student.email,
       gradeLevel: student.gradeLevel,
       section: student.section,
-      houseId: student.houseId,
+      podId: student.podId,
+      classId: student.classId,
     });
     setIsEditModalOpen(true);
   };
@@ -267,24 +273,37 @@ const ManageRoster: FC<ManageRosterProps> = () => {
     setIsDeleteAllModalOpen(false);
   };
 
-  // Get house color and name
-  const getHouseDetails = (houseId: number | null | undefined) => {
-    if (houseId === null || houseId === undefined || houseId === 0 || !houses) {
-      return { color: '#cccccc', name: 'No House' };
+  // Get pod and class details
+  const getPodAndClassDetails = (podId: number | null | undefined, classId: number | null | undefined) => {
+    let podName = 'No Pod';
+    let podColor = '#cccccc';
+    let className = 'No Class';
+    
+    // Get pod details
+    if (podId && pods) {
+      const pod = pods.find(p => p.id === podId);
+      if (pod) {
+        podName = pod.name;
+        podColor = pod.color;
+      }
     }
     
-    const house = houses.find(h => h.id === houseId);
-    if (!house) {
-      return { color: '#cccccc', name: 'No House' };
+    // Get class details
+    if (classId && classes) {
+      const cls = classes.find(c => c.id === classId);
+      if (cls) {
+        className = cls.name;
+      }
     }
     
     return {
-      color: house.color,
-      name: house.name
+      podName,
+      podColor,
+      className
     };
   };
 
-  if (isLoadingStudents || isLoadingHouses) {
+  if (isLoadingStudents || isLoadingPods || isLoadingClasses) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
@@ -351,14 +370,15 @@ const ManageRoster: FC<ManageRosterProps> = () => {
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Grade</TableHead>
-                <TableHead>House</TableHead>
+                <TableHead>Pod</TableHead>
+                <TableHead>Class</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {students && students.length > 0 ? (
                 students.map(student => {
-                  const houseDetails = getHouseDetails(student.houseId);
+                  const details = getPodAndClassDetails(student.podId, student.classId);
                   
                   return (
                     <TableRow key={student.id}>
@@ -378,10 +398,13 @@ const ManageRoster: FC<ManageRosterProps> = () => {
                         <div className="flex items-center gap-2">
                           <div 
                             className="w-3 h-3 rounded-full" 
-                            style={{ backgroundColor: houseDetails.color }}
+                            style={{ backgroundColor: details.podColor }}
                           ></div>
-                          <span>{houseDetails.name}</span>
+                          <span>{details.podName}</span>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        {details.className}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
@@ -554,30 +577,55 @@ const ManageRoster: FC<ManageRosterProps> = () => {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="houseId">House</Label>
+                <Label htmlFor="podId">Pod</Label>
                 <Select 
-                  value={formData.houseId?.toString() || '0'} 
+                  value={formData.podId?.toString() || '0'} 
                   onValueChange={(value) => {
                     setFormData({
                       ...formData,
-                      houseId: value && value !== '0' ? parseInt(value) : null
+                      podId: value && value !== '0' ? parseInt(value) : null
                     });
                   }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a house" />
+                    <SelectValue placeholder="Select a pod" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="0">No House</SelectItem>
-                    {houses?.map(house => (
-                      <SelectItem key={house.id} value={house.id.toString()}>
+                    <SelectItem value="0">No Pod</SelectItem>
+                    {pods?.map(pod => (
+                      <SelectItem key={pod.id} value={pod.id.toString()}>
                         <div className="flex items-center gap-2">
                           <div 
                             className="w-3 h-3 rounded-full" 
-                            style={{ backgroundColor: house.color }}
+                            style={{ backgroundColor: pod.color }}
                           ></div>
-                          {house.name}
+                          {pod.name}
                         </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="classId">Class</Label>
+                <Select 
+                  value={formData.classId?.toString() || '0'} 
+                  onValueChange={(value) => {
+                    setFormData({
+                      ...formData,
+                      classId: value && value !== '0' ? parseInt(value) : null
+                    });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a class" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">No Class</SelectItem>
+                    {classes?.map(cls => (
+                      <SelectItem key={cls.id} value={cls.id.toString()}>
+                        {cls.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
