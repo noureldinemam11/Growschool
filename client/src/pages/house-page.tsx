@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ClassDashboardCard from '@/components/class/ClassDashboardCard';
 
 export default function PodPage() {
   const { user } = useAuth();
@@ -311,7 +312,7 @@ export default function PodPage() {
                         )}
                         <h2 className="text-2xl font-bold text-gray-800">
                           {selectedPod 
-                            ? `${selectedPod.name} - Classes Dashboard` 
+                            ? `${selectedPod.name} — Classes Dashboard` 
                             : "Pod Classes Dashboard"}
                         </h2>
                       </div>
@@ -327,8 +328,8 @@ export default function PodPage() {
                       </button>
                     </div>
                     
-                    {/* Classes grid for selected pod - Make cards larger when in fullscreen mode */}
-                    <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 ${isFullscreen ? 'lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6' : ''}`}>
+                    {/* Classes grid for selected pod - styled to match the design */}
+                    <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 ${isFullscreen ? 'lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6' : ''}`}>
                       {/* Classes display section */}
                       {!podId ? (
                         <div className="col-span-full text-center py-10">
@@ -352,49 +353,28 @@ export default function PodPage() {
                         </div>
                       ) : (
                         <>
-                          {classes.map((classItem, index) => {
-                            // Generate vibrant colors for the classes
-                            const colors = [
-                              'bg-gradient-to-br from-green-300 to-green-400',
-                              'bg-gradient-to-br from-pink-400 to-pink-500',
-                              'bg-gradient-to-br from-amber-300 to-amber-400',
-                              'bg-gradient-to-br from-yellow-300 to-yellow-400',
-                              'bg-gradient-to-br from-yellow-400 to-orange-400',
-                              'bg-gradient-to-br from-blue-300 to-blue-400',
-                              'bg-gradient-to-br from-red-400 to-red-500',
-                              'bg-gradient-to-br from-lime-300 to-lime-400',
-                              'bg-gradient-to-br from-purple-300 to-purple-400',
-                              'bg-gradient-to-br from-teal-300 to-teal-400',
-                              'bg-gradient-to-br from-cyan-300 to-cyan-400',
-                              'bg-gradient-to-br from-amber-600 to-amber-700',
-                            ];
-                            
-                            const colorClass = colors[index % colors.length];
-                            const classPoint = classPoints[classItem.id] || 0;
-                            
-                            return (
-                              <div 
-                                key={classItem.id} 
-                                className={`${colorClass} rounded-lg shadow p-6 flex flex-col items-center justify-center text-center aspect-[3/2] transition-transform hover:scale-105 cursor-pointer`}
-                              >
-                                {isLoadingClassPoints ? (
-                                  <Loader2 className="h-6 w-6 animate-spin text-blue-900" />
-                                ) : (
-                                  <>
-                                    <div className={`text-blue-900 font-bold text-3xl md:text-4xl ${isFullscreen ? 'text-5xl md:text-6xl lg:text-7xl' : 'lg:text-5xl'} mb-2`}>
-                                      {new Intl.NumberFormat().format(classPoint)}
-                                    </div>
-                                    <div className={`text-blue-900 font-medium ${isFullscreen ? 'text-xl' : ''}`}>
-                                      Class {classItem.name}
-                                    </div>
-                                    <div className={`text-blue-900/70 text-xs ${isFullscreen ? 'text-sm' : ''} mt-1`}>
-                                      Grade {classItem.gradeLevel}
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                            );
-                          })}
+                          {/* Sort classes by points in descending order for proper ranking */}
+                          {classes
+                            .map(classItem => ({
+                              ...classItem,
+                              points: classPoints[classItem.id] || 0
+                            }))
+                            .sort((a, b) => b.points - a.points)
+                            .map((classItem, index) => {
+                              // Determine if the class is "gaining fast" (for the 4th class in the mockup)
+                              // This is just a placeholder - you may want to implement actual logic
+                              const isGaining = index === 3;
+                              
+                              return (
+                                <ClassDashboardCard
+                                  key={classItem.id}
+                                  classItem={classItem}
+                                  points={classItem.points}
+                                  rank={index}
+                                  gaining={isGaining}
+                                />
+                              );
+                            })}
                         </>
                       )}
                     </div>
