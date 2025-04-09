@@ -38,9 +38,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 // Schema for the form
 const bulkImportSchema = z.object({
   studentNames: z.string().min(1, { message: "Please enter at least one student name" }),
-  classId: z.string().optional(),
-  podId: z.string().optional(),
-  gradeLevel: z.string().optional(),
+  classId: z.string(),
+  podId: z.string(),
+  gradeLevel: z.string(),
 });
 
 type BulkImportFormData = z.infer<typeof bulkImportSchema>;
@@ -68,15 +68,20 @@ export function BulkNameImport({ classes, pods }: BulkNameImportProps) {
     resolver: zodResolver(bulkImportSchema),
     defaultValues: {
       studentNames: '',
-      classId: '',
-      podId: '',
-      gradeLevel: '',
+      classId: 'none',
+      podId: 'none',
+      gradeLevel: 'none',
     },
   });
 
   // Handle class selection change
   const handleClassChange = (classId: string) => {
-    if (!classId) return;
+    if (!classId || classId === 'none') {
+      // User selected "None" - reset related fields to "none"
+      form.setValue('podId', 'none');
+      form.setValue('gradeLevel', 'none');
+      return;
+    }
     
     const selectedClass = classes.find(c => c.id.toString() === classId);
     if (selectedClass) {
@@ -97,9 +102,9 @@ export function BulkNameImport({ classes, pods }: BulkNameImportProps) {
 
       const payload = {
         names,
-        classId: data.classId ? parseInt(data.classId) : undefined,
-        podId: data.podId ? parseInt(data.podId) : undefined,
-        gradeLevel: data.gradeLevel || undefined,
+        classId: data.classId && data.classId !== 'none' ? parseInt(data.classId) : undefined,
+        podId: data.podId && data.podId !== 'none' ? parseInt(data.podId) : undefined,
+        gradeLevel: data.gradeLevel && data.gradeLevel !== 'none' ? data.gradeLevel : undefined,
       };
 
       const response = await apiRequest('POST', '/api/users/bulk-import-names', payload);
@@ -202,7 +207,7 @@ ALI HASAN ALI ABDULQADER ALKATHEERI"
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">None</SelectItem>
+                          <SelectItem value="none">None</SelectItem>
                           {classes.map((cls) => (
                             <SelectItem key={cls.id} value={cls.id.toString()}>
                               {cls.name} (Grade {cls.gradeLevel})
@@ -234,7 +239,7 @@ ALI HASAN ALI ABDULQADER ALKATHEERI"
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">None</SelectItem>
+                          <SelectItem value="none">None</SelectItem>
                           {pods.map((pod) => (
                             <SelectItem key={pod.id} value={pod.id.toString()}>
                               <div className="flex items-center gap-2">
@@ -272,7 +277,7 @@ ALI HASAN ALI ABDULQADER ALKATHEERI"
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">None</SelectItem>
+                          <SelectItem value="none">None</SelectItem>
                           {Array.from({ length: 12 }, (_, i) => i + 1).map((grade) => (
                             <SelectItem key={grade} value={grade.toString()}>
                               Grade {grade}
