@@ -749,18 +749,18 @@ export default function RosterPage() {
                   Pod
                 </Label>
                 <Select
-                  value={editingStudent.podId?.toString() || ''}
+                  value={editingStudent.podId?.toString() || 'none'}
                   onValueChange={(value) => 
                     setEditingStudent({
                       ...editingStudent, 
-                      podId: value ? parseInt(value) : null
+                      podId: value && value !== 'none' ? parseInt(value) : null
                     })}
                 >
                   <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="Select a pod" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No pod assigned</SelectItem>
+                    <SelectItem value="none">No pod assigned</SelectItem>
                     {pods?.map(pod => (
                       <SelectItem key={pod.id} value={pod.id.toString()}>
                         <div className="flex items-center">
@@ -781,18 +781,18 @@ export default function RosterPage() {
                   Class
                 </Label>
                 <Select
-                  value={editingStudent.classId?.toString() || ''}
+                  value={editingStudent.classId?.toString() || 'none'}
                   onValueChange={(value) => 
                     setEditingStudent({
                       ...editingStudent, 
-                      classId: value ? parseInt(value) : null
+                      classId: value && value !== 'none' ? parseInt(value) : null
                     })}
                 >
                   <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="Select a class" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No class assigned</SelectItem>
+                    <SelectItem value="none">No class assigned</SelectItem>
                     {classes?.map(classObj => (
                       <SelectItem key={classObj.id} value={classObj.id.toString()}>
                         <div className="flex items-center">
