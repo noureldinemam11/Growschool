@@ -66,7 +66,7 @@ export function BulkNameImport({ classes, pods }: BulkNameImportProps) {
     resolver: zodResolver(bulkImportSchema),
     defaultValues: {
       studentNames: '',
-      classId: 'none',
+      classId: undefined,
     },
   });
 
@@ -83,7 +83,7 @@ export function BulkNameImport({ classes, pods }: BulkNameImportProps) {
 
       const payload = {
         names,
-        classId: data.classId && data.classId !== 'none' ? parseInt(data.classId) : undefined,
+        classId: data.classId && data.classId !== '' ? parseInt(data.classId) : undefined,
       };
 
       try {
@@ -212,7 +212,7 @@ ALI HASAN ALI ABDULQADER ALKATHEERI"
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="none">None</SelectItem>
+                          <SelectItem value="">None</SelectItem>
                           {classes.map((cls) => (
                             <SelectItem key={cls.id} value={cls.id.toString()}>
                               {cls.name} (Grade {cls.gradeLevel})
