@@ -915,6 +915,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(403).json({ error: "Unauthorized" });
     }
 
+    // Set cache control headers to prevent browser caching
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+
     try {
       const { role } = req.params;
       let users = [];
@@ -938,7 +943,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role: user.role,
         gradeLevel: user.gradeLevel,
         section: user.section,
-        houseId: user.houseId
+        podId: user.podId,
+        classId: user.classId
       }));
       
       res.json(safeUsers);
@@ -984,7 +990,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: user.email,
         gradeLevel: user.gradeLevel,
         section: user.section,
-        houseId: user.houseId
+        podId: user.podId,
+        classId: user.classId
       };
       
       res.json(safeUser);
@@ -1043,7 +1050,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             lastName: student.lastName,
             gradeLevel: student.gradeLevel,
             section: student.section,
-            houseId: student.houseId
+            podId: student.podId,
+            classId: student.classId
           }));
           
           return res.json(safeStudents);
@@ -1069,6 +1077,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user || !["admin", "teacher"].includes(user.role)) {
         return res.status(403).json({ error: "Unauthorized - Insufficient permissions" });
       }
+      
+      // CRITICAL FIX: Set cache control headers to prevent browser caching
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
 
       console.log("Fetching students roster for user:", user.id, user.username, user.role);
       
