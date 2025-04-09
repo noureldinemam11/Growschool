@@ -75,7 +75,7 @@ export default function PodPage() {
         .then(data => {
           console.log(`Received ${data.length} classes, filtering for pod ${podId}:`, data);
           // Filter classes to only include those from the selected pod
-          const filteredClasses = data.filter(classItem => classItem.podId === podId);
+          const filteredClasses = data.filter((classItem: { podId: number }) => classItem.podId === podId);
           console.log(`Filtered to ${filteredClasses.length} classes for pod ${podId}:`, filteredClasses);
           setClasses(filteredClasses);
           setIsLoadingClasses(false);

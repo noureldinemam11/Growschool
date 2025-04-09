@@ -909,7 +909,13 @@ export class DatabaseStorage implements IStorage {
   
   async getClassesByPodId(podId: number): Promise<Class[]> {
     try {
-      return await db.select().from(classes).where(eq(classes.podId, podId));
+      console.log(`Executing database query for classes with podId=${podId}`);
+      const results = await db.select()
+        .from(classes)
+        .where(eq(classes.podId, podId));
+      
+      console.log(`Found ${results.length} classes for podId=${podId}:`, results);
+      return results;
     } catch (error) {
       console.error(`Error in getClassesByPodId for podId ${podId}:`, error);
       throw error;
@@ -964,9 +970,13 @@ export class DatabaseStorage implements IStorage {
   
   async getClassesByPodId(podId: number): Promise<Class[]> {
     try {
-      return await db.select()
+      console.log(`Executing database query for classes with podId=${podId}`);
+      const results = await db.select()
         .from(classes)
         .where(eq(classes.podId, podId));
+      
+      console.log(`Found ${results.length} classes for podId=${podId}:`, results);
+      return results;
     } catch (error) {
       console.error(`Error in getClassesByPodId for podId ${podId}:`, error);
       throw error;
