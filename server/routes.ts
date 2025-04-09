@@ -1591,18 +1591,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const username = `${firstName.toLowerCase().replace(/[^a-z0-9]/g, '')}_${randomSuffix}_${timestamp}`;
           
           // Create student with minimal required fields
+          // Generate a placeholder email that's unique
+          const email = `${username}@placeholder.school`;
+          
+          // Need to hash the password before creating the user
+          const hashedPassword = await hashPassword('placeholder123');
+          
           const newStudent = await storage.createUser({
             firstName,
             lastName,
             username, // System-generated, not for login
-            password: 'placeholder', // Will be hashed but never used
-            email: '', // Empty email as per requirement
+            password: hashedPassword, // Properly hashed placeholder password
+            email: email, // Placeholder email for database requirements
             role: 'student',
             classId: classId || null,
             podId: podId || null,
             gradeLevel: gradeLevel || null,
             section: null,
-            parentId: null
+            parentId: null,
+            confirmPassword: 'placeholder123' // Required by schema but not stored
           });
           
           createdStudents.push(newStudent);
