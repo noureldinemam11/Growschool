@@ -68,16 +68,25 @@ export default function PodPage() {
   useEffect(() => {
     if (podId) {
       setIsLoadingClasses(true);
+      console.log(`Fetching classes for pod ID: ${podId}`);
+      
       fetch(`/api/classes?podId=${podId}`)
         .then(res => res.json())
         .then(data => {
-          setClasses(data);
+          console.log(`Received ${data.length} classes, filtering for pod ${podId}:`, data);
+          // Filter classes to only include those from the selected pod
+          const filteredClasses = data.filter(classItem => classItem.podId === podId);
+          console.log(`Filtered to ${filteredClasses.length} classes for pod ${podId}:`, filteredClasses);
+          setClasses(filteredClasses);
           setIsLoadingClasses(false);
         })
         .catch(err => {
           console.error("Error fetching classes for pod:", err);
           setIsLoadingClasses(false);
         });
+    } else {
+      // Reset classes if no pod is selected
+      setClasses([]);
     }
   }, [podId]);
   
@@ -234,7 +243,7 @@ export default function PodPage() {
                   {/* Dashboard Button */}
                   <div className="bg-blue-50 rounded-md p-4">
                     <button 
-                      onClick={() => setLocation('/pod/dashboard')}
+                      onClick={() => setLocation('/pods')}
                       className="w-full text-left flex items-center space-x-3 text-primary hover:text-primary-dark"
                     >
                       <span className="border border-blue-300 rounded p-2 bg-white">
