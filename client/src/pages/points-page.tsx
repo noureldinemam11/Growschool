@@ -16,7 +16,7 @@ export default function PointsPage() {
   const [location, setLocation] = useLocation();
   const [selectedStudents, setSelectedStudents] = useState<number[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [filterHouse, setFilterHouse] = useState<string>('all');
+  const [filterPod, setFilterPod] = useState<string>('all');
   const [selectedStudentForPoints, setSelectedStudentForPoints] = useState<number | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<User | null>(null);
   
@@ -33,14 +33,14 @@ export default function PointsPage() {
     queryKey: ['/api/users/role/teacher'],
   });
 
-  // Fetch houses
-  const { data: houses, isLoading: loadingHouses } = useQuery<any[]>({
-    queryKey: ['/api/houses'],
+  // Fetch pods
+  const { data: pods, isLoading: loadingPods } = useQuery<any[]>({
+    queryKey: ['/api/pods'],
   });
 
   const filteredStudents = students?.filter(student => {
-    // Apply house filter
-    if (filterHouse !== 'all' && student.houseId !== Number(filterHouse)) {
+    // Apply pod filter
+    if (filterPod !== 'all' && student.podId !== Number(filterPod)) {
       return false;
     }
     return true;
@@ -175,16 +175,16 @@ export default function PointsPage() {
       <div className="bg-white border-b py-2 px-4 sticky top-0 z-10">
         <div className="container mx-auto flex flex-wrap justify-between items-center gap-2">
           <div className="flex items-center gap-2">
-            <Select value={filterHouse} onValueChange={setFilterHouse}>
+            <Select value={filterPod} onValueChange={setFilterPod}>
               <SelectTrigger className="w-[140px]">
                 <Home className="mr-2 h-4 w-4" />
-                <SelectValue placeholder="All Houses" />
+                <SelectValue placeholder="All Pods" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Houses</SelectItem>
-                {houses?.map(house => (
-                  <SelectItem key={house.id} value={house.id.toString()}>
-                    {house.name}
+                <SelectItem value="all">All Pods</SelectItem>
+                {pods?.map(pod => (
+                  <SelectItem key={pod.id} value={pod.id.toString()}>
+                    {pod.name}
                   </SelectItem>
                 ))}
               </SelectContent>
