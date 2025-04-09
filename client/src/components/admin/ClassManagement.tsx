@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { insertClassSchema } from '@shared/schema';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
+import { BulkAssignStudents } from '@/components/class/BulkAssignStudents';
 
 import {
   Card,
@@ -432,6 +433,13 @@ export default function ClassManagement() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        {/* Bulk Assign Students component */}
+                        <div className="mr-2">
+                          <BulkAssignStudents 
+                            classId={classObj.id} 
+                            className={classObj.name} 
+                          />
+                        </div>
                         <Button 
                           size="icon" 
                           variant="ghost" 
