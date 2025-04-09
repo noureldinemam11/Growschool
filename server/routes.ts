@@ -649,22 +649,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Top Students per House
+  // Top Students per Pod
   app.get("/api/houses-top-students", async (req, res) => {
     try {
-      const houses = await storage.getAllHouses();
+      const pods = await storage.getAllPods();
       const result = await Promise.all(
-        houses.map(async (house) => {
-          const students = await storage.getStudentsByHouseId(house.id);
+        pods.map(async (pod) => {
+          const students = await storage.getStudentsByPodId(pod.id);
           let topStudent = null;
           let maxPoints = 0;
-          let houseTotal = 0;
+          let podTotal = 0;
           
-          // Calculate the total points for all students in this house
+          // Calculate the total points for all students in this pod
           for (const student of students) {
             const points = await storage.getBehaviorPointsByStudentId(student.id);
             const studentTotal = points.reduce((sum, point) => sum + point.points, 0);
-            houseTotal += studentTotal;
+            podTotal += studentTotal;
             
             if (studentTotal > maxPoints) {
               maxPoints = studentTotal;
@@ -677,18 +677,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }
           
-          // Ensure house points match the total calculated from all students
-          if (house.points !== houseTotal) {
-            console.log(`Correcting house points for ${house.name}: DB=${house.points}, Calculated=${houseTotal}`);
-            await storage.updateHouse(house.id, { points: houseTotal });
-            house.points = houseTotal;
+          // Ensure pod points match the total calculated from all students
+          if (pod.points !== podTotal) {
+            console.log(`Correcting pod points for ${pod.name}: DB=${pod.points}, Calculated=${podTotal}`);
+            await storage.updatePod(pod.id, { points: podTotal });
+            pod.points = podTotal;
           }
           
           return {
-            houseId: house.id,
-            houseName: house.name,
-            houseColor: house.color,
-            housePoints: houseTotal, // Use our calculated total
+            houseId: pod.id, // Keep houseId for backwards compatibility
+            houseName: pod.name, // Keep houseName for backwards compatibility
+            houseColor: pod.color, // Keep houseColor for backwards compatibility
+            housePoints: podTotal, // Use our calculated total
             topStudent: topStudent
           };
         })
