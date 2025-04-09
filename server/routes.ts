@@ -1082,7 +1082,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: users.email,
           gradeLevel: users.gradeLevel,
           section: users.section,
-          houseId: users.houseId
+          podId: users.podId,
+          classId: users.classId
         })
         .from(users)
         .where(eq(users.role, "student"));
@@ -1599,6 +1600,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("===== BULK IMPORT START =====");
       console.log("Received bulk import request:", JSON.stringify(req.body));
+      console.log("Auth user:", req.user);
       const { names, classId } = req.body;
       
       if (!Array.isArray(names)) {

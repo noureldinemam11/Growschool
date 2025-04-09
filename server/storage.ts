@@ -897,8 +897,23 @@ export class DatabaseStorage implements IStorage {
   // Class methods
   async getClass(id: number): Promise<Class | undefined> {
     try {
+      console.log(`Getting class with ID: ${id}`);
+      
+      // Validate input
+      if (!id || isNaN(Number(id))) {
+        console.error(`Invalid class ID: ${id}`);
+        return undefined;
+      }
+      
       const result = await db.select().from(classes).where(eq(classes.id, id));
-      return result[0] || undefined;
+      
+      if (result.length === 0) {
+        console.log(`No class found with ID: ${id}`);
+        return undefined;
+      }
+      
+      console.log(`Found class: ${JSON.stringify(result[0])}`);
+      return result[0];
     } catch (error) {
       console.error(`Error in getClass for ID ${id}:`, error);
       throw error;
