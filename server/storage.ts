@@ -1,6 +1,6 @@
-import { users, houses, behaviorCategories, behaviorPoints, rewards, rewardRedemptions, incidentReports } from "@shared/schema";
+import { users, pods, classes, behaviorCategories, behaviorPoints, rewards, rewardRedemptions, incidentReports } from "@shared/schema";
 import type { 
-  User, InsertUser, House, InsertHouse, 
+  User, InsertUser, Pod, InsertPod, Class, InsertClass,
   BehaviorCategory, InsertBehaviorCategory, 
   BehaviorPoint, InsertBehaviorPoint, 
   Reward, InsertReward, 
@@ -18,15 +18,17 @@ import { db, pool } from "./db";
 // Helper function to ensure correct typing for User objects
 function ensureUserType(user: any): User {
   if (user) {
-    // Set houseId to null if undefined
-    if (user.houseId === undefined) {
-      user.houseId = null;
+    // Set podId to null if undefined
+    if (user.podId === undefined) {
+      user.podId = null;
     }
     
-    // Add classId as null since it doesn't exist in the database
-    const userWithType = user as User;
-    userWithType.classId = null;
-    return userWithType;
+    // Set classId to null if undefined
+    if (user.classId === undefined) {
+      user.classId = null;
+    }
+    
+    return user as User;
   }
   return user as User;
 }
@@ -45,16 +47,25 @@ export interface IStorage {
   getAllUsers(): Promise<User[]>;
   getUsersByRole(role: string): Promise<User[]>;
   getStudentsByParentId(parentId: number): Promise<User[]>;
-  getStudentsByHouseId(houseId: number): Promise<User[]>;
+  getStudentsByPodId(podId: number): Promise<User[]>;
+  getStudentsByClassId(classId: number): Promise<User[]>;
   
-  // House management
-  getHouse(id: number): Promise<House | undefined>;
-  getHouseByName(name: string): Promise<House | undefined>;
-  createHouse(house: InsertHouse): Promise<House>;
-  updateHouse(id: number, house: Partial<House>): Promise<House | undefined>;
-  deleteHouse(id: number): Promise<boolean>;
-  getAllHouses(): Promise<House[]>;
-  updateHousePoints(id: number, points: number): Promise<House | undefined>;
+  // Pod management
+  getPod(id: number): Promise<Pod | undefined>;
+  getPodByName(name: string): Promise<Pod | undefined>;
+  createPod(pod: InsertPod): Promise<Pod>;
+  updatePod(id: number, pod: Partial<Pod>): Promise<Pod | undefined>;
+  deletePod(id: number): Promise<boolean>;
+  getAllPods(): Promise<Pod[]>;
+  updatePodPoints(id: number, points: number): Promise<Pod | undefined>;
+  
+  // Class management
+  getClass(id: number): Promise<Class | undefined>;
+  getClassesByPodId(podId: number): Promise<Class[]>;
+  createClass(classObj: InsertClass): Promise<Class>;
+  updateClass(id: number, classObj: Partial<Class>): Promise<Class | undefined>;
+  deleteClass(id: number): Promise<boolean>;
+  getAllClasses(): Promise<Class[]>;
   
   // Behavior categories
   getBehaviorCategory(id: number): Promise<BehaviorCategory | undefined>;
@@ -98,7 +109,8 @@ export interface IStorage {
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
-  private houses: Map<number, House>;
+  private pods: Map<number, Pod>;
+  private classes: Map<number, Class>;
   private behaviorCategories: Map<number, BehaviorCategory>;
   private behaviorPoints: Map<number, BehaviorPoint>;
   private rewards: Map<number, Reward>;
@@ -108,7 +120,8 @@ export class MemStorage implements IStorage {
   sessionStore: any; // Using any instead of session.SessionStore
   
   private userCurrentId: number;
-  private houseCurrentId: number;
+  private podCurrentId: number;
+  private classCurrentId: number;
   private categoryCurrentId: number;
   private pointCurrentId: number;
   private rewardCurrentId: number;
@@ -117,7 +130,8 @@ export class MemStorage implements IStorage {
 
   constructor() {
     this.users = new Map();
-    this.houses = new Map();
+    this.pods = new Map();
+    this.classes = new Map();
     this.behaviorCategories = new Map();
     this.behaviorPoints = new Map();
     this.rewards = new Map();
@@ -125,7 +139,8 @@ export class MemStorage implements IStorage {
     this.incidentReports = new Map();
     
     this.userCurrentId = 1;
-    this.houseCurrentId = 1;
+    this.podCurrentId = 1;
+    this.classCurrentId = 1;
     this.categoryCurrentId = 1;
     this.pointCurrentId = 1;
     this.rewardCurrentId = 1;
@@ -137,19 +152,44 @@ export class MemStorage implements IStorage {
     });
     
     // Initialize with demo data
-    this.initializeDemo();
+    // We can't make the constructor async, so we call the function
+    // and ignore the promise (which is fine for initialization)
+    this.initializeDemo().catch(err => {
+      console.error("Error initializing demo data:", err);
+    });
   }
 
-  private initializeDemo() {
-    // Create houses
-    const houses = [
-      { name: 'Phoenix', color: '#3b82f6', description: 'House of courage and rebirth', logoUrl: '' },
-      { name: 'Griffin', color: '#10b981', description: 'House of nobility and strength', logoUrl: '' },
-      { name: 'Dragon', color: '#f59e0b', description: 'House of wisdom and power', logoUrl: '' },
-      { name: 'Pegasus', color: '#ef4444', description: 'House of freedom and inspiration', logoUrl: '' }
+  private async initializeDemo() {
+    // Create pods
+    const pods = [
+      { name: 'Phoenix', color: '#3b82f6', description: 'Pod of courage and rebirth', logoUrl: '' },
+      { name: 'Griffin', color: '#10b981', description: 'Pod of nobility and strength', logoUrl: '' },
+      { name: 'Dragon', color: '#f59e0b', description: 'Pod of wisdom and power', logoUrl: '' },
+      { name: 'Pegasus', color: '#ef4444', description: 'Pod of freedom and inspiration', logoUrl: '' }
     ];
     
-    houses.forEach(house => this.createHouse(house));
+    // Create pods first
+    const createdPods: Pod[] = [];
+    for (const pod of pods) {
+      const newPod = await this.createPod(pod);
+      createdPods.push(newPod);
+    }
+    
+    // Create classes within pods
+    const classes = [
+      { name: '1A', podId: createdPods[0].id, gradeLevel: '1', description: 'First grade, section A' },
+      { name: '1B', podId: createdPods[1].id, gradeLevel: '1', description: 'First grade, section B' },
+      { name: '2A', podId: createdPods[2].id, gradeLevel: '2', description: 'Second grade, section A' },
+      { name: '2B', podId: createdPods[3].id, gradeLevel: '2', description: 'Second grade, section B' },
+      { name: '3A', podId: createdPods[0].id, gradeLevel: '3', description: 'Third grade, section A' },
+      { name: '3B', podId: createdPods[1].id, gradeLevel: '3', description: 'Third grade, section B' },
+      { name: '4A', podId: createdPods[2].id, gradeLevel: '4', description: 'Fourth grade, section A' },
+      { name: '4B', podId: createdPods[3].id, gradeLevel: '4', description: 'Fourth grade, section B' }
+    ];
+    
+    for (const classObj of classes) {
+      await this.createClass(classObj);
+    }
     
     // Create behavior categories
     const categories = [
@@ -200,9 +240,9 @@ export class MemStorage implements IStorage {
       email: String(insertUser.email),
       gradeLevel: insertUser.gradeLevel ? String(insertUser.gradeLevel) : null,
       section: insertUser.section ? String(insertUser.section) : null,
-      houseId: typeof insertUser.houseId === 'number' ? insertUser.houseId : null,
       parentId: typeof insertUser.parentId === 'number' ? insertUser.parentId : null,
-      classId: typeof insertUser.classId === 'number' ? insertUser.classId : null
+      classId: typeof insertUser.classId === 'number' ? insertUser.classId : null,
+      podId: typeof insertUser.podId === 'number' ? insertUser.podId : null
     };
     
     this.users.set(id, user);
@@ -252,62 +292,110 @@ export class MemStorage implements IStorage {
     );
   }
 
-  async getStudentsByHouseId(houseId: number): Promise<User[]> {
+  async getStudentsByPodId(podId: number): Promise<User[]> {
     return Array.from(this.users.values()).filter(user => 
-      user.role === 'student' && user.houseId === houseId
+      user.role === 'student' && user.podId === podId
     );
   }
 
-  // House methods
-  async getHouse(id: number): Promise<House | undefined> {
-    return this.houses.get(id);
-  }
-
-  async getHouseByName(name: string): Promise<House | undefined> {
-    return Array.from(this.houses.values()).find(
-      (house) => house.name === name
+  async getStudentsByClassId(classId: number): Promise<User[]> {
+    return Array.from(this.users.values()).filter(user => 
+      user.role === 'student' && user.classId === classId
     );
   }
 
-  async createHouse(house: InsertHouse): Promise<House> {
-    const id = this.houseCurrentId++;
-    const newHouse: House = {
+  // Pod methods
+  async getPod(id: number): Promise<Pod | undefined> {
+    return this.pods.get(id);
+  }
+
+  async getPodByName(name: string): Promise<Pod | undefined> {
+    return Array.from(this.pods.values()).find(
+      (pod) => pod.name === name
+    );
+  }
+
+  async createPod(pod: InsertPod): Promise<Pod> {
+    const id = this.podCurrentId++;
+    const newPod: Pod = {
       id,
-      name: house.name,
-      color: house.color,
+      name: pod.name,
+      color: pod.color,
       points: 0,
-      description: house.description || null,
-      logoUrl: house.logoUrl || null
+      description: pod.description || null,
+      logoUrl: pod.logoUrl || null
     };
-    this.houses.set(id, newHouse);
-    return newHouse;
+    this.pods.set(id, newPod);
+    return newPod;
   }
 
-  async updateHouse(id: number, houseUpdate: Partial<House>): Promise<House | undefined> {
-    const house = this.houses.get(id);
-    if (!house) return undefined;
+  async updatePod(id: number, podUpdate: Partial<Pod>): Promise<Pod | undefined> {
+    const pod = this.pods.get(id);
+    if (!pod) return undefined;
     
-    const updatedHouse = { ...house, ...houseUpdate };
-    this.houses.set(id, updatedHouse);
-    return updatedHouse;
+    const updatedPod = { ...pod, ...podUpdate };
+    this.pods.set(id, updatedPod);
+    return updatedPod;
   }
   
-  async deleteHouse(id: number): Promise<boolean> {
-    if (!this.houses.has(id)) return false;
-    return this.houses.delete(id);
+  async deletePod(id: number): Promise<boolean> {
+    if (!this.pods.has(id)) return false;
+    return this.pods.delete(id);
   }
 
-  async getAllHouses(): Promise<House[]> {
-    return Array.from(this.houses.values());
+  async getAllPods(): Promise<Pod[]> {
+    return Array.from(this.pods.values());
   }
 
-  async updateHousePoints(id: number, points: number): Promise<House | undefined> {
-    const house = this.houses.get(id);
-    if (!house) return undefined;
+  async updatePodPoints(id: number, points: number): Promise<Pod | undefined> {
+    const pod = this.pods.get(id);
+    if (!pod) return undefined;
     
-    const updatedHouse = { ...house, points: house.points + points };
-    this.houses.set(id, updatedHouse);
-    return updatedHouse;
+    const updatedPod = { ...pod, points: pod.points + points };
+    this.pods.set(id, updatedPod);
+    return updatedPod;
+  }
+  
+  // Class methods
+  async getClass(id: number): Promise<Class | undefined> {
+    return this.classes.get(id);
+  }
+  
+  async getClassesByPodId(podId: number): Promise<Class[]> {
+    return Array.from(this.classes.values()).filter(cls => 
+      cls.podId === podId
+    );
+  }
+  
+  async createClass(classObj: InsertClass): Promise<Class> {
+    const id = this.classCurrentId++;
+    const newClass: Class = {
+      id,
+      name: classObj.name,
+      podId: classObj.podId,
+      gradeLevel: classObj.gradeLevel || null,
+      description: classObj.description || null
+    };
+    this.classes.set(id, newClass);
+    return newClass;
+  }
+  
+  async updateClass(id: number, classUpdate: Partial<Class>): Promise<Class | undefined> {
+    const classObj = this.classes.get(id);
+    if (!classObj) return undefined;
+    
+    const updatedClass = { ...classObj, ...classUpdate };
+    this.classes.set(id, updatedClass);
+    return updatedClass;
+  }
+  
+  async deleteClass(id: number): Promise<boolean> {
+    if (!this.classes.has(id)) return false;
+    return this.classes.delete(id);
+  }
+  
+  async getAllClasses(): Promise<Class[]> {
+    return Array.from(this.classes.values());
   }
 
   // Behavior category methods
@@ -366,10 +454,18 @@ export class MemStorage implements IStorage {
     };
     this.behaviorPoints.set(id, newPoint);
     
-    // Update house points if student is in a house
+    // Update pod points if student is in a pod or class
     const student = await this.getUser(point.studentId);
-    if (student && student.houseId) {
-      await this.updateHousePoints(student.houseId, point.points);
+    
+    if (student && student.podId) {
+      // Direct pod association
+      await this.updatePodPoints(student.podId, point.points);
+    } else if (student && student.classId) {
+      // Get the pod through class association
+      const classObj = await this.getClass(student.classId);
+      if (classObj && classObj.podId) {
+        await this.updatePodPoints(classObj.podId, point.points);
+      }
     }
     
     return newPoint;
@@ -397,31 +493,47 @@ export class MemStorage implements IStorage {
     // Clear behavior points map
     this.behaviorPoints.clear();
     
-    // Reset all house points to 0
-    const houses = Array.from(this.houses.values());
-    for (const house of houses) {
-      house.points = 0;
-      this.houses.set(house.id, house);
+    // Reset all pod points to 0
+    const pods = Array.from(this.pods.values());
+    for (const pod of pods) {
+      pod.points = 0;
+      this.pods.set(pod.id, pod);
     }
   }
   
   async deleteBehaviorPointsByStudentId(studentId: number): Promise<void> {
     // Get the student
     const student = await this.getUser(studentId);
-    if (!student || !student.houseId) return;
     
     // Calculate total points from this student
     const studentPoints = Array.from(this.behaviorPoints.values())
       .filter(point => point.studentId === studentId);
     
-    // Calculate the sum to subtract from house
+    if (studentPoints.length === 0) return;
+    
+    // Calculate the sum to subtract
     const pointsToSubtract = studentPoints.reduce((sum, point) => sum + point.points, 0);
     
-    // Update house points
-    const house = await this.getHouse(student.houseId);
-    if (house) {
-      house.points = Math.max(0, house.points - pointsToSubtract);
-      this.houses.set(house.id, house);
+    // Update pod points if needed
+    let podId: number | null = null;
+    
+    if (student && student.podId) {
+      // Direct pod association
+      podId = student.podId;
+    } else if (student && student.classId) {
+      // Get the pod through class association
+      const classObj = await this.getClass(student.classId);
+      if (classObj && classObj.podId) {
+        podId = classObj.podId;
+      }
+    }
+    
+    if (podId) {
+      const pod = await this.getPod(podId);
+      if (pod) {
+        pod.points = Math.max(0, pod.points - pointsToSubtract);
+        this.pods.set(pod.id, pod);
+      }
     }
     
     // Delete all behavior points for this student
@@ -580,19 +692,37 @@ export class DatabaseStorage implements IStorage {
   
   private async initializeDemo() {
     try {
-      // Check if we already have houses
-      const existingHouses = await this.getAllHouses();
-      if (existingHouses.length === 0) {
-        // Create houses
-        const houses = [
-          { name: 'Phoenix', color: '#3b82f6', description: 'House of courage and rebirth', logoUrl: '' },
-          { name: 'Griffin', color: '#10b981', description: 'House of nobility and strength', logoUrl: '' },
-          { name: 'Dragon', color: '#f59e0b', description: 'House of wisdom and power', logoUrl: '' },
-          { name: 'Pegasus', color: '#ef4444', description: 'House of freedom and inspiration', logoUrl: '' }
+      // Check if we already have pods
+      const existingPods = await this.getAllPods();
+      if (existingPods.length === 0) {
+        // Create pods
+        const pods = [
+          { name: 'Phoenix', color: '#3b82f6', description: 'Pod of courage and rebirth', logoUrl: '' },
+          { name: 'Griffin', color: '#10b981', description: 'Pod of nobility and strength', logoUrl: '' },
+          { name: 'Dragon', color: '#f59e0b', description: 'Pod of wisdom and power', logoUrl: '' },
+          { name: 'Pegasus', color: '#ef4444', description: 'Pod of freedom and inspiration', logoUrl: '' }
         ];
         
-        for (const house of houses) {
-          await this.createHouse(house);
+        const createdPods: Pod[] = [];
+        for (const pod of pods) {
+          const newPod = await this.createPod(pod);
+          createdPods.push(newPod);
+        }
+        
+        // Create classes within pods
+        const classes = [
+          { name: '1A', podId: createdPods[0].id, gradeLevel: '1', description: 'First grade, section A' },
+          { name: '1B', podId: createdPods[1].id, gradeLevel: '1', description: 'First grade, section B' },
+          { name: '2A', podId: createdPods[2].id, gradeLevel: '2', description: 'Second grade, section A' },
+          { name: '2B', podId: createdPods[3].id, gradeLevel: '2', description: 'Second grade, section B' },
+          { name: '3A', podId: createdPods[0].id, gradeLevel: '3', description: 'Third grade, section A' },
+          { name: '3B', podId: createdPods[1].id, gradeLevel: '3', description: 'Third grade, section B' },
+          { name: '4A', podId: createdPods[2].id, gradeLevel: '4', description: 'Fourth grade, section A' },
+          { name: '4B', podId: createdPods[3].id, gradeLevel: '4', description: 'Fourth grade, section B' }
+        ];
+        
+        for (const classObj of classes) {
+          await this.createClass(classObj);
         }
       }
       
@@ -646,6 +776,191 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
+  // Pod methods
+  async getPod(id: number): Promise<Pod | undefined> {
+    try {
+      const result = await db.select().from(pods).where(eq(pods.id, id));
+      return result[0] || undefined;
+    } catch (error) {
+      console.error(`Error in getPod for ID ${id}:`, error);
+      throw error;
+    }
+  }
+  
+  async getPodByName(name: string): Promise<Pod | undefined> {
+    try {
+      const result = await db.select().from(pods).where(eq(pods.name, name));
+      return result[0] || undefined;
+    } catch (error) {
+      console.error(`Error in getPodByName for name ${name}:`, error);
+      throw error;
+    }
+  }
+  
+  async createPod(pod: InsertPod): Promise<Pod> {
+    try {
+      const result = await db.insert(pods).values(pod).returning();
+      if (!result || result.length === 0) {
+        throw new Error('Failed to insert pod');
+      }
+      return result[0];
+    } catch (error) {
+      console.error('Error creating pod:', error);
+      throw error;
+    }
+  }
+  
+  async updatePod(id: number, podUpdate: Partial<Pod>): Promise<Pod | undefined> {
+    try {
+      const result = await db.update(pods)
+        .set(podUpdate)
+        .where(eq(pods.id, id))
+        .returning();
+      
+      return result[0] || undefined;
+    } catch (error) {
+      console.error(`Error in updatePod for ID ${id}:`, error);
+      throw error;
+    }
+  }
+  
+  async deletePod(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(pods).where(eq(pods.id, id)).returning({ id: pods.id });
+      return result.length > 0;
+    } catch (error) {
+      console.error(`Error in deletePod for ID ${id}:`, error);
+      throw error;
+    }
+  }
+  
+  async getAllPods(): Promise<Pod[]> {
+    try {
+      return await db.select().from(pods);
+    } catch (error) {
+      console.error('Error in getAllPods:', error);
+      throw error;
+    }
+  }
+  
+  async updatePodPoints(id: number, points: number): Promise<Pod | undefined> {
+    try {
+      const existingPod = await this.getPod(id);
+      if (!existingPod) return undefined;
+      
+      const newPoints = existingPod.points + points;
+      
+      const result = await db.update(pods)
+        .set({ points: newPoints })
+        .where(eq(pods.id, id))
+        .returning();
+      
+      return result[0] || undefined;
+    } catch (error) {
+      console.error(`Error in updatePodPoints for ID ${id}:`, error);
+      throw error;
+    }
+  }
+  
+  // Class methods
+  async getClass(id: number): Promise<Class | undefined> {
+    try {
+      const result = await db.select().from(classes).where(eq(classes.id, id));
+      return result[0] || undefined;
+    } catch (error) {
+      console.error(`Error in getClass for ID ${id}:`, error);
+      throw error;
+    }
+  }
+  
+  async getClassesByPodId(podId: number): Promise<Class[]> {
+    try {
+      return await db.select().from(classes).where(eq(classes.podId, podId));
+    } catch (error) {
+      console.error(`Error in getClassesByPodId for podId ${podId}:`, error);
+      throw error;
+    }
+  }
+  
+  async createClass(classObj: InsertClass): Promise<Class> {
+    try {
+      const result = await db.insert(classes).values(classObj).returning();
+      if (!result || result.length === 0) {
+        throw new Error('Failed to insert class');
+      }
+      return result[0];
+    } catch (error) {
+      console.error('Error creating class:', error);
+      throw error;
+    }
+  }
+  
+  async updateClass(id: number, classUpdate: Partial<Class>): Promise<Class | undefined> {
+    try {
+      const result = await db.update(classes)
+        .set(classUpdate)
+        .where(eq(classes.id, id))
+        .returning();
+      
+      return result[0] || undefined;
+    } catch (error) {
+      console.error(`Error in updateClass for ID ${id}:`, error);
+      throw error;
+    }
+  }
+  
+  async deleteClass(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(classes).where(eq(classes.id, id)).returning({ id: classes.id });
+      return result.length > 0;
+    } catch (error) {
+      console.error(`Error in deleteClass for ID ${id}:`, error);
+      throw error;
+    }
+  }
+  
+  async getAllClasses(): Promise<Class[]> {
+    try {
+      return await db.select().from(classes);
+    } catch (error) {
+      console.error('Error in getAllClasses:', error);
+      throw error;
+    }
+  }
+  
+  // Student methods by pod and class
+  async getStudentsByPodId(podId: number): Promise<User[]> {
+    try {
+      const result = await db.select()
+        .from(users)
+        .where(and(
+          eq(users.role, 'student'),
+          eq(users.podId, podId)
+        ));
+      
+      return result.map(user => ensureUserType(user));
+    } catch (error) {
+      console.error(`Error in getStudentsByPodId for podId ${podId}:`, error);
+      throw error;
+    }
+  }
+  
+  async getStudentsByClassId(classId: number): Promise<User[]> {
+    try {
+      const result = await db.select()
+        .from(users)
+        .where(and(
+          eq(users.role, 'student'),
+          eq(users.classId, classId)
+        ));
+      
+      return result.map(user => ensureUserType(user));
+    } catch (error) {
+      console.error(`Error in getStudentsByClassId for classId ${classId}:`, error);
+      throw error;
+    }
+  }
+  
   // User Management
   async getUser(id: number): Promise<User | undefined> {
     // Validate id is a proper number before querying the database
@@ -658,9 +973,8 @@ export class DatabaseStorage implements IStorage {
       // Use direct SQL query to avoid schema mismatch issues
       const client = await pool.connect();
       try {
-        // Include house_id in the query, but not class_id since it doesn't exist
         const result = await client.query(
-          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", house_id AS "houseId" FROM users WHERE id = $1',
+          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", pod_id AS "podId", class_id AS "classId" FROM users WHERE id = $1',
           [id]
         );
         
@@ -684,9 +998,8 @@ export class DatabaseStorage implements IStorage {
     try {
       const client = await pool.connect();
       try {
-        // Remove class_id from the query since it doesn't exist
         const result = await client.query(
-          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", house_id AS "houseId" FROM users WHERE username = $1',
+          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", pod_id AS "podId", class_id AS "classId" FROM users WHERE username = $1',
           [username]
         );
         
@@ -708,11 +1021,8 @@ export class DatabaseStorage implements IStorage {
   
   async createUser(user: InsertUser): Promise<User> {
     try {
-      // Remove classId from values if it exists, since the column doesn't exist in the database
-      const { classId, ...userWithoutClassId } = user;
-      
       // Explicitly returning PostgreSQL table data with proper typing
-      const result = await db.insert(users).values(userWithoutClassId).returning({
+      const result = await db.insert(users).values(user).returning({
         id: users.id,
         username: users.username,
         password: users.password,
@@ -723,20 +1033,15 @@ export class DatabaseStorage implements IStorage {
         gradeLevel: users.gradeLevel,
         section: users.section,
         parentId: users.parentId,
-        houseId: users.houseId
+        podId: users.podId,
+        classId: users.classId
       });
       
       if (!result || result.length === 0) {
         throw new Error('Failed to insert user - no results returned');
       }
       
-      // No need to add houseId since we now include it in the returning clause
       const userResult = result[0];
-      
-      // If houseId is undefined, set it to null to satisfy the type
-      if (userResult && userResult.houseId === undefined) {
-        userResult.houseId = null;
-      }
       
       // Use our helper function to ensure correct typing
       return ensureUserType(userResult);
@@ -761,12 +1066,13 @@ export class DatabaseStorage implements IStorage {
           lastName: 'last_name',
           gradeLevel: 'grade_level',
           parentId: 'parent_id',
-          houseId: 'house_id'
+          podId: 'pod_id',
+          classId: 'class_id'
         };
         
         for (const [key, value] of Object.entries(userUpdate)) {
-          // Skip undefined values and classId since it doesn't exist in the database
-          if (value === undefined || key === 'classId') continue;
+          // Skip undefined values
+          if (value === undefined) continue;
           
           // Map property name to column name if needed
           const columnName = columnMap[key] || key;
@@ -783,14 +1089,14 @@ export class DatabaseStorage implements IStorage {
         // Add the WHERE parameter
         updateValues.push(id);
         
-        // Execute the update - removed class_id from RETURNING clause
+        // Execute the update with pod_id and class_id
         const sql = `
           UPDATE users 
           SET ${updateFields.join(', ')} 
           WHERE id = $${paramCounter} 
           RETURNING id, username, password, first_name AS "firstName", last_name AS "lastName", 
                    role, email, grade_level AS "gradeLevel", section, 
-                   parent_id AS "parentId", house_id AS "houseId"
+                   parent_id AS "parentId", pod_id AS "podId", class_id AS "classId"
         `;
         
         const result = await client.query(sql, updateValues);
@@ -909,9 +1215,8 @@ export class DatabaseStorage implements IStorage {
     try {
       const client = await pool.connect();
       try {
-        // Remove class_id from the query since it doesn't exist
         const result = await client.query(
-          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", house_id AS "houseId" FROM users'
+          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", pod_id AS "podId", class_id AS "classId" FROM users'
         );
         
         // Use our helper function to ensure correct typing for each user
@@ -931,8 +1236,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const client = await pool.connect();
       try {
-        // Remove class_id from the query since it doesn't exist
-        let sql = 'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", house_id AS "houseId" FROM users';
+        let sql = 'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", pod_id AS "podId", class_id AS "classId" FROM users';
         
         let result;
         if (role !== 'all') {
@@ -942,8 +1246,7 @@ export class DatabaseStorage implements IStorage {
           result = await client.query(sql);
         }
         
-        // Make sure houseId is properly set to null if it's undefined
-        // And add classId as null since it doesn't exist in the database
+        // Use our helper function to ensure correct typing
         const users = result.rows.map(user => ensureUserType(user));
         
         return users as User[];
@@ -966,13 +1269,11 @@ export class DatabaseStorage implements IStorage {
     try {
       const client = await pool.connect();
       try {
-        // Remove class_id from the query since it doesn't exist
         const result = await client.query(
-          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", house_id AS "houseId" FROM users WHERE role = $1 AND parent_id = $2',
+          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", pod_id AS "podId", class_id AS "classId" FROM users WHERE role = $1 AND parent_id = $2',
           ['student', parentId]
         );
         
-        // Make sure houseId is properly set to null if it's undefined
         // Use our helper function to ensure correct typing
         const users = result.rows.map(user => ensureUserType(user));
         
@@ -986,93 +1287,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  async getStudentsByHouseId(houseId: number): Promise<User[]> {
-    // Validate houseId
-    if (isNaN(houseId) || houseId === null || houseId === undefined) {
-      console.warn(`Invalid house ID (${houseId}) passed to getStudentsByHouseId`);
-      return [];
-    }
-    
-    try {
-      // Use raw SQL to retrieve the students by house_id
-      const client = await pool.connect();
-      try {
-        // Remove class_id from the query since it doesn't exist
-        const result = await client.query(
-          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", house_id AS "houseId" FROM users WHERE role = $1 AND house_id = $2',
-          ['student', houseId]
-        );
-        
-        // Make sure all users have a houseId property, even if null
-        // Use our helper function to ensure correct typing, but ensure houseId is set to passed value
-        const users = result.rows.map(user => {
-          const processedUser = ensureUserType(user);
-          // Ensure houseId is set to the correct value we queried for
-          processedUser.houseId = houseId;
-          return processedUser;
-        });
-        
-        // Return the properly formatted results
-        return users as User[];
-      } finally {
-        client.release();
-      }
-    } catch (error) {
-      console.error(`Error in getStudentsByHouseId for house ${houseId}:`, error);
-      throw error;
-    }
-  }
-  // House Management
-  async getHouse(id: number): Promise<House | undefined> {
-    const result = await db.select().from(houses).where(eq(houses.id, id));
-    return result[0] as House | undefined;
-  }
-  
-  async getHouseByName(name: string): Promise<House | undefined> {
-    const result = await db.select().from(houses).where(eq(houses.name, name));
-    return result[0] as House | undefined;
-  }
-  
-  async createHouse(house: InsertHouse): Promise<House> {
-    const result = await db.insert(houses).values({
-      ...house,
-      points: 0
-    }).returning();
-    return result[0] as House;
-  }
-  
-  async updateHouse(id: number, houseUpdate: Partial<House>): Promise<House | undefined> {
-    const result = await db.update(houses)
-      .set(houseUpdate)
-      .where(eq(houses.id, id))
-      .returning();
-    return result[0] as House | undefined;
-  }
-  
-  async getAllHouses(): Promise<House[]> {
-    const result = await db.select().from(houses);
-    return result as House[];
-  }
-  
-  async deleteHouse(id: number): Promise<boolean> {
-    try {
-      const result = await db.delete(houses)
-        .where(eq(houses.id, id))
-        .returning();
-      return result.length > 0;
-    } catch (error) {
-      console.error("Error in deleteHouse:", error);
-      return false;
-    }
-  }
-  
-  async updateHousePoints(id: number, points: number): Promise<House | undefined> {
-    const house = await this.getHouse(id);
-    if (!house) return undefined;
-    
-    const newPoints = house.points + points;
-    return await this.updateHouse(id, { points: newPoints });
-  }
+  // We don't need getStudentsByHouseId anymore since we have getStudentsByPodId and getStudentsByClassId
   
   // Behavior Categories
   async getBehaviorCategory(id: number): Promise<BehaviorCategory | undefined> {
@@ -1125,24 +1340,46 @@ export class DatabaseStorage implements IStorage {
       timestamp: new Date()
     }).returning();
     
-    // Use raw SQL to update house points if student is in a house
+    // Use raw SQL to update pod points based on student's pod or class
     try {
       const client = await pool.connect();
       try {
+        // Check if student has direct pod association or class association
         const studentResult = await client.query(
-          'SELECT house_id FROM users WHERE id = $1 AND role = $2',
+          'SELECT pod_id, class_id FROM users WHERE id = $1 AND role = $2',
           [point.studentId, 'student']
         );
         
-        if (studentResult.rows.length > 0 && studentResult.rows[0].house_id) {
-          const houseId = studentResult.rows[0].house_id;
-          await this.updateHousePoints(houseId, point.points);
+        if (studentResult.rows.length > 0) {
+          const userData = studentResult.rows[0];
+          let podId = null;
+          
+          // Direct pod association
+          if (userData.pod_id) {
+            podId = userData.pod_id;
+          } 
+          // Get pod through class association
+          else if (userData.class_id) {
+            const classResult = await client.query(
+              'SELECT pod_id FROM classes WHERE id = $1',
+              [userData.class_id]
+            );
+            
+            if (classResult.rows.length > 0 && classResult.rows[0].pod_id) {
+              podId = classResult.rows[0].pod_id;
+            }
+          }
+          
+          // Update pod points if we found a pod association
+          if (podId) {
+            await this.updatePodPoints(podId, point.points);
+          }
         }
       } finally {
         client.release();
       }
     } catch (error) {
-      console.error(`Error updating house points for student ${point.studentId}:`, error);
+      console.error(`Error updating pod points for student ${point.studentId}:`, error);
     }
     
     return result[0] as BehaviorPoint;
@@ -1179,11 +1416,11 @@ export class DatabaseStorage implements IStorage {
         // Delete all behavior points
         await client.query('DELETE FROM behavior_points');
         
-        // Reset all house points to 0
-        await client.query('UPDATE houses SET points = 0');
+        // Reset all pod points to 0
+        await client.query('UPDATE pods SET points = 0');
         
         await client.query('COMMIT');
-        console.log('Successfully deleted all behavior points and reset house points');
+        console.log('Successfully deleted all behavior points and reset pod points');
       } catch (error) {
         await client.query('ROLLBACK');
         console.error('Error deleting all behavior points:', error);
@@ -1204,40 +1441,56 @@ export class DatabaseStorage implements IStorage {
       try {
         await client.query('BEGIN');
         
-        // Get the student's house
+        // Get the student's pod (directly or through class)
         const studentResult = await client.query(
-          'SELECT house_id FROM users WHERE id = $1 AND role = $2',
+          'SELECT pod_id, class_id FROM users WHERE id = $1 AND role = $2',
           [studentId, 'student']
         );
         
-        let houseId = null;
-        if (studentResult.rows.length > 0 && studentResult.rows[0].house_id) {
-          houseId = studentResult.rows[0].house_id;
-          
-          // Calculate the total points to remove from the house
-          const pointsResult = await client.query(
-            'SELECT SUM(points) as total_points FROM behavior_points WHERE student_id = $1',
-            [studentId]
-          );
-          
-          if (pointsResult.rows.length > 0 && pointsResult.rows[0].total_points) {
-            const totalPoints = parseInt(pointsResult.rows[0].total_points);
-            
-            // Get current house points and update
-            const houseResult = await client.query(
-              'SELECT points FROM houses WHERE id = $1',
-              [houseId]
+        let podId = null;
+        if (studentResult.rows.length > 0) {
+          // Direct pod association
+          if (studentResult.rows[0].pod_id) {
+            podId = studentResult.rows[0].pod_id;
+          } 
+          // Get pod through class association
+          else if (studentResult.rows[0].class_id) {
+            const classResult = await client.query(
+              'SELECT pod_id FROM classes WHERE id = $1',
+              [studentResult.rows[0].class_id]
             );
             
-            if (houseResult.rows.length > 0) {
-              const currentPoints = parseInt(houseResult.rows[0].points);
-              const newPoints = currentPoints - totalPoints;
+            if (classResult.rows.length > 0 && classResult.rows[0].pod_id) {
+              podId = classResult.rows[0].pod_id;
+            }
+          }
+          
+          if (podId) {
+            // Calculate the total points to remove from the pod
+            const pointsResult = await client.query(
+              'SELECT SUM(points) as total_points FROM behavior_points WHERE student_id = $1',
+              [studentId]
+            );
+            
+            if (pointsResult.rows.length > 0 && pointsResult.rows[0].total_points) {
+              const totalPoints = parseInt(pointsResult.rows[0].total_points);
               
-              // Update house points (ensure it doesn't go below 0)
-              await client.query(
-                'UPDATE houses SET points = GREATEST(0, $1) WHERE id = $2',
-                [newPoints, houseId]
+              // Get current pod points and update
+              const podResult = await client.query(
+                'SELECT points FROM pods WHERE id = $1',
+                [podId]
               );
+              
+              if (podResult.rows.length > 0) {
+                const currentPoints = parseInt(podResult.rows[0].points);
+                const newPoints = currentPoints - totalPoints;
+                
+                // Update pod points (ensure it doesn't go below 0)
+                await client.query(
+                  'UPDATE pods SET points = GREATEST(0, $1) WHERE id = $2',
+                  [newPoints, podId]
+                );
+              }
             }
           }
         }

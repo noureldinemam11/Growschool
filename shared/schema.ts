@@ -10,8 +10,8 @@ export type UserRole = typeof userRoles[number];
 export const appUserRoles = ["admin", "teacher"] as const;
 export type AppUserRole = typeof appUserRoles[number];
 
-// Houses for house competitions
-export const houses = pgTable("houses", {
+// Pods for school organization
+export const pods = pgTable("pods", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
   color: text("color").notNull(),
@@ -20,7 +20,18 @@ export const houses = pgTable("houses", {
   points: integer("points").notNull().default(0),
 });
 
-export const insertHouseSchema = createInsertSchema(houses).omit({ id: true, points: true });
+export const insertPodSchema = createInsertSchema(pods).omit({ id: true, points: true });
+
+// Classes within pods
+export const classes = pgTable("classes", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  podId: integer("pod_id").notNull().references(() => pods.id),
+  gradeLevel: text("grade_level"),
+  description: text("description"),
+});
+
+export const insertClassSchema = createInsertSchema(classes).omit({ id: true });
 
 // User model - avoid circular dependency by recreating a parentId definition
 export const users = pgTable("users", {
@@ -34,7 +45,8 @@ export const users = pgTable("users", {
   gradeLevel: text("grade_level"),
   section: text("section"),
   parentId: integer("parent_id"), // This will reference the users table but not with a direct reference
-  houseId: integer("house_id"),   // Reference to house table for students
+  classId: integer("class_id"),   // Reference to class table for students
+  podId: integer("pod_id"),       // Reference to pod, can be derived from class but kept for easier querying
 });
 
 export const insertUserSchema = createInsertSchema(users)
@@ -146,11 +158,14 @@ export const insertIncidentReportSchema = createInsertSchema(incidentReports)
   });
 
 // Data Types
-export type User = typeof users.$inferSelect & { classId?: number | null };
-export type InsertUser = z.infer<typeof insertUserSchema> & { classId?: number | null };
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
 
-export type House = typeof houses.$inferSelect;
-export type InsertHouse = z.infer<typeof insertHouseSchema>;
+export type Pod = typeof pods.$inferSelect;
+export type InsertPod = z.infer<typeof insertPodSchema>;
+
+export type Class = typeof classes.$inferSelect;
+export type InsertClass = z.infer<typeof insertClassSchema>;
 
 export type BehaviorCategory = typeof behaviorCategories.$inferSelect;
 export type InsertBehaviorCategory = z.infer<typeof insertBehaviorCategorySchema>;

@@ -7,7 +7,8 @@ import MobileNavbar from '@/components/layout/MobileNavbar';
 import UserManagement from '@/components/admin/UserManagement';
 import BehaviorCategoryManagement from '@/components/admin/BehaviorCategoryManagement';
 import RewardManagement from '@/components/admin/RewardManagement';
-import HouseManagement from '@/components/admin/HouseManagement';
+import PodManagement from '@/components/admin/PodManagement';
+import ClassManagement from '@/components/admin/ClassManagement';
 import RosterManagement from '@/components/admin/RosterManagement';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -148,8 +149,8 @@ function PointsResetSection() {
     onSuccess: () => {
       // Invalidate relevant queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/behavior-points/recent'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/houses'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/houses-top-students'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/pods'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/pods-top-students'] });
       queryClient.invalidateQueries({ queryKey: ['/api/behavior-points/teacher'] });
       
       toast({
@@ -181,8 +182,8 @@ function PointsResetSection() {
     onSuccess: (data) => {
       // Invalidate relevant queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/behavior-points/recent'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/houses'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/houses-top-students'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/pods'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/pods-top-students'] });
       queryClient.invalidateQueries({ queryKey: ['/api/behavior-points/teacher'] });
       
       toast({
@@ -207,7 +208,7 @@ function PointsResetSection() {
       <Card className="p-4">
         <h4 className="text-md font-medium mb-2">Reset All Points</h4>
         <p className="text-sm text-neutral-dark mb-4">
-          This will reset all behavior points for all students across all houses. This action cannot be undone.
+          This will reset all behavior points for all students across all pods. This action cannot be undone.
         </p>
         
         <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
@@ -224,7 +225,7 @@ function PointsResetSection() {
             <DialogHeader>
               <DialogTitle>Reset All Points</DialogTitle>
               <DialogDescription>
-                This action will delete ALL behavior points for ALL students and reset house points to zero.
+                This action will delete ALL behavior points for ALL students and reset pod points to zero.
                 <div className="mt-2 font-semibold">This action cannot be undone.</div>
               </DialogDescription>
             </DialogHeader>
@@ -360,7 +361,7 @@ export default function AdminPage() {
                 <TabsTrigger value="students" className="mr-4">Student Roster</TabsTrigger>
                 <TabsTrigger value="behavior" className="mr-4">Behavior Categories</TabsTrigger>
                 <TabsTrigger value="rewards" className="mr-4">Rewards</TabsTrigger>
-                <TabsTrigger value="houses" className="mr-4">Houses</TabsTrigger>
+                <TabsTrigger value="houses" className="mr-4">Pods & Classes</TabsTrigger>
                 <TabsTrigger value="system">System Settings</TabsTrigger>
               </TabsList>
               
@@ -384,8 +385,8 @@ export default function AdminPage() {
                   
                   <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle>Houses</CardTitle>
-                      <CardDescription>View house stats</CardDescription>
+                      <CardTitle>Pods</CardTitle>
+                      <CardDescription>View pod stats</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="text-3xl font-mono font-bold text-primary">
@@ -393,7 +394,7 @@ export default function AdminPage() {
                         4
                       </div>
                       <div className="mt-2 text-sm text-neutral-dark">
-                        School houses for competitions
+                        School pods for competitions
                       </div>
                     </CardContent>
                   </Card>
@@ -472,7 +473,10 @@ export default function AdminPage() {
               </TabsContent>
               
               <TabsContent value="houses" className="space-y-6">
-                <HouseManagement />
+                <PodManagement />
+                <div className="mt-8">
+                  <ClassManagement />
+                </div>
               </TabsContent>
               
               <TabsContent value="system" className="space-y-6">
