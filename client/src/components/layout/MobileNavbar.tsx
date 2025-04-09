@@ -127,10 +127,10 @@ export default function MobileNavbar() {
                 <DrawerDescription>Access additional features</DrawerDescription>
               </DrawerHeader>
               <div className="grid grid-cols-2 gap-3 p-4">
-                <Link href="/houses" onClick={() => setIsDrawerOpen(false)}>
+                <Link href="/pods" onClick={() => setIsDrawerOpen(false)}>
                   <Button variant="outline" className="w-full h-24 flex flex-col gap-2 items-center justify-center shadow-sm">
                     <BarChart className="h-6 w-6 text-primary" />
-                    <span>Houses</span>
+                    <span>Pods</span>
                   </Button>
                 </Link>
                 <Link href="/rewards" onClick={() => setIsDrawerOpen(false)}>

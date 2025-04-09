@@ -6,7 +6,7 @@ import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import DashboardPage from "@/pages/dashboard-page";
 import StudentPage from "@/pages/student-page";
-import HousePage from "@/pages/house-page";
+import PodPage from "@/pages/house-page"; // Using the existing house-page but renaming the import
 import RewardsPage from "@/pages/rewards-page";
 import ReportsPage from "@/pages/reports-page";
 import AdminPage from "@/pages/admin-page";
@@ -53,31 +53,59 @@ function Router() {
       />
       <ProtectedRoute 
         path="/houses" 
-        component={HousePage} 
+        component={PodPage} 
+      />
+      <ProtectedRoute 
+        path="/pods" 
+        component={PodPage} 
       />
       <ProtectedRoute 
         path="/house" 
-        component={HousePage} 
+        component={PodPage} 
+      />
+      <ProtectedRoute 
+        path="/pod" 
+        component={PodPage} 
       />
       <ProtectedRoute 
         path="/house/dashboard" 
-        component={HousePage} 
+        component={PodPage} 
+      />
+      <ProtectedRoute 
+        path="/pod/dashboard" 
+        component={PodPage} 
       />
       <ProtectedRoute 
         path="/house-points" 
-        component={() => <Redirect to="/house/dashboard" />} 
+        component={() => <Redirect to="/pod/dashboard" />} 
+      />
+      <ProtectedRoute 
+        path="/pod-points" 
+        component={() => <Redirect to="/pod/dashboard" />} 
       />
       <ProtectedRoute 
         path="/house/posters" 
-        component={HousePage} 
+        component={PodPage} 
+      />
+      <ProtectedRoute 
+        path="/pod/posters" 
+        component={PodPage} 
       />
       <ProtectedRoute 
         path="/house/setup" 
-        component={HousePage} 
+        component={PodPage} 
+      />
+      <ProtectedRoute 
+        path="/pod/setup" 
+        component={PodPage} 
       />
       <ProtectedRoute 
         path="/house/options" 
-        component={HousePage} 
+        component={PodPage} 
+      />
+      <ProtectedRoute 
+        path="/pod/options" 
+        component={PodPage} 
       />
       <ProtectedRoute 
         path="/rewards" 

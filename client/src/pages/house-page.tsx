@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useQuery } from '@tanstack/react-query';
-import { House, User } from '@shared/schema';
+import { Pod, User } from '@shared/schema';
 import { globalEventBus } from '@/lib/queryClient';
 import { Loader2, ArrowLeft, Settings, Building, UserPlus, LineChart, Award, Maximize2, Minimize2 } from 'lucide-react';
 import { useLocation, useRoute } from 'wouter';
@@ -13,17 +13,17 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-export default function HousePage() {
+export default function PodPage() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   
   // Check which route we're on
-  const [isHousesPath] = useRoute('/houses');
-  const [isBasePath] = useRoute('/house');
-  const [isDashboard] = useRoute('/house/dashboard');
-  const [isPosters] = useRoute('/house/posters');
-  const [isSetup] = useRoute('/house/setup');
-  const [isOptions] = useRoute('/house/options');
+  const [isPodsPath] = useRoute('/pods');
+  const [isBasePath] = useRoute('/pod');
+  const [isDashboard] = useRoute('/pod/dashboard');
+  const [isPosters] = useRoute('/pod/posters');
+  const [isSetup] = useRoute('/pod/setup');
+  const [isOptions] = useRoute('/pod/options');
   
   // State to force refetch
   const [refreshCounter, setRefreshCounter] = useState(0);
@@ -45,18 +45,18 @@ export default function HousePage() {
     };
   }, [isFullscreen]);
   
-  // Get houses data with refresh counter to force refetch
-  const { data: houses, isLoading: isLoadingHouses, refetch: houseRefetch } = useQuery<House[]>({
-    queryKey: ['/api/houses', refreshCounter],
+  // Get pods data with refresh counter to force refetch
+  const { data: pods, isLoading: isLoadingPods, refetch: podRefetch } = useQuery<Pod[]>({
+    queryKey: ['/api/pods', refreshCounter],
     refetchInterval: 2000, // Refresh every 2 seconds to keep data in sync
   });
   
   // Define an interface for the top student data
   interface TopStudentData {
-    houseId: number;
-    houseName: string;
-    houseColor: string;
-    housePoints: number;
+    podId: number;
+    podName: string;
+    podColor: string;
+    podPoints: number;
     topStudent: {
       id: number;
       firstName: string;
@@ -65,32 +65,32 @@ export default function HousePage() {
     } | null;
   }
   
-  // Get top students for each house
-  const { data: topStudentsByHouse, isLoading: isLoadingTopStudents } = useQuery<TopStudentData[]>({
-    queryKey: ['/api/houses-top-students', refreshCounter],
+  // Get top students for each pod
+  const { data: topStudentsByPod, isLoading: isLoadingTopStudents } = useQuery<TopStudentData[]>({
+    queryKey: ['/api/pods-top-students', refreshCounter],
     refetchInterval: 2000, // Refresh every 2 seconds to keep data in sync
   });
   
-  // Subscribe to house-updated events to refresh data immediately
+  // Subscribe to pod-updated events to refresh data immediately
   useEffect(() => {
-    // Subscribe to house-updated events
-    const unsubscribe = globalEventBus.subscribe('house-updated', () => {
+    // Subscribe to pod-updated events
+    const unsubscribe = globalEventBus.subscribe('pod-updated', () => {
       // Increment refresh counter to trigger a refetch
       setRefreshCounter(prev => prev + 1);
       // Also do an explicit refetch for immediate update
-      houseRefetch();
+      podRefetch();
     });
     
     // Clean up subscription on unmount
     return () => {
       unsubscribe();
     };
-  }, [houseRefetch]);
+  }, [podRefetch]);
   
 
 
-  // If we're on the /houses path, show the Houses list page
-  if (isHousesPath) {
+  // If we're on the /pods path, show the Pods list page
+  if (isPodsPath) {
     return (
       <div className="h-screen flex flex-col">
         <Navbar />
@@ -101,29 +101,29 @@ export default function HousePage() {
           <div className="flex-1 flex flex-col overflow-y-auto bg-neutral">
             <div className="p-4 md:p-8">
               <header className="mb-6">
-                <h1 className="text-2xl font-heading font-bold text-neutral-darker">Houses</h1>
-                <p className="text-neutral-dark">View and manage house teams and competitions</p>
+                <h1 className="text-2xl font-heading font-bold text-neutral-darker">Pods</h1>
+                <p className="text-neutral-dark">View and manage pod teams and competitions</p>
               </header>
 
-              {isLoadingHouses ? (
+              {isLoadingPods ? (
                 <div className="flex items-center justify-center h-64">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
-              ) : houses && houses.length > 0 ? (
+              ) : pods && pods.length > 0 ? (
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {houses.map(house => (
-                      <Card key={house.id} className="overflow-hidden">
-                        <div className="h-2" style={{ backgroundColor: house.color }}></div>
+                    {pods.map(pod => (
+                      <Card key={pod.id} className="overflow-hidden">
+                        <div className="h-2" style={{ backgroundColor: pod.color }}></div>
                         <CardHeader className="pb-2">
                           <div className="flex justify-between items-start">
-                            <CardTitle>{house.name}</CardTitle>
+                            <CardTitle>{pod.name}</CardTitle>
                             <Badge variant="outline" className="font-mono">
-                              {house.points} pts
+                              {pod.points} pts
                             </Badge>
                           </div>
                           <CardDescription>
-                            {house.description || "No description available"}
+                            {pod.description || "No description available"}
                           </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -131,7 +131,7 @@ export default function HousePage() {
                             <Button 
                               variant="outline" 
                               size="sm"
-                              onClick={() => setLocation(`/house/dashboard?house=${house.id}`)}
+                              onClick={() => setLocation(`/pod/dashboard?pod=${pod.id}`)}
                             >
                               View Details
                             </Button>
@@ -139,7 +139,7 @@ export default function HousePage() {
                               variant="ghost" 
                               size="sm"
                               className="text-primary"
-                              onClick={() => setLocation(`/house/setup?house=${house.id}`)}
+                              onClick={() => setLocation(`/pod/setup?pod=${pod.id}`)}
                             >
                               Manage
                             </Button>
@@ -151,9 +151,9 @@ export default function HousePage() {
                 </div>
               ) : (
                 <div className="bg-white rounded-lg shadow-sm p-6 text-center">
-                  <p className="text-neutral-dark mb-4">No houses have been set up yet.</p>
-                  <Button onClick={() => setLocation('/house/setup')}>
-                    Set Up Houses
+                  <p className="text-neutral-dark mb-4">No pods have been set up yet.</p>
+                  <Button onClick={() => setLocation('/pod/setup')}>
+                    Set Up Pods
                   </Button>
                 </div>
               )}
@@ -166,7 +166,7 @@ export default function HousePage() {
     );
   }
 
-  // For other house-related routes, show the original layout
+  // For other pod-related routes, show the original layout
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header is now provided globally in App.tsx */}
@@ -174,7 +174,7 @@ export default function HousePage() {
       {/* Main Content */}
       <main className="flex-1 bg-slate-50 p-6">
         <div className="container mx-auto space-y-8">
-          {isLoadingHouses ? (
+          {isLoadingPods ? (
             <div className="flex items-center justify-center h-64">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
@@ -186,7 +186,7 @@ export default function HousePage() {
                   {/* Dashboard Button */}
                   <div className="bg-blue-50 rounded-md p-4">
                     <button 
-                      onClick={() => setLocation('/house/dashboard')}
+                      onClick={() => setLocation('/pod/dashboard')}
                       className="w-full text-left flex items-center space-x-3 text-primary hover:text-primary-dark"
                     >
                       <span className="border border-blue-300 rounded p-2 bg-white">
@@ -201,7 +201,7 @@ export default function HousePage() {
                   {/* Points Posters */}
                   <div className="bg-white border rounded-md p-4">
                     <button 
-                      onClick={() => setLocation('/house/posters')}
+                      onClick={() => setLocation('/pod/posters')}
                       className="w-full text-left flex items-center space-x-3 text-gray-700 hover:text-primary"
                     >
                       <span className="border border-gray-200 rounded p-2">
@@ -213,17 +213,17 @@ export default function HousePage() {
                     </button>
                   </div>
                   
-                  {/* House Setup */}
+                  {/* Pod Setup */}
                   <div className="bg-white border rounded-md p-4">
                     <button 
-                      onClick={() => setLocation('/house/setup')}
+                      onClick={() => setLocation('/pod/setup')}
                       className="w-full text-left flex items-center space-x-3 text-gray-700 hover:text-primary"
                     >
                       <span className="border border-gray-200 rounded p-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                       </span>
                       <div>
-                        <div className="font-semibold">House Setup</div>
+                        <div className="font-semibold">Pod Setup</div>
                       </div>
                     </button>
                   </div>
@@ -252,7 +252,7 @@ export default function HousePage() {
                             </button>
                           </div>
                         )}
-                        <h2 className="text-2xl font-bold text-gray-800">House Points Dashboard</h2>
+                        <h2 className="text-2xl font-bold text-gray-800">Pod Points Dashboard</h2>
                       </div>
                       <button 
                         onClick={() => setIsFullscreen(!isFullscreen)}
@@ -268,7 +268,7 @@ export default function HousePage() {
                     
                     {/* Colorful pods grid - Make cards larger when in fullscreen mode */}
                     <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 ${isFullscreen ? 'lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6' : ''}`}>
-                      {houses?.map((house, index) => {
+                      {pods?.map((pod, index) => {
                         // Generate a vibrant color for each pod based on its index
                         const colors = [
                           'bg-gradient-to-br from-green-300 to-green-400',
@@ -290,25 +290,25 @@ export default function HousePage() {
                         
                         return (
                           <div 
-                            key={house.id} 
+                            key={pod.id} 
                             className={`${colorClass} rounded-lg shadow p-6 flex flex-col items-center justify-center text-center aspect-[3/2] transition-transform hover:scale-105 cursor-pointer`}
                           >
                             <div className={`text-blue-900 font-bold text-3xl md:text-4xl ${isFullscreen ? 'text-5xl md:text-6xl lg:text-7xl' : 'lg:text-5xl'} mb-2`}>
-                              {new Intl.NumberFormat().format(house.points)}
+                              {new Intl.NumberFormat().format(pod.points)}
                             </div>
                             <div className={`text-blue-900 font-medium ${isFullscreen ? 'text-xl' : ''}`}>
-                              {house.name}
+                              {pod.name}
                             </div>
                             <div className={`text-blue-900/70 text-xs ${isFullscreen ? 'text-sm' : ''} mt-1`}>
                               Total from all educators
                             </div>
 
                             {/* Show top student if available */}
-                            {topStudentsByHouse && topStudentsByHouse.length > 0 && (
+                            {topStudentsByPod && topStudentsByPod.length > 0 && (
                               <>
                                 {(() => {
-                                  const houseData = topStudentsByHouse.find(h => h.houseId === house.id);
-                                  if (houseData?.topStudent) {
+                                  const podData = topStudentsByPod.find(p => p.podId === pod.id);
+                                  if (podData?.topStudent) {
                                     return (
                                       <div className="mt-3 pt-2 border-t border-blue-900/20 w-full flex flex-col items-center">
                                         <div className={`bg-blue-900/20 px-3 py-0.5 rounded-full ${isFullscreen ? 'text-sm' : 'text-xs'} uppercase text-blue-900 font-bold tracking-wide mb-1.5`}>
@@ -321,7 +321,7 @@ export default function HousePage() {
                                                 <path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clipRule="evenodd" />
                                               </svg>
                                             </span>
-                                            {houseData.topStudent.firstName} {houseData.topStudent.lastName.charAt(0)}.
+                                            {podData.topStudent.firstName} {podData.topStudent.lastName.charAt(0)}.
                                           </div>
                                           <div className="flex items-center justify-center mt-0.5">
                                             <span className={`inline-block bg-blue-900/10 ${isFullscreen ? 'w-5 h-5' : 'w-4 h-4'} rounded-full flex items-center justify-center mr-1`}>
@@ -330,7 +330,7 @@ export default function HousePage() {
                                               </svg>
                                             </span>
                                             <span className={`${isFullscreen ? 'text-sm' : 'text-xs'} font-semibold text-blue-900`}>
-                                              {houseData.topStudent.totalPoints} points
+                                              {podData.topStudent.totalPoints} points
                                             </span>
                                           </div>
                                         </div>
@@ -353,12 +353,12 @@ export default function HousePage() {
               {isPosters && (
                 <div className="bg-white p-6 rounded-lg shadow-sm">
                   <h2 className="text-2xl font-bold mb-6 text-gray-800">Points Posters</h2>
-                  <p className="text-gray-600 mb-4">Generate and print house points posters for your classroom or school.</p>
+                  <p className="text-gray-600 mb-4">Generate and print pod points posters for your classroom or school.</p>
                   
                   <div className="grid md:grid-cols-2 gap-6">
-                    {houses?.map(house => (
-                      <div key={house.id} className="border rounded-lg p-4">
-                        <h3 className="text-lg font-semibold mb-2" style={{ color: house.color }}>{house.name}</h3>
+                    {pods?.map(pod => (
+                      <div key={pod.id} className="border rounded-lg p-4">
+                        <h3 className="text-lg font-semibold mb-2" style={{ color: pod.color }}>{pod.name}</h3>
                         <div className="bg-gray-100 h-40 flex items-center justify-center rounded mb-3">
                           <p className="text-gray-400">Poster Preview</p>
                         </div>
@@ -374,16 +374,16 @@ export default function HousePage() {
               {/* Setup Content */}
               {isSetup && (
                 <div className="bg-white p-6 rounded-lg shadow-sm">
-                  <h2 className="text-2xl font-bold mb-6 text-gray-800">House Setup</h2>
+                  <h2 className="text-2xl font-bold mb-6 text-gray-800">Pod Setup</h2>
                   
                   <div className="space-y-6">
-                    {houses?.map(house => (
-                      <div key={house.id} className="border rounded-lg p-4 relative">
+                    {pods?.map(pod => (
+                      <div key={pod.id} className="border rounded-lg p-4 relative">
                         <div className="flex items-center mb-4">
-                          <div className="w-12 h-12 rounded-full mr-4" style={{ backgroundColor: house.color }}></div>
+                          <div className="w-12 h-12 rounded-full mr-4" style={{ backgroundColor: pod.color }}></div>
                           <div>
-                            <h3 className="text-lg font-semibold">{house.name}</h3>
-                            <p className="text-sm text-gray-500">{house.description || 'No description'}</p>
+                            <h3 className="text-lg font-semibold">{pod.name}</h3>
+                            <p className="text-sm text-gray-500">{pod.description || 'No description'}</p>
                           </div>
                           {/* Settings button removed as requested */}
                         </div>
@@ -391,7 +391,7 @@ export default function HousePage() {
                         <div className="flex justify-between items-center">
                           <div className="text-sm text-gray-500">Students: <span className="font-semibold">24</span></div>
                           <button 
-                            onClick={() => setLocation(`/roster?house=${house.id}`)}
+                            onClick={() => setLocation(`/roster?pod=${pod.id}`)}
                             className="px-3 py-1 rounded text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center gap-1"
                           >
                             <UserPlus size={14} />
@@ -407,7 +407,7 @@ export default function HousePage() {
               {/* Options Content */}
               {isOptions && (
                 <div className="bg-white p-6 rounded-lg shadow-sm">
-                  <h2 className="text-2xl font-bold mb-6 text-gray-800">House Options</h2>
+                  <h2 className="text-2xl font-bold mb-6 text-gray-800">Pod Options</h2>
                   
                   <div className="space-y-4">
                     <div className="border p-4 rounded-lg">
@@ -419,7 +419,7 @@ export default function HousePage() {
                         </div>
                         <div className="flex items-center">
                           <input type="checkbox" id="showRankings" className="mr-2" />
-                          <label htmlFor="showRankings">Show house rankings</label>
+                          <label htmlFor="showRankings">Show pod rankings</label>
                         </div>
                       </div>
                     </div>
