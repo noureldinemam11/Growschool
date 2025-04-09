@@ -363,6 +363,8 @@ export class MemStorage implements IStorage {
   }
   
   async getClassesByPodId(podId: number): Promise<Class[]> {
+    // This implementation is for in-memory storage only
+    // The DatabaseStorage implementation below will handle database queries
     return Array.from(this.classes.values()).filter(cls => 
       cls.podId === podId
     );
@@ -399,11 +401,7 @@ export class MemStorage implements IStorage {
     return Array.from(this.classes.values());
   }
   
-  async getClassesByPodId(podId: number): Promise<Class[]> {
-    return Array.from(this.classes.values()).filter(cls => 
-      cls.podId === podId
-    );
-  }
+  // This is a duplicate method, see below in the file for the implementation that is used
   
   async getClassPoints(): Promise<Record<number, number>> {
     const classPoints: Record<number, number> = {};

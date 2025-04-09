@@ -1638,6 +1638,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Need to hash the password before creating the user
           const hashedPassword = await hashPassword('placeholder123');
           
+          // First determine which class is assigned (if any)
+          let targetClassId = null;
+          if (classId && classId !== 'none') {
+            targetClassId = parseInt(classId);
+          }
+          
+          // Get pod and grade level information if class is assigned
+          let podId = null;
+          let gradeLevel = null;
+          
+          if (targetClassId) {
+            try {
+              const classInfo = await storage.getClass(targetClassId);
+              console.log(`Found class info for class ${targetClassId}:`, classInfo);
+              if (classInfo) {
+                podId = classInfo.podId; 
+                gradeLevel = classInfo.gradeLevel;
+              }
+            } catch (err) {
+              console.error(`Failed to get class info for class ${targetClassId}:`, err);
+            }
+          }
+          
+          console.log(`Creating student with: classId=${targetClassId}, podId=${podId}, gradeLevel=${gradeLevel}`);
+          
           const newStudent = await storage.createUser({
             firstName,
             lastName,
@@ -1645,9 +1670,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             password: hashedPassword, // Properly hashed placeholder password
             email: email, // Placeholder email for database requirements
             role: 'student',
-            classId: classId || null,
-            podId: classId && classId !== 'none' ? (await storage.getClass(parseInt(classId)))?.podId || null : null,
-            gradeLevel: classId && classId !== 'none' ? (await storage.getClass(parseInt(classId)))?.gradeLevel || null : null,
+            classId: targetClassId,
+            podId: podId,
+            gradeLevel: gradeLevel,
             section: null,
             parentId: null,
             confirmPassword: 'placeholder123' // Required by schema but not stored
