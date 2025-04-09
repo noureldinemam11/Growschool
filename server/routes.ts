@@ -6,7 +6,8 @@ import { setupAuth, comparePasswords, hashPassword } from "./auth";
 import { setupExcelImport } from "./excel-import";
 import { storage } from "./storage";
 import { db, pool } from "./db";
-import { insertBehaviorPointSchema, insertRewardRedemptionSchema, userRoles, users, User } from "@shared/schema";
+import { insertBehaviorPointSchema, insertRewardRedemptionSchema, userRoles, users, User, 
+  insertPodSchema, insertClassSchema } from "@shared/schema";
 import { z } from "zod";
 import { fileURLToPath } from "url";
 import { eq } from "drizzle-orm";
@@ -250,6 +251,281 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error assigning students to house:", error);
       res.status(500).json({ 
         error: "Failed to assign students to house",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  // Pods
+  app.get("/api/pods", async (req, res) => {
+    try {
+      const pods = await storage.getAllPods();
+      res.json(pods);
+    } catch (error) {
+      console.error("Error fetching pods:", error);
+      res.status(500).json({ error: "Failed to fetch pods" });
+    }
+  });
+
+  app.get("/api/pods/:id", async (req, res) => {
+    try {
+      const podId = Number(req.params.id);
+      const pod = await storage.getPod(podId);
+      if (!pod) {
+        return res.status(404).json({ error: "Pod not found" });
+      }
+      res.json(pod);
+    } catch (error) {
+      console.error("Error fetching pod:", error);
+      res.status(500).json({ error: "Failed to fetch pod" });
+    }
+  });
+  
+  app.post("/api/pods", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    try {
+      console.log("Creating pod with data:", req.body);
+      // Validate the input data using the insert schema
+      const validatedData = insertPodSchema.parse(req.body);
+      const pod = await storage.createPod(validatedData);
+      console.log("Pod created successfully:", pod);
+      res.status(201)
+        .header('Content-Type', 'application/json')
+        .json(pod);
+    } catch (error) {
+      console.error("Error creating pod:", error);
+      res.status(500).json({ error: "Failed to create pod" });
+    }
+  });
+
+  app.patch("/api/pods/:id", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const podId = Number(req.params.id);
+      const pod = await storage.getPod(podId);
+      
+      if (!pod) {
+        return res.status(404).json({ error: "Pod not found" });
+      }
+      
+      const updatedPod = await storage.updatePod(podId, req.body);
+      
+      if (!updatedPod) {
+        return res.status(500).json({ error: "Failed to update pod" });
+      }
+      
+      res.json({ success: true, pod: updatedPod });
+    } catch (error) {
+      console.error("Error updating pod:", error);
+      res.status(500).json({ 
+        error: "Failed to update pod",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  app.delete("/api/pods/:id", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const podId = Number(req.params.id);
+      const pod = await storage.getPod(podId);
+      
+      if (!pod) {
+        return res.status(404).json({ error: "Pod not found" });
+      }
+      
+      // Check if there are classes assigned to this pod
+      const classesInPod = await storage.getClassesByPodId(podId);
+      if (classesInPod.length > 0) {
+        return res.status(400).json({ 
+          error: "Cannot delete pod with assigned classes. Please reassign or delete classes first." 
+        });
+      }
+      
+      const deleted = await storage.deletePod(podId);
+      
+      if (!deleted) {
+        return res.status(500).json({ error: "Failed to delete pod" });
+      }
+      
+      res.json({ success: true, message: "Pod deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting pod:", error);
+      res.status(500).json({ error: "Failed to delete pod" });
+    }
+  });
+
+  // Classes
+  app.get("/api/classes", async (req, res) => {
+    try {
+      const classes = await storage.getAllClasses();
+      res.json(classes);
+    } catch (error) {
+      console.error("Error fetching classes:", error);
+      res.status(500).json({ error: "Failed to fetch classes" });
+    }
+  });
+
+  app.get("/api/classes/:id", async (req, res) => {
+    try {
+      const classId = Number(req.params.id);
+      const classObj = await storage.getClass(classId);
+      if (!classObj) {
+        return res.status(404).json({ error: "Class not found" });
+      }
+      res.json(classObj);
+    } catch (error) {
+      console.error("Error fetching class:", error);
+      res.status(500).json({ error: "Failed to fetch class" });
+    }
+  });
+  
+  app.post("/api/classes", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    try {
+      console.log("Creating class with data:", req.body);
+      // Validate the input data using the insert schema
+      const validatedData = insertClassSchema.parse(req.body);
+      const classObj = await storage.createClass(validatedData);
+      console.log("Class created successfully:", classObj);
+      res.status(201)
+        .header('Content-Type', 'application/json')
+        .json(classObj);
+    } catch (error) {
+      console.error("Error creating class:", error);
+      res.status(500).json({ error: "Failed to create class" });
+    }
+  });
+
+  app.patch("/api/classes/:id", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const classId = Number(req.params.id);
+      const classObj = await storage.getClass(classId);
+      
+      if (!classObj) {
+        return res.status(404).json({ error: "Class not found" });
+      }
+      
+      const updatedClass = await storage.updateClass(classId, req.body);
+      
+      if (!updatedClass) {
+        return res.status(500).json({ error: "Failed to update class" });
+      }
+      
+      res.json({ success: true, class: updatedClass });
+    } catch (error) {
+      console.error("Error updating class:", error);
+      res.status(500).json({ 
+        error: "Failed to update class",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  app.delete("/api/classes/:id", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const classId = Number(req.params.id);
+      const classObj = await storage.getClass(classId);
+      
+      if (!classObj) {
+        return res.status(404).json({ error: "Class not found" });
+      }
+      
+      // Check if there are students assigned to this class
+      const studentsInClass = await storage.getStudentsByClassId(classId);
+      if (studentsInClass.length > 0) {
+        return res.status(400).json({ 
+          error: "Cannot delete class with assigned students. Please reassign students first." 
+        });
+      }
+      
+      const deleted = await storage.deleteClass(classId);
+      
+      if (!deleted) {
+        return res.status(500).json({ error: "Failed to delete class" });
+      }
+      
+      res.json({ success: true, message: "Class deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting class:", error);
+      res.status(500).json({ error: "Failed to delete class" });
+    }
+  });
+
+  // Endpoint to assign multiple students to a class
+  app.post("/api/classes/:id/assign-students", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const classId = Number(req.params.id);
+      const { studentIds } = req.body;
+      
+      // Validate input
+      if (!studentIds || !Array.isArray(studentIds) || studentIds.length === 0) {
+        return res.status(400).json({ error: "Invalid request: studentIds array is required" });
+      }
+      
+      // Check if class exists
+      const classObj = await storage.getClass(classId);
+      if (!classObj) {
+        return res.status(404).json({ error: "Class not found" });
+      }
+      
+      // Get all users to update
+      const students = await Promise.all(
+        studentIds.map(id => storage.getUser(Number(id)))
+      );
+      
+      // Filter out non-existent users and non-students
+      const validStudents = students.filter(
+        student => student && student.role === "student"
+      );
+      
+      if (validStudents.length === 0) {
+        return res.status(400).json({ error: "No valid students found in the provided IDs" });
+      }
+      
+      // Update each student's class ID
+      const updated = await Promise.all(
+        validStudents.map(student => {
+          if (student) {
+            return storage.updateUser(student.id, { classId });
+          }
+          return null;
+        })
+      );
+      
+      res.status(200).json({
+        success: true,
+        message: `${updated.filter(Boolean).length} students assigned to class successfully`,
+        assignedStudents: updated.filter(Boolean)
+      });
+    } catch (error) {
+      console.error("Error assigning students to class:", error);
+      res.status(500).json({ 
+        error: "Failed to assign students to class",
         details: error instanceof Error ? error.message : "Unknown error"
       });
     }
