@@ -1,9 +1,10 @@
 import { FC, useState, useEffect } from 'react';
-import { User, House } from '@shared/schema';
+import { User } from '@shared/schema';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { useLocation } from 'wouter';
 import {
   UsersIcon,
   UserX,
@@ -76,6 +77,7 @@ interface ManageRosterProps {
 const ManageRoster: FC<ManageRosterProps> = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
   const [selectedStudents, setSelectedStudents] = useState<number[]>([]);
   const [selectAll, setSelectAll] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -303,7 +305,7 @@ const ManageRoster: FC<ManageRosterProps> = () => {
               size="sm" 
               variant="outline" 
               className="flex items-center gap-1"
-              onClick={() => window.location.href = '/add-student'}
+              onClick={() => navigate('/roster')}
             >
               <UserPlus className="h-4 w-4" />
               Add Student
@@ -418,7 +420,7 @@ const ManageRoster: FC<ManageRosterProps> = () => {
                         size="sm"
                         variant="outline"
                         className="mt-4"
-                        onClick={() => window.location.href = '/add-student'}
+                        onClick={() => navigate('/roster')}
                       >
                         <UserPlus className="h-4 w-4 mr-2" />
                         Add Student
