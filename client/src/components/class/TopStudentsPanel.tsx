@@ -59,14 +59,6 @@ const TopStudentsPanel: React.FC<TopStudentsPanelProps> = ({
                     {index + 1}
                   </div>
                   
-                  {/* Class Icon */}
-                  <div 
-                    className="h-7 w-7 rounded-full flex items-center justify-center text-white font-semibold mr-3" 
-                    style={{ backgroundColor: classItem.color }}
-                  >
-                    {classItem.name.replace(/[0-9]/g, '')}
-                  </div>
-                  
                   {/* Class Info */}
                   <div className="mr-2">
                     <div className="font-semibold">{classItem.name}</div>
