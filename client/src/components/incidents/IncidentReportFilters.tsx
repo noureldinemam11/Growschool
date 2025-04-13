@@ -1,372 +1,457 @@
-import { useState } from "react";
-import { incidentStatuses, incidentTypes } from "@shared/schema";
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { 
   Card, 
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
+} from '@/components/ui/select';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { 
+  Calendar 
+} from '@/components/ui/calendar';
+import { Badge } from '@/components/ui/badge';
 import { 
   CalendarIcon, 
-  FilterIcon, 
-  X, 
-  ChevronDown, 
-  BarChart4 
-} from "lucide-react";
-import { useIncidentReports } from "@/hooks/incident-report-context";
+  Check, 
+  ChevronDown,
+  Filter, 
+  Search, 
+  X 
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useIncidentReports } from '@/hooks/incident-report-context';
+import { format } from 'date-fns';
 
-export function IncidentReportFilters() {
-  const { 
-    filters, 
-    setStatusFilter, 
-    setTypeFilter, 
-    setTeacherFilter, 
-    setStudentFilter, 
-    setDateRangeFilter, 
+const incidentStatusOptions = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'escalated', label: 'Escalated' },
+  { value: 'resolved', label: 'Resolved' },
+];
+
+const incidentTypeOptions = [
+  { value: 'classroom_disruption', label: 'Classroom Disruption' },
+  { value: 'harassment', label: 'Harassment' },
+  { value: 'property_damage', label: 'Property Damage' },
+  { value: 'physical_aggression', label: 'Physical Aggression' },
+  { value: 'verbal_aggression', label: 'Verbal Aggression' },
+  { value: 'attendance', label: 'Attendance' },
+  { value: 'academic_dishonesty', label: 'Academic Dishonesty' },
+  { value: 'technology_misuse', label: 'Technology Misuse' },
+  { value: 'other', label: 'Other' },
+];
+
+const predefinedDateRanges = [
+  { value: 'today', label: 'Today' },
+  { value: 'yesterday', label: 'Yesterday' },
+  { value: 'this_week', label: 'This Week' },
+  { value: 'last_week', label: 'Last Week' },
+  { value: 'this_month', label: 'This Month' },
+  { value: 'last_month', label: 'Last Month' },
+  { value: 'custom', label: 'Custom Range' },
+];
+
+export default function IncidentReportFilters() {
+  const {
+    filters,
+    setStatusFilter,
+    setTypeFilter,
+    setTeacherFilter,
+    setStudentFilter,
+    setDateRangeFilter,
     clearFilters,
     teachers,
     students
   } = useIncidentReports();
 
-  const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedDateRange, setSelectedDateRange] = useState<string | null>(null);
   
-  // Date range calendar state
-  const [calendarOpen, setCalendarOpen] = useState(false);
-  
-  // Count active filters
-  const activeFilterCount = Object.values(filters).filter(f => {
-    if (f === null) return false;
-    if (typeof f === 'object' && f.from === null && f.to === null) return false;
-    return true;
-  }).length;
+  // Check if any filters are applied
+  const hasActiveFilters = 
+    filters.status !== null || 
+    filters.type !== null || 
+    filters.teacherId !== null || 
+    filters.studentId !== null || 
+    filters.dateRange.from !== null || 
+    filters.dateRange.to !== null;
 
-  const formatIncidentType = (type: string) => {
-    return type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, ' ');
+  const handleDateRangeChange = (range: string) => {
+    setSelectedDateRange(range);
+    
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    // Reset hours to start of day
+    today.setHours(0, 0, 0, 0);
+    yesterday.setHours(0, 0, 0, 0);
+    
+    const thisWeekStart = new Date(today);
+    thisWeekStart.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
+    
+    const lastWeekStart = new Date(thisWeekStart);
+    lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+    
+    const lastWeekEnd = new Date(thisWeekStart);
+    lastWeekEnd.setDate(lastWeekEnd.getDate() - 1);
+    
+    const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    
+    const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+
+    switch (range) {
+      case 'today':
+        setDateRangeFilter(today, today);
+        break;
+      case 'yesterday':
+        setDateRangeFilter(yesterday, yesterday);
+        break;
+      case 'this_week':
+        setDateRangeFilter(thisWeekStart, today);
+        break;
+      case 'last_week':
+        setDateRangeFilter(lastWeekStart, lastWeekEnd);
+        break;
+      case 'this_month':
+        setDateRangeFilter(thisMonthStart, today);
+        break;
+      case 'last_month':
+        setDateRangeFilter(lastMonthStart, lastMonthEnd);
+        break;
+      case 'custom':
+        // Will be handled by the date picker
+        break;
+      default:
+        setDateRangeFilter(null, null);
+    }
+  };
+
+  const handleClearFilters = () => {
+    clearFilters();
+    setSearchQuery('');
+    setSelectedDateRange(null);
+  };
+
+  const getTeacherName = (id: number | null) => {
+    if (!id) return '';
+    const teacher = teachers.find(t => t.id === id);
+    return teacher ? `${teacher.firstName} ${teacher.lastName}` : '';
+  };
+
+  const getStudentName = (id: number | null) => {
+    if (!id) return '';
+    const student = students.find(s => s.id === id);
+    return student ? `${student.firstName} ${student.lastName}` : '';
   };
 
   return (
     <Card className="mb-6">
-      <CardHeader className="pb-3">
-        <div className="flex justify-between items-center">
-          <div>
-            <CardTitle>Filter Incident Reports</CardTitle>
-            <CardDescription>Narrow down incidents by various criteria</CardDescription>
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => setFiltersExpanded(!filtersExpanded)}
-          >
-            <FilterIcon className="h-4 w-4 mr-2" />
-            Filters
-            {activeFilterCount > 0 && (
-              <Badge variant="secondary" className="ml-2">
-                {activeFilterCount}
-              </Badge>
-            )}
-            <ChevronDown className={`h-4 w-4 ml-2 transition-transform ${filtersExpanded ? 'rotate-180' : ''}`} />
-          </Button>
-        </div>
-        
-        {/* Active filters display */}
-        {activeFilterCount > 0 && (
-          <div className="flex flex-wrap gap-2 mt-2">
-            {filters.status && (
-              <Badge variant="outline" className="bg-gray-100">
-                Status: {filters.status.charAt(0).toUpperCase() + filters.status.slice(1)}
-                <X 
-                  className="h-3 w-3 ml-1 cursor-pointer" 
-                  onClick={() => setStatusFilter(null)} 
-                />
-              </Badge>
-            )}
-            
-            {filters.type && (
-              <Badge variant="outline" className="bg-gray-100">
-                Type: {formatIncidentType(filters.type)}
-                <X 
-                  className="h-3 w-3 ml-1 cursor-pointer" 
-                  onClick={() => setTypeFilter(null)} 
-                />
-              </Badge>
-            )}
-            
-            {filters.teacherId && (
-              <Badge variant="outline" className="bg-gray-100">
-                Teacher: {
-                  teachers.find(t => t.id === filters.teacherId)
-                    ? `${teachers.find(t => t.id === filters.teacherId)?.firstName} ${teachers.find(t => t.id === filters.teacherId)?.lastName}`
-                    : `ID: ${filters.teacherId}`
-                }
-                <X 
-                  className="h-3 w-3 ml-1 cursor-pointer" 
-                  onClick={() => setTeacherFilter(null)} 
-                />
-              </Badge>
-            )}
-            
-            {filters.studentId && (
-              <Badge variant="outline" className="bg-gray-100">
-                Student: {
-                  students.find(s => s.id === filters.studentId)
-                    ? `${students.find(s => s.id === filters.studentId)?.firstName} ${students.find(s => s.id === filters.studentId)?.lastName}`
-                    : `ID: ${filters.studentId}`
-                }
-                <X 
-                  className="h-3 w-3 ml-1 cursor-pointer" 
-                  onClick={() => setStudentFilter(null)} 
-                />
-              </Badge>
-            )}
-            
-            {(filters.dateRange.from || filters.dateRange.to) && (
-              <Badge variant="outline" className="bg-gray-100">
-                Date: {filters.dateRange.from ? format(filters.dateRange.from, "MMM d, yyyy") : "Any"} 
-                - 
-                {filters.dateRange.to ? format(filters.dateRange.to, "MMM d, yyyy") : "Any"}
-                <X 
-                  className="h-3 w-3 ml-1 cursor-pointer" 
-                  onClick={() => setDateRangeFilter(null, null)} 
-                />
-              </Badge>
-            )}
-            
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-7 px-2 text-xs" 
-              onClick={clearFilters}
-            >
-              Clear all
-            </Button>
-          </div>
-        )}
-      </CardHeader>
-      
-      {filtersExpanded && (
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Status filter */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Status</label>
-              <Select 
-                value={filters.status || ""} 
-                onValueChange={value => setStatusFilter(value === "" ? null : value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Any status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Any status</SelectItem>
-                  {incidentStatuses.map(status => (
-                    <SelectItem key={status} value={status}>
-                      {status.charAt(0).toUpperCase() + status.slice(1)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {/* Type filter */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Incident Type</label>
-              <Select 
-                value={filters.type || ""} 
-                onValueChange={value => setTypeFilter(value === "" ? null : value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Any type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Any type</SelectItem>
-                  {incidentTypes.map(type => (
-                    <SelectItem key={type} value={type}>
-                      {formatIncidentType(type)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {/* Teacher filter */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Reported By</label>
-              <Select 
-                value={filters.teacherId?.toString() || ""} 
-                onValueChange={value => setTeacherFilter(value === "" ? null : parseInt(value))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Any teacher" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Any teacher</SelectItem>
-                  {teachers.map(teacher => (
-                    <SelectItem key={teacher.id} value={teacher.id.toString()}>
-                      {teacher.firstName} {teacher.lastName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {/* Student filter */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Student Involved</label>
-              <Select 
-                value={filters.studentId?.toString() || ""} 
-                onValueChange={value => setStudentFilter(value === "" ? null : parseInt(value))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Any student" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Any student</SelectItem>
-                  {students.map(student => (
-                    <SelectItem key={student.id} value={student.id.toString()}>
-                      {student.firstName} {student.lastName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {/* Date range filter */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Date Range</label>
-              <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left font-normal"
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {filters.dateRange.from && filters.dateRange.to ? (
-                      <>
-                        {format(filters.dateRange.from, "MMM d, yyyy")} - {format(filters.dateRange.to, "MMM d, yyyy")}
-                      </>
-                    ) : filters.dateRange.from ? (
-                      <>From {format(filters.dateRange.from, "MMM d, yyyy")}</>
-                    ) : filters.dateRange.to ? (
-                      <>Until {format(filters.dateRange.to, "MMM d, yyyy")}</>
-                    ) : (
-                      "Any date range"
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="range"
-                    defaultMonth={filters.dateRange.from || undefined}
-                    selected={{
-                      from: filters.dateRange.from || undefined,
-                      to: filters.dateRange.to || undefined
-                    }}
-                    onSelect={(range) => {
-                      setDateRangeFilter(range?.from || null, range?.to || null);
-                      setCalendarOpen(false);
-                    }}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            {/* Search input - for future implementation */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Search Description</label>
-              <Input 
-                placeholder="Search descriptions..." 
-                disabled 
-                className="text-muted-foreground"
+      <CardContent className="p-4">
+        <div className="flex flex-col space-y-4">
+          {/* Top filter bar - always visible */}
+          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search incidents..."
+                className="pl-9"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
-              <p className="text-xs text-muted-foreground">Coming soon</p>
+            </div>
+            
+            <div className="flex gap-2 items-center">
+              {hasActiveFilters && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleClearFilters}
+                  className="px-2"
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Clear
+                </Button>
+              )}
+              
+              <Button 
+                variant={isExpanded ? "default" : "outline"} 
+                size="sm" 
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="gap-1"
+              >
+                <Filter className="h-4 w-4" />
+                Filters
+                <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+              </Button>
             </div>
           </div>
-        </CardContent>
-      )}
-    </Card>
-  );
-}
-
-export function IncidentReportAnalytics() {
-  const [expanded, setExpanded] = useState(false);
-  
-  return (
-    <Card className="mb-6">
-      <CardHeader className="pb-3">
-        <div className="flex justify-between items-center">
-          <div>
-            <CardTitle>Incident Analytics</CardTitle>
-            <CardDescription>View trends and patterns in reported incidents</CardDescription>
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => setExpanded(!expanded)}
-          >
-            <BarChart4 className="h-4 w-4 mr-2" />
-            Analytics
-            <ChevronDown className={`h-4 w-4 ml-2 transition-transform ${expanded ? 'rotate-180' : ''}`} />
-          </Button>
+          
+          {/* Applied filters */}
+          {hasActiveFilters && (
+            <div className="flex flex-wrap gap-2">
+              {filters.status && (
+                <Badge variant="secondary" className="gap-1">
+                  Status: {filters.status.charAt(0).toUpperCase() + filters.status.slice(1).replace(/_/g, ' ')}
+                  <X 
+                    className="h-3 w-3 cursor-pointer" 
+                    onClick={() => setStatusFilter(null)} 
+                  />
+                </Badge>
+              )}
+              
+              {filters.type && (
+                <Badge variant="secondary" className="gap-1">
+                  Type: {filters.type.charAt(0).toUpperCase() + filters.type.slice(1).replace(/_/g, ' ')}
+                  <X 
+                    className="h-3 w-3 cursor-pointer" 
+                    onClick={() => setTypeFilter(null)} 
+                  />
+                </Badge>
+              )}
+              
+              {filters.teacherId && (
+                <Badge variant="secondary" className="gap-1">
+                  Reporter: {getTeacherName(filters.teacherId)}
+                  <X 
+                    className="h-3 w-3 cursor-pointer" 
+                    onClick={() => setTeacherFilter(null)} 
+                  />
+                </Badge>
+              )}
+              
+              {filters.studentId && (
+                <Badge variant="secondary" className="gap-1">
+                  Student: {getStudentName(filters.studentId)}
+                  <X 
+                    className="h-3 w-3 cursor-pointer" 
+                    onClick={() => setStudentFilter(null)} 
+                  />
+                </Badge>
+              )}
+              
+              {(filters.dateRange.from || filters.dateRange.to) && (
+                <Badge variant="secondary" className="gap-1">
+                  Date: {
+                    filters.dateRange.from && filters.dateRange.to
+                      ? `${format(filters.dateRange.from, 'MMM d, yyyy')} - ${format(filters.dateRange.to, 'MMM d, yyyy')}`
+                      : filters.dateRange.from
+                        ? `From ${format(filters.dateRange.from, 'MMM d, yyyy')}`
+                        : `Until ${format(filters.dateRange.to!, 'MMM d, yyyy')}`
+                  }
+                  <X 
+                    className="h-3 w-3 cursor-pointer" 
+                    onClick={() => {
+                      setDateRangeFilter(null, null);
+                      setSelectedDateRange(null);
+                    }} 
+                  />
+                </Badge>
+              )}
+            </div>
+          )}
+          
+          {/* Expanded filter options */}
+          {isExpanded && (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t">
+              {/* Status filter */}
+              <div>
+                <Label className="mb-2 block">Status</Label>
+                <Select 
+                  value={filters.status || ""} 
+                  onValueChange={(value) => setStatusFilter(value || null)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Any status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Any status</SelectItem>
+                    {incidentStatusOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Type filter */}
+              <div>
+                <Label className="mb-2 block">Incident Type</Label>
+                <Select 
+                  value={filters.type || ""} 
+                  onValueChange={(value) => setTypeFilter(value || null)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Any type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Any type</SelectItem>
+                    {incidentTypeOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Teacher filter */}
+              <div>
+                <Label className="mb-2 block">Reporter</Label>
+                <Select 
+                  value={filters.teacherId?.toString() || ""} 
+                  onValueChange={(value) => setTeacherFilter(value ? parseInt(value) : null)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Any teacher" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Any teacher</SelectItem>
+                    {teachers.map(teacher => (
+                      <SelectItem key={teacher.id} value={teacher.id.toString()}>
+                        {teacher.firstName} {teacher.lastName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Date range filter */}
+              <div>
+                <Label className="mb-2 block">Date Range</Label>
+                <div className="flex gap-2">
+                  <Select 
+                    value={selectedDateRange || ""} 
+                    onValueChange={handleDateRangeChange}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Any time" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Any time</SelectItem>
+                      {predefinedDateRanges.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  {selectedDateRange === 'custom' && (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-auto gap-1">
+                          <CalendarIcon className="h-4 w-4" />
+                          {filters.dateRange.from && filters.dateRange.to
+                            ? `${format(filters.dateRange.from, 'MM/dd')} - ${format(filters.dateRange.to, 'MM/dd')}`
+                            : "Select"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="end">
+                        <Calendar
+                          mode="range"
+                          defaultMonth={filters.dateRange.from || undefined}
+                          selected={{
+                            from: filters.dateRange.from || undefined,
+                            to: filters.dateRange.to || undefined,
+                          }}
+                          onSelect={(range) => {
+                            if (range?.from) {
+                              setDateRangeFilter(range.from, range.to || range.from);
+                            } else {
+                              setDateRangeFilter(null, null);
+                            }
+                          }}
+                          numberOfMonths={2}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                </div>
+              </div>
+              
+              {/* Student filter */}
+              <div className="md:col-span-2">
+                <Label className="mb-2 block">Student</Label>
+                <Select 
+                  value={filters.studentId?.toString() || ""} 
+                  onValueChange={(value) => setStudentFilter(value ? parseInt(value) : null)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Any student" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Any student</SelectItem>
+                    {students.map(student => (
+                      <SelectItem key={student.id} value={student.id.toString()}>
+                        {student.firstName} {student.lastName} {student.gradeLevel ? `(${student.gradeLevel})` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Quick filter buttons */}
+              <div className="flex flex-wrap gap-2 md:col-span-2 items-end">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-1"
+                  onClick={() => {
+                    setStatusFilter('pending');
+                    setSelectedDateRange(null);
+                    setDateRangeFilter(null, null);
+                  }}
+                >
+                  <Check className="h-4 w-4" />
+                  Pending Issues
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-1"
+                  onClick={() => {
+                    setStatusFilter(null);
+                    handleDateRangeChange('today');
+                  }}
+                >
+                  <Check className="h-4 w-4" />
+                  Today's Incidents
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-1"
+                  onClick={() => {
+                    setStatusFilter(null);
+                    handleDateRangeChange('this_week');
+                  }}
+                >
+                  <Check className="h-4 w-4" />
+                  This Week
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
-      </CardHeader>
-      
-      {expanded && (
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardHeader className="p-4 pb-2">
-                <CardTitle className="text-lg">Status Breakdown</CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 pt-2">
-                <div className="text-center p-6 text-muted-foreground">
-                  <p>Analytics visualization coming soon</p>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="p-4 pb-2">
-                <CardTitle className="text-lg">Incident Types</CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 pt-2">
-                <div className="text-center p-6 text-muted-foreground">
-                  <p>Analytics visualization coming soon</p>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="p-4 pb-2">
-                <CardTitle className="text-lg">Trend Over Time</CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 pt-2">
-                <div className="text-center p-6 text-muted-foreground">
-                  <p>Analytics visualization coming soon</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </CardContent>
-      )}
+      </CardContent>
     </Card>
   );
 }

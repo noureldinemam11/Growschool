@@ -4,6 +4,8 @@ import IncidentReportsList from '@/components/incidents/IncidentReportsList';
 import IncidentReportForm from '@/components/incidents/IncidentReportForm';
 import IncidentReportDetail from '@/components/incidents/IncidentReportDetail';
 import IncidentReportAnalytics from '@/components/incidents/IncidentReportAnalytics';
+import IncidentReportDashboard from '@/components/incidents/IncidentReportDashboard';
+import IncidentReportFilters from '@/components/incidents/IncidentReportFilters';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft, BarChart } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
@@ -57,6 +59,13 @@ function IncidentReportsListPage() {
         </div>
       </div>
       
+      {/* Dashboard Statistics */}
+      <IncidentReportDashboard />
+      
+      {/* Filters */}
+      <IncidentReportFilters />
+      
+      {/* Reports Table */}
       <IncidentReportsList />
     </>
   );
