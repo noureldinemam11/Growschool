@@ -492,7 +492,18 @@ export default function PodPage() {
                                             'No students'
                                           )}
                                         </div>
-                                        <div className="text-xs text-gray-500">Star Student</div>
+                                        <div className="text-xs flex items-center">
+                                          <span className="text-gray-500 mr-1">Star Student</span>
+                                          {!isLoadingClassTopStudents && topStudentsByClass && topStudentsByClass.find(
+                                            c => c.classId === classItem.id
+                                          )?.topStudent && (
+                                            <span className="bg-primary/10 text-primary px-1 rounded-sm font-semibold">
+                                              {topStudentsByClass.find(
+                                                c => c.classId === classItem.id
+                                              )?.topStudent?.totalPoints || 0} pts
+                                            </span>
+                                          )}
+                                        </div>
                                       </div>
                                       <div className={`w-1 h-10 rounded-full ${
                                         // Use real rank data from API instead of hardcoded index

@@ -67,13 +67,13 @@ const ClassDashboardCard: React.FC<ClassDashboardCardProps> = ({
 
   return (
     <div className="flex flex-col items-center">
-      {/* Points circle with medal badge */}
+      {/* Class circle with medal badge */}
       <div className="relative">
         <div 
           className="w-14 h-14 rounded-full flex items-center justify-center mb-1 text-white font-bold text-xl shadow-md"
           style={{ backgroundColor: classColorHex }}
         >
-          {points}
+          {classItem.name.replace(/[0-9]/g, '')}
         </div>
         {getMedalBadge()}
       </div>
@@ -105,7 +105,7 @@ const ClassDashboardCard: React.FC<ClassDashboardCardProps> = ({
             {classItem.name}
           </div>
           <div className="text-xs text-gray-500">
-            {classItem.gradeLevel}
+            Grade {classItem.gradeLevel}
           </div>
         </div>
       </div>
