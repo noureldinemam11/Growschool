@@ -8,6 +8,7 @@ import { insertClassSchema } from '@shared/schema';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { BulkAssignStudents } from '@/components/class/BulkAssignStudents';
+import { HexColorPicker } from 'react-colorful';
 
 import {
   Card,
@@ -85,6 +86,7 @@ export default function ClassManagement() {
       podId: 0,
       gradeLevel: '',
       description: '',
+      color: '#00D1B2', // Default teal color
     },
   });
 
@@ -97,6 +99,7 @@ export default function ClassManagement() {
       podId: 0,
       gradeLevel: '',
       description: '',
+      color: '#00D1B2', // Default teal color
     },
   });
 
@@ -270,6 +273,7 @@ export default function ClassManagement() {
       podId: classObj.podId,
       gradeLevel: classObj.gradeLevel || '',
       description: classObj.description || '',
+      color: classObj.color || '#00D1B2', // Use the class color from database or default
     });
     setIsEditDialogOpen(true);
   };
@@ -352,7 +356,7 @@ export default function ClassManagement() {
                       <FormItem>
                         <FormLabel>Grade Level</FormLabel>
                         <FormControl>
-                          <Input placeholder="5th Grade" {...field} />
+                          <Input placeholder="5th Grade" {...field} value={field.value || ''} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -371,6 +375,35 @@ export default function ClassManagement() {
                             value={field.value || ''}
                           />
                         </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="color"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Class Color</FormLabel>
+                        <div className="space-y-2">
+                          <div className="flex gap-2 items-center">
+                            <div 
+                              className="h-6 w-6 rounded-full border"
+                              style={{ backgroundColor: field.value || '#00D1B2' }}
+                            />
+                            <FormControl>
+                              <Input 
+                                {...field} 
+                                value={field.value || ''} 
+                                placeholder="#00D1B2" 
+                              />
+                            </FormControl>
+                          </div>
+                          <HexColorPicker color={field.value || '#00D1B2'} onChange={field.onChange} />
+                          <FormDescription>
+                            Choose a color for this class. This color will be used to represent the class in charts and displays.
+                          </FormDescription>
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -418,6 +451,7 @@ export default function ClassManagement() {
                   <TableHead>Name</TableHead>
                   <TableHead>Pod</TableHead>
                   <TableHead>Grade Level</TableHead>
+                  <TableHead>Color</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -428,6 +462,15 @@ export default function ClassManagement() {
                     <TableCell className="font-medium">{classObj.name}</TableCell>
                     <TableCell>{getPodName(classObj.podId)}</TableCell>
                     <TableCell>{classObj.gradeLevel || 'N/A'}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="h-5 w-5 rounded-full border" 
+                          style={{ backgroundColor: classObj.color || '#00D1B2' }}
+                        />
+                        <span className="text-xs">{classObj.color || '#00D1B2'}</span>
+                      </div>
+                    </TableCell>
                     <TableCell className="max-w-xs truncate">
                       {classObj.description || 'No description'}
                     </TableCell>
@@ -544,6 +587,35 @@ export default function ClassManagement() {
                         value={field.value || ''}
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="color"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Class Color</FormLabel>
+                    <div className="space-y-2">
+                      <div className="flex gap-2 items-center">
+                        <div 
+                          className="h-6 w-6 rounded-full border"
+                          style={{ backgroundColor: field.value || '#00D1B2' }}
+                        />
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            value={field.value || ''} 
+                            placeholder="#00D1B2" 
+                          />
+                        </FormControl>
+                      </div>
+                      <HexColorPicker color={field.value || '#00D1B2'} onChange={field.onChange} />
+                      <FormDescription>
+                        Choose a color for this class. This color will be used to represent the class in charts and displays.
+                      </FormDescription>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
