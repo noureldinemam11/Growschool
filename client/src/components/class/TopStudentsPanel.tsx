@@ -30,9 +30,14 @@ const TopStudentsPanel: React.FC<TopStudentsPanelProps> = ({
   topStudentsByClass,
   isLoadingClassTopStudents
 }) => {
-  // Sort classes by points
+  // Sort classes by their top student's points
+  const getTopStudentPoints = (classId: number) => {
+    const topStudent = topStudentsByClass?.find(c => c.classId === classId)?.topStudent;
+    return topStudent?.totalPoints || 0;
+  };
+  
   const sortedClasses = [...classes].sort((a, b) => 
-    (classPoints[b.id] || 0) - (classPoints[a.id] || 0)
+    getTopStudentPoints(b.id) - getTopStudentPoints(a.id)
   );
   
   return (
