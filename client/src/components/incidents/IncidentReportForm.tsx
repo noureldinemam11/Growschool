@@ -382,29 +382,35 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
                           {classMap && classMap.length > 0 && (
                             <div className="px-3 py-2 border-b">
                               <Select
-                                value={classFilter !== null ? classFilter.toString() : ""}
+                                value={classFilter !== null ? classFilter.toString() : "all"}
                                 onValueChange={(value) => {
-                                  const classId = value ? parseInt(value, 10) : null;
-                                  setClassFilter(classId);
-                                  // Filter students by selected class
-                                  if (classId) {
-                                    const filtered = students.filter(s => s.classId === classId);
-                                    setFilteredStudents(filtered);
-                                  } else {
-                                    // If no class selected, show all students (or respect search query)
+                                  // Handle the "all" special value for showing all classes
+                                  if (value === "all") {
+                                    setClassFilter(null);
+                                    // If search query exists, respect it, otherwise show all students
                                     if (searchQuery) {
                                       handleSearch(searchQuery);
                                     } else {
                                       setFilteredStudents(students);
                                     }
+                                    return;
                                   }
+                                  
+                                  // Convert value to number for class ID
+                                  const classId = parseInt(value, 10);
+                                  setClassFilter(classId);
+                                  
+                                  // Filter students by selected class
+                                  const filtered = students.filter(s => s.classId === classId);
+                                  setFilteredStudents(filtered);
+                                  console.log(`Filtered to ${filtered.length} students in class ${classMap.find(c => c.id === classId)?.name}`);
                                 }}
                               >
                                 <SelectTrigger className="h-8 text-xs font-medium">
                                   <SelectValue placeholder="Filter by class" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="">All Classes</SelectItem>
+                                  <SelectItem value="all">All Classes</SelectItem>
                                   {classMap.map(c => (
                                     <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
                                   ))}
