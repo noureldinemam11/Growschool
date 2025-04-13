@@ -1,5 +1,5 @@
 import React from 'react';
-import { Award, Trophy, Star } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 import { Class } from '@shared/schema';
 
 interface ClassDashboardCardProps {
@@ -40,9 +40,6 @@ const ClassDashboardCard: React.FC<ClassDashboardCardProps> = ({
   // Calculate bar height based on points (min 40px height even for 0 points)
   const heightPercentage = Math.max(15, (points / maxPoints) * 100);
   const barHeight = points === 0 ? 40 : Math.max(40, heightPercentage * 1.6); // Scale appropriately with minimum height
-
-  // Use a consistent "Star Student" label since we don't have real student data per class
-  const starStudent = rank === 0 ? "Star Student" : (rank < 3 ? "Top Student" : "Class Leader");
 
   // Determine ranking badge
   const getRankBadge = () => {
@@ -98,16 +95,13 @@ const ClassDashboardCard: React.FC<ClassDashboardCardProps> = ({
           </div>
         </div>
         
-        {/* Class name and star student */}
+        {/* Class name */}
         <div className="text-center mt-2 w-full">
           <div className="font-bold text-gray-800">
             {classItem.name}
           </div>
-          
-          {/* Star student */}
-          <div className="mt-1 flex items-center justify-center text-xs">
-            <Star className="h-3 w-3 mr-1 text-yellow-500" />
-            <span className="text-gray-600">{starStudent}</span>
+          <div className="text-xs text-gray-500">
+            {classItem.gradeLevel}
           </div>
         </div>
       </div>

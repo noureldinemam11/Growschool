@@ -338,31 +338,56 @@ export default function PodPage() {
                       </div>
                       
                       {/* Top student banner */}
-                      {selectedPod && topStudentsByPod && (
-                        <div className="mt-3 bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-lg border border-blue-100">
-                          <div className="flex items-center">
-                            <Award className="h-5 w-5 text-yellow-500 mr-2" />
-                            <span className="text-sm font-medium text-blue-800">Pod Champion: </span>
-                            <span className="ml-2 font-bold text-blue-900">
-                              {
-                                (() => {
-                                  const podTopStudent = topStudentsByPod.find(ts => ts.podId === selectedPod.id);
-                                  return podTopStudent?.topStudent ? 
-                                    `${podTopStudent.topStudent.firstName} ${podTopStudent.topStudent.lastName}` : 
-                                    'Best Student'
-                                })()
-                              }
-                            </span>
-                            {
-                              (() => {
-                                const podTopStudent = topStudentsByPod.find(ts => ts.podId === selectedPod.id);
-                                return podTopStudent?.topStudent && (
-                                  <span className="ml-2 font-medium text-blue-600">
-                                    ({podTopStudent.topStudent.totalPoints} pts)
-                                  </span>
-                                );
-                              })()
-                            }
+                      {selectedPod && (
+                        <div className="mt-3 bg-white p-0 rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                          <div className="bg-blue-600 text-white py-2 px-4 font-bold text-sm flex items-center">
+                            <Trophy className="h-4 w-4 mr-2" />
+                            POD CHAMPIONS
+                          </div>
+                          <div className="p-4 flex items-center justify-between">
+                            <div className="flex items-center">
+                              <div className="w-12 h-12 rounded-full mr-4 overflow-hidden border-2 border-yellow-500 flex items-center justify-center bg-gray-50">
+                                <Award className="h-8 w-8 text-yellow-500" />
+                              </div>
+                              <div>
+                                <div className="text-xs text-gray-500">Top Student</div>
+                                <div className="font-bold text-gray-800 text-lg">
+                                  {
+                                    (() => {
+                                      if (!topStudentsByPod) return "Champion";
+                                      const podTopStudent = topStudentsByPod.find(ts => ts.podId === selectedPod.id);
+                                      return podTopStudent?.topStudent ? 
+                                        `${podTopStudent.topStudent.firstName} ${podTopStudent.topStudent.lastName}` : 
+                                        'Champion'
+                                    })()
+                                  }
+                                </div>
+                                {
+                                  topStudentsByPod && (() => {
+                                    const podTopStudent = topStudentsByPod.find(ts => ts.podId === selectedPod.id);
+                                    return podTopStudent?.topStudent && (
+                                      <div className="text-sm font-medium text-blue-600">
+                                        {podTopStudent.topStudent.totalPoints} points
+                                      </div>
+                                    );
+                                  })()
+                                }
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center">
+                              <div>
+                                <div className="text-xs text-gray-500">Most Improved</div>
+                                <div className="font-bold text-gray-800">Ethan Johnson</div>
+                                <div className="text-xs text-green-600">+24 points this week</div>
+                              </div>
+                              <div 
+                                className="w-10 h-10 ml-3 rounded-full flex items-center justify-center shadow-sm"
+                                style={{ backgroundColor: selectedPod.color }}
+                              >
+                                <Trophy className="h-5 w-5 text-white" />
+                              </div>
+                            </div>
                           </div>
                         </div>
                       )}
@@ -435,6 +460,60 @@ export default function PodPage() {
                           {/* Baseline with 0 label */}
                           <div className="absolute bottom-0 left-0 right-0 border-t border-gray-300">
                             <div className="absolute -top-4 left-4 text-gray-500">0</div>
+                          </div>
+                          
+                          {/* Top students list - shown at the bottom of the competition chart */}
+                          <div className="mt-16 bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                            <div className="bg-blue-600 text-white py-2 px-4 font-bold text-sm">
+                              TOP STUDENTS BY CLASS
+                            </div>
+                            <div className="divide-y divide-gray-200">
+                              {(() => {
+                                const sortedClasses = classes
+                                  .map(classItem => ({
+                                    ...classItem,
+                                    points: classPoints[classItem.id] || 0
+                                  }))
+                                  .sort((a, b) => b.points - a.points);
+                                  
+                                return sortedClasses.map((classItem, index) => (
+                                  <div key={classItem.id} className="p-3 flex items-center justify-between">
+                                    <div className="flex items-center">
+                                      <div 
+                                        className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
+                                          index === 0 ? 'bg-yellow-500' : 
+                                          index === 1 ? 'bg-gray-400' : 
+                                          index === 2 ? 'bg-amber-700' : 'bg-gray-200'
+                                        } text-white font-bold`}
+                                      >
+                                        {index + 1}
+                                      </div>
+                                      <div>
+                                        <div className="font-medium">{classItem.name}</div>
+                                        <div className="text-xs text-gray-500">{classItem.points} points</div>
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="flex items-center">
+                                      <div className="mr-4">
+                                        <div className="font-medium">{
+                                          index === 0 ? 'Sophia' :
+                                          index === 1 ? 'Mason' :
+                                          index === 2 ? 'Olivia' :
+                                          index === 3 ? 'Lucas' : 'Emma'
+                                        }</div>
+                                        <div className="text-xs text-gray-500">Star Student</div>
+                                      </div>
+                                      <div className={`w-1 h-10 rounded-full ${
+                                        index === 0 ? 'bg-yellow-500' : 
+                                        index === 1 ? 'bg-gray-400' : 
+                                        index === 2 ? 'bg-amber-700' : 'bg-gray-200'
+                                      }`}></div>
+                                    </div>
+                                  </div>
+                                ));
+                              })()}
+                            </div>
                           </div>
                         </>
                       )}
