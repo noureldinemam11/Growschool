@@ -15,33 +15,28 @@ const ClassDashboardCard: React.FC<ClassDashboardCardProps> = ({
   rank,
   maxPoints = 100 // Default max points for scale
 }) => {
-  // Define background colors based on the new design image from attached_assets
-  const barColors = [
-    'bg-[#00D1B2]', // bright teal for 1st place (9L)
-    'bg-[#FF69B4]', // bright pink for 2nd place (9M)
-    'bg-[#FFB800]', // amber/gold for 3rd place (10A)
-    'bg-[#FFB800]', // amber/gold for 4th place (9K)
-    'bg-[#FFB800]'  // amber/gold for 5th place (10B)
-  ];
-  
-  // Circle colors based on rank - matching the design image
-  const circleColors = [
-    'bg-[#00D1B2]', // teal for 1st (9L)
-    'bg-[#FF69B4]', // pink for 2nd (9M)
-    'bg-[#FFB800]', // amber/gold for 3rd (10A)
-    'bg-[#FFB800]', // amber/gold for 4th (9K)
-    'bg-[#FFB800]', // amber/gold for 5th (10B)
-  ];
+  // Define fixed class colors - each class gets a consistent color
+  // This helps students associate colors with their own class
+  const getClassColor = (className: string) => {
+    // Use a switch or mapping to assign fixed colors to specific classes
+    switch (className) {
+      case '9L': return 'bg-[#00D1B2]'; // teal
+      case '9M': return 'bg-[#FF69B4]'; // pink
+      case '10A': return 'bg-[#FFB800]'; // amber/gold
+      case '9K': return 'bg-[#59B5F8]'; // blue
+      case '10B': return 'bg-[#A459F8]'; // purple
+      default: return 'bg-[#FFB800]'; // default color
+    }
+  };
 
-  // Use the appropriate color based on rank
-  const barColor = barColors[rank < barColors.length ? rank : barColors.length - 1];
-  const circleColor = circleColors[rank < circleColors.length ? rank : circleColors.length - 1];
+  // Get fixed color for this class
+  const classColor = getClassColor(classItem.name);
 
   // Calculate bar height based on points (min 40px height even for 0 points)
   const heightPercentage = Math.max(15, (points / maxPoints) * 100);
   const barHeight = points === 0 ? 40 : Math.max(40, heightPercentage * 1.6); // Scale appropriately with minimum height
 
-  // Get medal badge for top 3
+  // Get medal badge for top 3 - these are based on rank, not class positions
   const getMedalBadge = () => {
     if (rank === 0) {
       return (
@@ -70,7 +65,7 @@ const ClassDashboardCard: React.FC<ClassDashboardCardProps> = ({
       {/* Points circle with medal badge */}
       <div className="relative">
         <div 
-          className={`${circleColor} w-14 h-14 rounded-full flex items-center justify-center mb-1 text-white font-bold text-xl shadow-md`}
+          className={`${classColor} w-14 h-14 rounded-full flex items-center justify-center mb-1 text-white font-bold text-xl shadow-md`}
         >
           {points}
         </div>
@@ -80,10 +75,10 @@ const ClassDashboardCard: React.FC<ClassDashboardCardProps> = ({
       {/* Bar chart column */}
       <div className="flex flex-col items-center">
         <div 
-          className={`${barColor} w-16 rounded-t-lg shadow-md flex flex-col justify-end items-center transition-all duration-500`} 
+          className={`${classColor} w-16 rounded-t-lg shadow-md flex flex-col justify-end items-center transition-all duration-500`} 
           style={{ height: `${barHeight}px` }}
         >
-          {/* Streak indicator dots */}
+          {/* Streak indicator dots - shown for top 3 ranks */}
           <div className="w-full flex justify-center items-center pb-1">
             {rank < 3 && (
               <div className="flex">

@@ -373,26 +373,39 @@ export default function PodPage() {
                       ) : (
                         <>
                           <div className="flex items-end space-x-8 justify-around pt-8 pb-4 relative min-h-[300px]">
-                            {/* Calculate max points for scaling */}
+                            {/* Display classes in fixed positions based on ID or name */}
                             {(() => {
-                              const sortedClasses = classes
-                                .map(classItem => ({
-                                  ...classItem,
-                                  points: classPoints[classItem.id] || 0
-                                }))
+                              // Add points data to classes but DON'T sort them
+                              // This keeps classes in their original positions
+                              const classesWithPoints = classes.map(classItem => ({
+                                ...classItem,
+                                points: classPoints[classItem.id] || 0
+                              }));
+                              
+                              // Find ranks separately to determine medals
+                              const rankMap = new Map();
+                              
+                              // Create a sorted copy to determine ranks
+                              const sortedForRanking = [...classesWithPoints]
                                 .sort((a, b) => b.points - a.points);
                                 
+                              // Assign ranks (0=1st place, 1=2nd place, etc.)
+                              sortedForRanking.forEach((item, index) => {
+                                rankMap.set(item.id, index);
+                              });
+                              
                               const maxPoints = Math.max(
-                                sortedClasses[0]?.points || 0, 
+                                Math.max(...classesWithPoints.map(c => c.points)), 
                                 70 // Minimum scale for good visual appearance
                               );
                               
-                              return sortedClasses.map((classItem, index) => (
+                              // Display classes in their fixed positions, but award trophies based on points
+                              return classesWithPoints.map((classItem) => (
                                 <ClassDashboardCard
                                   key={classItem.id}
                                   classItem={classItem}
                                   points={classItem.points}
-                                  rank={index}
+                                  rank={rankMap.get(classItem.id)} // Pass the rank for medal display only
                                   maxPoints={maxPoints}
                                 />
                               ));
