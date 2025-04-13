@@ -521,29 +521,54 @@ export default function PodPage() {
                                 </div>
                               ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                  {topStudentsByClass?.filter(c => c.topStudent).map((classData) => (
-                                    <div 
-                                      key={classData.classId} 
-                                      className="p-3 rounded-lg border flex items-center"
-                                      style={{ borderColor: classData.classColor }}
-                                    >
-                                      <div 
-                                        className="w-2 h-full rounded-full mr-3"
-                                        style={{ backgroundColor: classData.classColor }}
-                                      ></div>
-                                      <div>
-                                        <div className="text-sm text-gray-500">
-                                          {classData.className}
+                                  {topStudentsByClass
+                                    ?.filter(c => c.topStudent)
+                                    .sort((a, b) => (b.topStudent?.totalPoints || 0) - (a.topStudent?.totalPoints || 0))
+                                    .map((classData, index) => {
+                                      // Find max points for highlighting top student
+                                      const maxPoints = Math.max(
+                                        ...(topStudentsByClass
+                                          ?.filter(c => c.topStudent)
+                                          .map(c => c.topStudent?.totalPoints || 0) || [0])
+                                      );
+                                      const isTopStudent = classData.topStudent?.totalPoints === maxPoints;
+                                      
+                                      return (
+                                        <div 
+                                          key={classData.classId} 
+                                          className={`p-3 rounded-lg border flex items-center ${isTopStudent ? 'bg-yellow-50' : ''}`}
+                                          style={{ borderColor: classData.classColor }}
+                                        >
+                                          <div 
+                                            className="w-2 h-full rounded-full mr-3"
+                                            style={{ backgroundColor: classData.classColor }}
+                                          ></div>
+                                          <div className="flex-grow">
+                                            <div className="text-sm text-gray-500">
+                                              {classData.className}
+                                            </div>
+                                            <div className="font-semibold flex items-center">
+                                              {classData.topStudent?.firstName} {classData.topStudent?.lastName.charAt(0)}.
+                                              {isTopStudent && (
+                                                <Trophy className="h-3 w-3 ml-1 text-yellow-500" />
+                                              )}
+                                            </div>
+                                            <div className="text-xs text-gray-500">
+                                              {classData.topStudent?.totalPoints} points
+                                            </div>
+                                          </div>
+                                          {index < 3 && (
+                                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                                              index === 0 ? 'bg-yellow-400 text-yellow-900' : 
+                                              index === 1 ? 'bg-gray-300 text-gray-700' :
+                                              'bg-amber-700 text-amber-100'
+                                            }`}>
+                                              {index + 1}
+                                            </div>
+                                          )}
                                         </div>
-                                        <div className="font-semibold">
-                                          {classData.topStudent?.firstName} {classData.topStudent?.lastName.charAt(0)}.
-                                        </div>
-                                        <div className="text-xs text-gray-500">
-                                          {classData.topStudent?.totalPoints} points
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ))}
+                                      );
+                                    })}
                                 </div>
                               )}
                             </div>
