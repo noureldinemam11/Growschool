@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useLocation, Redirect } from 'wouter';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,12 +12,17 @@ import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { insertUserSchema, userRoles } from '@shared/schema';
-import { Loader2, Award, Trophy, Star, CheckCircle, Users, ChevronRight } from 'lucide-react';
+import { Loader2, Award, Trophy, Star, CheckCircle, Users, ChevronRight, 
+         User, Mail, Lock, School, BookOpen, GraduationCap, Eye, EyeOff,
+         CheckSquare } from 'lucide-react';
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function AuthPage() {
   const [location] = useLocation();
   const { user, loginMutation, registerMutation } = useAuth();
   const [activeTab, setActiveTab] = useState<string>("login");
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   const loginSchema = z.object({
     username: z.string().min(3, "Username must be at least 3 characters"),
@@ -135,13 +140,20 @@ export default function AuthPage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-neutral-darker font-medium">Username</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="Enter your username" 
-                                {...field} 
-                                className="h-11 border-neutral/30 focus:border-primary focus:ring-primary/20"
-                              />
-                            </FormControl>
+                            <div className="relative">
+                              <FormControl>
+                                <div className="relative">
+                                  <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                    <User className="h-5 w-5" />
+                                  </div>
+                                  <Input 
+                                    placeholder="Enter your username" 
+                                    {...field} 
+                                    className="h-11 pl-10 border-neutral/30 focus:border-primary focus:ring-primary/20 transition-all duration-200 hover:border-primary/50"
+                                  />
+                                </div>
+                              </FormControl>
+                            </div>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -153,18 +165,41 @@ export default function AuthPage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-neutral-darker font-medium">Password</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="password" 
-                                placeholder="Enter your password" 
-                                {...field} 
-                                className="h-11 border-neutral/30 focus:border-primary focus:ring-primary/20"
-                              />
-                            </FormControl>
+                            <div className="relative">
+                              <FormControl>
+                                <div className="relative">
+                                  <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                    <Lock className="h-5 w-5" />
+                                  </div>
+                                  <Input 
+                                    type={showPassword ? "text" : "password"}
+                                    placeholder="Enter your password" 
+                                    {...field} 
+                                    className="h-11 pl-10 pr-10 border-neutral/30 focus:border-primary focus:ring-primary/20 transition-all duration-200 hover:border-primary/50"
+                                  />
+                                  <div 
+                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer hover:text-primary transition-colors"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                  >
+                                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                  </div>
+                                </div>
+                              </FormControl>
+                            </div>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="remember-me" checked={rememberMe} onCheckedChange={(checked) => setRememberMe(checked as boolean)} />
+                        <label
+                          htmlFor="remember-me"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
+                          Remember me
+                        </label>
+                      </div>
                       
                       <Button 
                         type="submit" 
@@ -250,13 +285,20 @@ export default function AuthPage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-neutral-darker font-medium">Username</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="Choose a username" 
-                                {...field} 
-                                className="h-11 border-neutral/30 focus:border-primary focus:ring-primary/20"
-                              />
-                            </FormControl>
+                            <div className="relative">
+                              <FormControl>
+                                <div className="relative">
+                                  <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                    <User className="h-5 w-5" />
+                                  </div>
+                                  <Input 
+                                    placeholder="Choose a username" 
+                                    {...field} 
+                                    className="h-11 pl-10 border-neutral/30 focus:border-primary focus:ring-primary/20 transition-all duration-200 hover:border-primary/50"
+                                  />
+                                </div>
+                              </FormControl>
+                            </div>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -268,14 +310,21 @@ export default function AuthPage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-neutral-darker font-medium">Email</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="email" 
-                                placeholder="Enter your email" 
-                                {...field} 
-                                className="h-11 border-neutral/30 focus:border-primary focus:ring-primary/20"
-                              />
-                            </FormControl>
+                            <div className="relative">
+                              <FormControl>
+                                <div className="relative">
+                                  <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                    <Mail className="h-5 w-5" />
+                                  </div>
+                                  <Input 
+                                    type="email" 
+                                    placeholder="Enter your email" 
+                                    {...field} 
+                                    className="h-11 pl-10 border-neutral/30 focus:border-primary focus:ring-primary/20 transition-all duration-200 hover:border-primary/50"
+                                  />
+                                </div>
+                              </FormControl>
+                            </div>
                             <FormMessage />
                           </FormItem>
                         )}
