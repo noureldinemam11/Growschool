@@ -271,7 +271,7 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
                     <FormLabel>Incident Type</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
-                      defaultValue={field.value || "No action taken"}
+                      value={field.value || incidentTypes[0]}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -567,7 +567,7 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
                   <FormLabel>Action Taken by Teacher</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
-                    defaultValue={field.value || "No action taken"}
+                    value={field.value || "No action taken"}
                   >
                     <FormControl>
                       <SelectTrigger>
