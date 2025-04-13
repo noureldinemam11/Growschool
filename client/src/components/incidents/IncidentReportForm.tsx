@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -62,7 +62,19 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
   const [students, setStudents] = useState<User[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [classFilter, setClassFilter] = useState<string>('');
   const [teachers, setTeachers] = useState<User[]>([]);
+  
+  // Extract unique class/section from students for the filter dropdown
+  const classes = useMemo(() => {
+    const uniqueClasses = new Set<string>();
+    students.forEach(student => {
+      if (student.section) {
+        uniqueClasses.add(student.section);
+      }
+    });
+    return Array.from(uniqueClasses).sort();
+  }, [students]);
   
   // Directly fetch students and teachers using fetch API
   useEffect(() => {
@@ -223,16 +235,16 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
   };
   
   return (
-    <Card className="max-w-4xl mx-auto">
-      <CardHeader>
-        <CardTitle>{report ? "Edit Incident Report" : "New Incident Report"}</CardTitle>
+    <Card className="max-w-4xl mx-auto shadow-lg border border-border/50">
+      <CardHeader className="bg-muted/30">
+        <CardTitle className="text-2xl font-bold">{report ? "Edit Incident Report" : "New Incident Report"}</CardTitle>
         <CardDescription>
           {report 
             ? "Update the details of this incident report" 
             : "Fill out the form to report a student behavior incident"}
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -342,48 +354,90 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
                     </PopoverTrigger>
                     <PopoverContent className="w-full p-0">
                       <div className="flex flex-col">
-                        <div className="flex items-center border-b px-3">
-                          <Search className="mr-2 h-4 w-4 opacity-50" />
-                          <input
-                            className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-                            placeholder="Search students..."
-                            value={searchQuery}
-                            onChange={(e) => handleSearch(e.target.value)}
-                          />
+                        <div className="flex flex-col">
+                          <div className="flex items-center border-b px-3">
+                            <Search className="mr-2 h-4 w-4 opacity-50" />
+                            <input
+                              className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                              placeholder="Search students..."
+                              value={searchQuery}
+                              onChange={(e) => handleSearch(e.target.value)}
+                            />
+                          </div>
+                          
+                          {/* Class/section filter dropdown */}
+                          {classes.length > 0 && (
+                            <div className="px-3 py-2 border-b">
+                              <Select
+                                value={classFilter}
+                                onValueChange={(value) => {
+                                  setClassFilter(value);
+                                  // Filter students by selected class
+                                  if (value) {
+                                    const filtered = students.filter(s => s.section === value);
+                                    setFilteredStudents(filtered);
+                                  } else {
+                                    // If no class selected, show all students (or respect search query)
+                                    if (searchQuery) {
+                                      handleSearch(searchQuery);
+                                    } else {
+                                      setFilteredStudents(students);
+                                    }
+                                  }
+                                }}
+                              >
+                                <SelectTrigger className="h-8 text-xs">
+                                  <SelectValue placeholder="Filter by class" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="">All Classes</SelectItem>
+                                  {classes.map(c => (
+                                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
                         </div>
                         
                         {filteredStudents.length === 0 ? (
                           <div className="py-6 text-center text-sm">No students found.</div>
                         ) : (
-                          <div className="max-h-64 overflow-auto p-1">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+                          <div className="max-h-64 overflow-auto p-2">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                               {filteredStudents.map((student) => (
                                 <div
                                   key={student.id}
                                   className={cn(
-                                    "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none",
-                                    "hover:bg-accent hover:text-accent-foreground",
+                                    "relative flex cursor-pointer select-none items-center rounded-md px-3 py-2 text-sm outline-none",
+                                    "hover:bg-accent hover:text-accent-foreground transition-colors duration-200",
                                     selectedStudentIds.includes(student.id) 
-                                      ? "bg-primary/10 border border-primary/30" 
-                                      : "border border-transparent"
+                                      ? "bg-primary/10 border-2 border-primary/50 shadow-sm" 
+                                      : "border border-border/40"
                                   )}
                                   onClick={() => toggleStudent(student.id)}
                                 >
                                   <Check
                                     className={cn(
-                                      "mr-2 h-4 w-4 text-primary",
+                                      "mr-2 h-4 w-4 flex-shrink-0",
                                       selectedStudentIds.includes(student.id)
-                                        ? "opacity-100"
+                                        ? "text-primary opacity-100"
                                         : "opacity-0"
                                     )}
                                   />
-                                  <div className="flex flex-col">
-                                    <span className="font-medium">{student.firstName} {student.lastName}</span>
-                                    {student.gradeLevel && (
-                                      <span className="text-muted-foreground text-xs">
-                                        Grade: {student.gradeLevel}
-                                      </span>
-                                    )}
+                                  <div className="flex flex-col overflow-hidden">
+                                    <span className="font-medium truncate">{student.firstName} {student.lastName}</span>
+                                    <div className="flex items-center text-muted-foreground text-xs space-x-1">
+                                      {student.gradeLevel && (
+                                        <span>Grade: {student.gradeLevel}</span>
+                                      )}
+                                      {student.section && (
+                                        <span className="inline-flex items-center">
+                                          <span className="mx-1">•</span> 
+                                          Class: {student.section}
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               ))}
@@ -396,21 +450,25 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
                   
                   {/* Display selected students */}
                   {selectedStudentIds.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {selectedStudentIds.map(id => {
-                        const student = students.find(s => s.id === id);
-                        return (
-                          <Badge 
-                            key={id} 
-                            variant="secondary"
-                            className="cursor-pointer pl-2 pr-1.5 py-1 hover:bg-secondary/80 transition-colors"
-                            onClick={() => toggleStudent(id)}
-                          >
-                            {student ? `${student.firstName} ${student.lastName}` : `Student #${id}`}
-                            <X className="ml-1.5 h-3 w-3 text-muted-foreground hover:text-foreground" />
-                          </Badge>
-                        );
-                      })}
+                    <div className="mt-3 border rounded-md p-3 bg-muted/20">
+                      <div className="text-xs font-medium text-muted-foreground mb-2">Selected Students:</div>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedStudentIds.map(id => {
+                          const student = students.find(s => s.id === id);
+                          return (
+                            <Badge 
+                              key={id} 
+                              variant="secondary"
+                              className="cursor-pointer pl-2 pr-1.5 py-1.5 hover:bg-secondary/80 transition-colors shadow-sm"
+                              onClick={() => toggleStudent(id)}
+                            >
+                              {student ? `${student.firstName} ${student.lastName}` : `Student #${id}`}
+                              {student?.section && <span className="mx-1 text-muted-foreground">({student.section})</span>}
+                              <X className="ml-1 h-3 w-3 text-muted-foreground hover:text-foreground" />
+                            </Badge>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                   
