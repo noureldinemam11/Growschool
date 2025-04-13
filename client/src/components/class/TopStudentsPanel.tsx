@@ -62,7 +62,6 @@ const TopStudentsPanel: React.FC<TopStudentsPanelProps> = ({
                   {/* Class Info */}
                   <div className="mr-2">
                     <div className="font-semibold">{classItem.name}</div>
-                    <div className="text-xs text-gray-500">{classPoints[classItem.id] || 0} points</div>
                   </div>
                   
                   {/* Student Info */}
