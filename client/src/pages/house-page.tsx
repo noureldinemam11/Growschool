@@ -337,14 +337,7 @@ export default function PodPage() {
                         </button>
                       </div>
                       
-                      {/* Pod section title */}
-                      {selectedPod && (
-                        <div className="mt-3 mb-1">
-                          <h3 className="text-lg font-semibold text-gray-700">
-                            {selectedPod.name} Classes
-                          </h3>
-                        </div>
-                      )}
+                      {/* Pod section removed to make more space */}
                     </div>
                     
                     {/* Bar chart container for classes */}
