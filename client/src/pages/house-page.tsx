@@ -368,7 +368,7 @@ export default function PodPage() {
                           <div className="bg-white p-3 rounded-lg shadow-sm">
                             <p className="text-sm text-gray-500">Pod Rank</p>
                             <p className="text-2xl font-bold text-gray-800">
-                              {pods ? (pods.findIndex(p => p.id === selectedPod.id) + 1) : 0}/{pods?.length || 0}
+                              {pods && selectedPod ? `${pods.findIndex(p => p.id === selectedPod.id) + 1}/${pods.length}` : '0/0'}
                             </p>
                           </div>
                         </div>
