@@ -294,120 +294,43 @@ export default function PodPage() {
               {isDashboard && (
                 <div className={isFullscreen ? "fixed inset-0 z-50 bg-slate-50 overflow-auto p-6" : ""}>
                   <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
-                    <div className="mb-6">
-                      {/* Header with back button and title */}
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center">
-                          {isFullscreen && (
-                            <div className="fixed top-0 left-0 right-0 bg-primary text-white py-2 px-4 z-[60] flex items-center">
-                              <button 
-                                onClick={() => {
-                                  setIsFullscreen(false);
-                                  // Stay on the same page, just exit fullscreen
-                                }}
-                                className="flex items-center text-white hover:bg-primary/80 font-medium"
-                              >
-                                <ArrowLeft className="h-5 w-5 mr-2" />
-                                <span>Back</span>
-                              </button>
-                            </div>
-                          )}
-                          <div>
-                            <h2 className="text-2xl font-bold text-gray-800 flex items-center">
-                              Classes Dashboard
-                              {selectedPod && (
-                                <div 
-                                  className="ml-3 px-3 py-1 rounded-full text-white text-sm font-medium" 
-                                  style={{ backgroundColor: selectedPod.color }}
-                                >
-                                  {selectedPod.name}
-                                </div>
-                              )}
-                            </h2>
-                            {selectedPod && (
-                              <p className="text-gray-600 mt-1">{selectedPod.description || "No pod description available"}</p>
-                            )}
+                    <div className="mb-6 flex justify-between items-center">
+                      <div className="flex items-center">
+                        {isFullscreen && (
+                          <div className="fixed top-0 left-0 right-0 bg-primary text-white py-2 px-4 z-[60] flex items-center">
+                            <button 
+                              onClick={() => {
+                                setIsFullscreen(false);
+                                // Stay on the same page, just exit fullscreen
+                              }}
+                              className="flex items-center text-white hover:bg-primary/80 font-medium"
+                            >
+                              <ArrowLeft className="h-5 w-5 mr-2" />
+                              <span>Back</span>
+                            </button>
                           </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <select 
-                            className="bg-white border border-gray-300 rounded-md px-3 py-1 text-sm"
-                            defaultValue="thisWeek"
-                          >
-                            <option value="today">Today</option>
-                            <option value="thisWeek">This Week</option>
-                            <option value="thisMonth">This Month</option>
-                            <option value="allTime">All Time</option>
-                          </select>
-                          <button 
-                            onClick={() => setIsFullscreen(!isFullscreen)}
-                            className="p-2 rounded-full hover:bg-gray-100"
-                            title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-                          >
-                            {isFullscreen ? 
-                              <Minimize2 className="h-5 w-5 text-gray-700" /> : 
-                              <Maximize2 className="h-5 w-5 text-gray-700" />
-                            }
-                          </button>
-                        </div>
+                        )}
+                        <h2 className="text-2xl font-bold text-gray-800">
+                          Classes Dashboard
+                        </h2>
+                        {selectedPod && (
+                          <p className="text-gray-600 ml-2">{selectedPod.name}</p>
+                        )}
                       </div>
-
-                      {/* Pod stats summary */}
-                      {selectedPod && (
-                        <div className="mt-4 grid grid-cols-3 gap-4">
-                          <div className="bg-white p-3 rounded-lg shadow-sm">
-                            <p className="text-sm text-gray-500">Total Pod Points</p>
-                            <p className="text-2xl font-bold" style={{ color: selectedPod.color }}>
-                              {selectedPod.points}
-                            </p>
-                          </div>
-                          <div className="bg-white p-3 rounded-lg shadow-sm">
-                            <p className="text-sm text-gray-500">Classes</p>
-                            <p className="text-2xl font-bold text-gray-800">{classes.length}</p>
-                          </div>
-                          <div className="bg-white p-3 rounded-lg shadow-sm">
-                            <p className="text-sm text-gray-500">Pod Rank</p>
-                            <p className="text-2xl font-bold text-gray-800">
-                              {pods && selectedPod ? `${pods.findIndex(p => p.id === selectedPod.id) + 1}/${pods.length}` : '0/0'}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Legend for colors */}
-                      <div className="mt-4 bg-white p-3 rounded-lg shadow-sm">
-                        <p className="text-sm font-medium mb-2">Class Rankings</p>
-                        <div className="flex items-center flex-wrap gap-3">
-                          <div className="flex items-center">
-                            <div className="w-3 h-3 rounded-full bg-[#00D1B2] mr-1"></div>
-                            <span className="text-xs">1st Place</span>
-                          </div>
-                          <div className="flex items-center">
-                            <div className="w-3 h-3 rounded-full bg-[#FF69B4] mr-1"></div>
-                            <span className="text-xs">2nd Place</span>
-                          </div>
-                          <div className="flex items-center">
-                            <div className="w-3 h-3 rounded-full bg-[#FFCC00] mr-1"></div>
-                            <span className="text-xs">3rd & 4th Place</span>
-                          </div>
-                          <div className="flex items-center">
-                            <div className="w-3 h-3 rounded-full bg-[#FFA500] mr-1"></div>
-                            <span className="text-xs">5th Place</span>
-                          </div>
-                        </div>
-                      </div>
+                      <button 
+                        onClick={() => setIsFullscreen(!isFullscreen)}
+                        className="p-2 rounded-full hover:bg-gray-100"
+                        title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+                      >
+                        {isFullscreen ? 
+                          <Minimize2 className="h-5 w-5 text-gray-700" /> : 
+                          <Maximize2 className="h-5 w-5 text-gray-700" />
+                        }
+                      </button>
                     </div>
                     
                     {/* Bar chart container for classes */}
-                    <div className="bg-slate-50 p-4 rounded-lg relative overflow-hidden">
-                      {/* Grid lines */}
-                      <div className="absolute inset-0 pt-16 pb-8">
-                        <div className="h-1/4 border-t border-gray-200"></div>
-                        <div className="h-1/4 border-t border-gray-200"></div>
-                        <div className="h-1/4 border-t border-gray-200"></div>
-                        <div className="h-1/4 border-t border-gray-200"></div>
-                      </div>
-                      
+                    <div className="bg-slate-50 p-4 rounded-lg relative">
                       {/* Classes display section */}
                       {!podId ? (
                         <div className="col-span-full text-center py-10">
@@ -431,32 +354,7 @@ export default function PodPage() {
                         </div>
                       ) : (
                         <>
-                          {/* Y-axis labels */}
-                          <div className="absolute left-2 top-0 bottom-0 w-8 flex flex-col justify-between pt-14 pb-8 text-xs text-gray-500">
-                            {(() => {
-                              const sortedClasses = classes
-                                .map(classItem => ({
-                                  ...classItem,
-                                  points: classPoints[classItem.id] || 0
-                                }))
-                                .sort((a, b) => b.points - a.points);
-                              
-                              const maxPoints = Math.max(
-                                sortedClasses[0]?.points || 0, 
-                                70 // Minimum scale for good visual appearance
-                              );
-                              
-                              // Create 5 labels for y-axis
-                              return [4, 3, 2, 1].map((div) => (
-                                <div key={div} className="text-right">
-                                  {Math.round(maxPoints * div / 4)}
-                                </div>
-                              ));
-                            })()}
-                            <div className="text-right">0</div>
-                          </div>
-                          
-                          <div className="flex items-end space-x-8 justify-around pt-16 pb-4 relative min-h-[300px] pl-8">
+                          <div className="flex items-end space-x-8 justify-around pt-8 pb-4 relative min-h-[300px]">
                             {/* Calculate max points for scaling */}
                             {(() => {
                               const sortedClasses = classes
@@ -478,22 +376,14 @@ export default function PodPage() {
                                   points={classItem.points}
                                   rank={index}
                                   maxPoints={maxPoints}
-                                  previousPoints={classItem.points - Math.floor(Math.random() * 10)}
                                 />
                               ));
                             })()}
                           </div>
                           
-                          {/* Baseline with label */}
-                          <div className="absolute bottom-0 left-0 right-0 border-t-2 border-gray-300">
-                          </div>
-                          
-                          {/* Add view details button */}
-                          <div className="flex justify-center mt-8">
-                            <Button variant="outline" className="flex items-center gap-2" onClick={() => setLocation(`/pod/${podId}/stats`)}>
-                              <LineChart className="h-4 w-4" />
-                              View Detailed Stats
-                            </Button>
+                          {/* Baseline with 0 label */}
+                          <div className="absolute bottom-0 left-0 right-0 border-t border-gray-300">
+                            <div className="absolute -top-4 left-4 text-gray-500">0</div>
                           </div>
                         </>
                       )}
