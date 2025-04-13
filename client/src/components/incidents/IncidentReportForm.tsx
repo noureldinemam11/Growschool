@@ -146,22 +146,44 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
     try {
       setIsSubmitting(true);
       
+      // Get student names for the toast message
+      const studentNames = values.studentIds.map(id => {
+        const student = students.find(s => s.id === id);
+        return student ? `${student.firstName} ${student.lastName}` : `Student #${id}`;
+      });
+      
       // Cast the type to the expected IncidentType using type assertion
       // since we know the form only allows valid types from the dropdown
-      const reportData: InsertIncidentReport = {
+      const reportData = {
         ...values,
         type: values.type as any, // Type assertion to handle the enum conversion
         teacherId: user?.id || 0,
         // Ensure studentIds is properly formatted as an array of numbers
         studentIds: values.studentIds.map(id => Number(id)),
-      };
+      } as unknown as InsertIncidentReport; // Force type assertion to match expected type
       
       if (report) {
         // Update existing report
-        await updateReport(report.id, reportData);
+        await updateReport(report.id, reportData as any);
+        
+        // Show success toast
+        toast({
+          title: "Incident report updated",
+          description: `The incident report has been successfully updated.`,
+          variant: "default",
+        });
       } else {
         // Create new report
-        await createReport(reportData);
+        await createReport(reportData as any);
+        
+        // Show success toast with student details
+        toast({
+          title: "Incident report submitted",
+          description: `Report created for ${studentNames.length > 1 
+            ? `${studentNames.length} students` 
+            : studentNames[0]}.`,
+          variant: "default",
+        });
       }
       
       if (onSuccess) {
@@ -169,6 +191,13 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
       }
     } catch (error) {
       console.error("Error submitting incident report:", error);
+      
+      // Show error toast
+      toast({
+        title: "Submission failed",
+        description: "There was an error submitting the incident report. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
