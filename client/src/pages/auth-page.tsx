@@ -23,6 +23,33 @@ export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<string>("login");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [fadeIn, setFadeIn] = useState(false);
+  const [typedText, setTypedText] = useState("");
+  const fullText = "Student Growth Platform";
+  
+  // Add animation effect when component mounts
+  useEffect(() => {
+    // Small delay for better visual effect
+    const fadeTimer = setTimeout(() => {
+      setFadeIn(true);
+    }, 100);
+    
+    // Typing animation for subtitle
+    let currentIndex = 0;
+    const typingTimer = setInterval(() => {
+      if (currentIndex <= fullText.length) {
+        setTypedText(fullText.substring(0, currentIndex));
+        currentIndex++;
+      } else {
+        clearInterval(typingTimer);
+      }
+    }, 50);
+    
+    return () => {
+      clearTimeout(fadeTimer);
+      clearInterval(typingTimer);
+    };
+  }, []);
 
   const loginSchema = z.object({
     username: z.string().min(3, "Username must be at least 3 characters"),
@@ -107,7 +134,7 @@ export default function AuthPage() {
       
       <div className="max-w-6xl w-full mx-auto grid md:grid-cols-2 gap-8 p-4 sm:p-8 z-10">
         {/* Login Card Section */}
-        <div className="backdrop-blur-sm bg-white/80 p-6 sm:p-8 rounded-2xl shadow-xl border border-white/20">
+        <div className={`backdrop-blur-sm bg-white/80 p-6 sm:p-8 rounded-2xl shadow-xl border border-white/20 transition-all duration-700 ${fadeIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
           <div className="flex items-center mb-6">
             <div className="bg-gradient-to-r from-primary to-primary/80 p-2 rounded-lg">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -248,13 +275,20 @@ export default function AuthPage() {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel className="text-neutral-darker font-medium">First Name</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  placeholder="First name" 
-                                  {...field} 
-                                  className="h-11 border-neutral/30 focus:border-primary focus:ring-primary/20"
-                                />
-                              </FormControl>
+                              <div className="relative">
+                                <FormControl>
+                                  <div className="relative">
+                                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                      <User className="h-5 w-5" />
+                                    </div>
+                                    <Input 
+                                      placeholder="First name" 
+                                      {...field} 
+                                      className="h-11 pl-10 border-neutral/30 focus:border-primary focus:ring-primary/20 transition-all duration-200 hover:border-primary/50"
+                                    />
+                                  </div>
+                                </FormControl>
+                              </div>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -266,13 +300,20 @@ export default function AuthPage() {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel className="text-neutral-darker font-medium">Last Name</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  placeholder="Last name" 
-                                  {...field} 
-                                  className="h-11 border-neutral/30 focus:border-primary focus:ring-primary/20"
-                                />
-                              </FormControl>
+                              <div className="relative">
+                                <FormControl>
+                                  <div className="relative">
+                                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                      <User className="h-5 w-5" />
+                                    </div>
+                                    <Input 
+                                      placeholder="Last name" 
+                                      {...field} 
+                                      className="h-11 pl-10 border-neutral/30 focus:border-primary focus:ring-primary/20 transition-all duration-200 hover:border-primary/50"
+                                    />
+                                  </div>
+                                </FormControl>
+                              </div>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -337,14 +378,27 @@ export default function AuthPage() {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel className="text-neutral-darker font-medium">Password</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  type="password" 
-                                  placeholder="Create a password" 
-                                  {...field} 
-                                  className="h-11 border-neutral/30 focus:border-primary focus:ring-primary/20"
-                                />
-                              </FormControl>
+                              <div className="relative">
+                                <FormControl>
+                                  <div className="relative">
+                                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                      <Lock className="h-5 w-5" />
+                                    </div>
+                                    <Input 
+                                      type={showPassword ? "text" : "password"}
+                                      placeholder="Create a password" 
+                                      {...field} 
+                                      className="h-11 pl-10 pr-10 border-neutral/30 focus:border-primary focus:ring-primary/20 transition-all duration-200 hover:border-primary/50"
+                                    />
+                                    <div 
+                                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer hover:text-primary transition-colors"
+                                      onClick={() => setShowPassword(!showPassword)}
+                                    >
+                                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                    </div>
+                                  </div>
+                                </FormControl>
+                              </div>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -356,14 +410,21 @@ export default function AuthPage() {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel className="text-neutral-darker font-medium">Confirm Password</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  type="password" 
-                                  placeholder="Confirm password" 
-                                  {...field} 
-                                  className="h-11 border-neutral/30 focus:border-primary focus:ring-primary/20"
-                                />
-                              </FormControl>
+                              <div className="relative">
+                                <FormControl>
+                                  <div className="relative">
+                                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                      <Lock className="h-5 w-5" />
+                                    </div>
+                                    <Input 
+                                      type={showPassword ? "text" : "password"}
+                                      placeholder="Confirm password" 
+                                      {...field} 
+                                      className="h-11 pl-10 border-neutral/30 focus:border-primary focus:ring-primary/20 transition-all duration-200 hover:border-primary/50"
+                                    />
+                                  </div>
+                                </FormControl>
+                              </div>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -376,23 +437,28 @@ export default function AuthPage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-neutral-darker font-medium">Role</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger className="h-11 border-neutral/30 focus:ring-primary/20">
-                                  <SelectValue placeholder="Select your role" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {userRoles.map((role) => (
-                                  <SelectItem key={role} value={role}>
-                                    {role.charAt(0).toUpperCase() + role.slice(1)}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            <div className="relative">
+                              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10">
+                                <School className="h-5 w-5" />
+                              </div>
+                              <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger className="h-11 pl-10 border-neutral/30 focus:ring-primary/20 transition-all duration-200 hover:border-primary/50">
+                                    <SelectValue placeholder="Select your role" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {userRoles.map((role) => (
+                                    <SelectItem key={role} value={role} className="cursor-pointer transition-colors hover:bg-primary/10">
+                                      {role.charAt(0).toUpperCase() + role.slice(1)}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -406,13 +472,20 @@ export default function AuthPage() {
                             render={({ field }) => (
                               <FormItem>
                                 <FormLabel className="text-neutral-darker font-medium">Grade Level</FormLabel>
-                                <FormControl>
-                                  <Input 
-                                    placeholder="e.g. 8" 
-                                    {...field} 
-                                    className="h-11 border-neutral/30 focus:border-primary focus:ring-primary/20"
-                                  />
-                                </FormControl>
+                                <div className="relative">
+                                  <FormControl>
+                                    <div className="relative">
+                                      <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                        <GraduationCap className="h-5 w-5" />
+                                      </div>
+                                      <Input 
+                                        placeholder="e.g. 8" 
+                                        {...field} 
+                                        className="h-11 pl-10 border-neutral/30 focus:border-primary focus:ring-primary/20 transition-all duration-200 hover:border-primary/50"
+                                      />
+                                    </div>
+                                  </FormControl>
+                                </div>
                                 <FormMessage />
                               </FormItem>
                             )}
@@ -424,13 +497,20 @@ export default function AuthPage() {
                             render={({ field }) => (
                               <FormItem>
                                 <FormLabel className="text-neutral-darker font-medium">Section</FormLabel>
-                                <FormControl>
-                                  <Input 
-                                    placeholder="e.g. A" 
-                                    {...field} 
-                                    className="h-11 border-neutral/30 focus:border-primary focus:ring-primary/20"
-                                  />
-                                </FormControl>
+                                <div className="relative">
+                                  <FormControl>
+                                    <div className="relative">
+                                      <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                        <BookOpen className="h-5 w-5" />
+                                      </div>
+                                      <Input 
+                                        placeholder="e.g. A" 
+                                        {...field} 
+                                        className="h-11 pl-10 border-neutral/30 focus:border-primary focus:ring-primary/20 transition-all duration-200 hover:border-primary/50"
+                                      />
+                                    </div>
+                                  </FormControl>
+                                </div>
                                 <FormMessage />
                               </FormItem>
                             )}
@@ -470,7 +550,7 @@ export default function AuthPage() {
         </div>
         
         {/* Hero/Information Section */}
-        <div className="hidden md:flex flex-col justify-center relative">
+        <div className={`hidden md:flex flex-col justify-center relative transition-all duration-1000 delay-300 ${fadeIn ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'}`}>
           <div className="absolute -left-10 top-1/2 -translate-y-1/2 w-20 h-80 bg-gradient-to-t from-transparent via-white/20 to-transparent blur-xl rounded-full"></div>
           
           <h1 className="text-5xl font-heading font-bold mb-4">
@@ -483,7 +563,7 @@ export default function AuthPage() {
           </p>
           
           <div className="grid grid-cols-1 gap-6">
-            <div className="flex p-6 rounded-xl bg-white/80 backdrop-blur-sm shadow-lg border border-white/20 transform transition-all hover:translate-y-[-5px]">
+            <div className={`flex p-6 rounded-xl bg-white/80 backdrop-blur-sm shadow-lg border border-white/20 transform transition-all hover:translate-y-[-5px] ${fadeIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'} transition-all duration-700 delay-500`}>
               <Award className="h-14 w-14 text-blue-600 mr-6 flex-shrink-0" />
               <div>
                 <h3 className="text-xl font-heading font-bold text-neutral-darker mb-2">Recognize Achievement</h3>
@@ -491,15 +571,15 @@ export default function AuthPage() {
               </div>
             </div>
             
-            <div className="flex p-6 rounded-xl bg-white/80 backdrop-blur-sm shadow-lg border border-white/20 transform transition-all hover:translate-y-[-5px]">
+            <div className={`flex p-6 rounded-xl bg-white/80 backdrop-blur-sm shadow-lg border border-white/20 transform transition-all hover:translate-y-[-5px] ${fadeIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'} transition-all duration-700 delay-700`}>
               <Trophy className="h-14 w-14 text-indigo-600 mr-6 flex-shrink-0" />
               <div>
-                <h3 className="text-xl font-heading font-bold text-neutral-darker mb-2">House Competition</h3>
-                <p className="text-neutral-dark">Foster school spirit and teamwork through engaging house-based competitions.</p>
+                <h3 className="text-xl font-heading font-bold text-neutral-darker mb-2">Pod Competition</h3>
+                <p className="text-neutral-dark">Foster school spirit and teamwork through engaging pod-based competitions.</p>
               </div>
             </div>
             
-            <div className="flex p-6 rounded-xl bg-white/80 backdrop-blur-sm shadow-lg border border-white/20 transform transition-all hover:translate-y-[-5px]">
+            <div className={`flex p-6 rounded-xl bg-white/80 backdrop-blur-sm shadow-lg border border-white/20 transform transition-all hover:translate-y-[-5px] ${fadeIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'} transition-all duration-700 delay-900`}>
               <CheckCircle className="h-14 w-14 text-green-600 mr-6 flex-shrink-0" />
               <div>
                 <h3 className="text-xl font-heading font-bold text-neutral-darker mb-2">Data-Driven Insights</h3>
