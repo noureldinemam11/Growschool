@@ -350,7 +350,7 @@ const StudentDetail: FC<StudentDetailProps> = ({ student, points, isLoading }) =
                   <Badge 
                     className={point.points > 0 ? 'bg-success' : 'bg-error'}
                   >
-                    {point.points > 0 ? `+${point.points}` : point.points}
+                    {point.points}
                   </Badge>
                 </div>
               </div>

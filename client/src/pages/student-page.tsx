@@ -171,7 +171,7 @@ export default function StudentPage() {
                                         <div className={`text-sm font-mono font-semibold ${
                                           point.points > 0 ? 'text-success' : 'text-error'
                                         }`}>
-                                          {point.points > 0 ? `+${point.points}` : point.points}
+                                          {point.points}
                                         </div>
                                       </td>
                                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-darker">
