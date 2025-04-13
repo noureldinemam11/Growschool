@@ -12,11 +12,11 @@ import {
 export default function IncidentReportDashboard() {
   const { reports, isLoading } = useIncidentReports();
 
-  // Calculate statistics
+  // Calculate statistics based on the actual status values from schema
   const totalIncidents = reports.length;
-  const openIncidents = reports.filter(report => report.status === 'pending').length;
+  const pendingIncidents = reports.filter(report => report.status === 'pending').length;
   const resolvedIncidents = reports.filter(report => report.status === 'resolved').length;
-  const inProgressIncidents = reports.filter(report => report.status === 'escalated').length;
+  const escalatedIncidents = reports.filter(report => report.status === 'escalated').length;
   
   // Count unique students involved in incidents
   const uniqueStudentIds = new Set();
@@ -54,15 +54,15 @@ export default function IncidentReportDashboard() {
       textColor: 'text-amber-700'
     },
     {
-      title: 'Open',
-      value: openIncidents,
+      title: 'Pending',
+      value: pendingIncidents,
       icon: <AlertCircle className="h-5 w-5 text-red-500" />,
       color: 'bg-red-50 border-red-200',
       textColor: 'text-red-700'
     },
     {
-      title: 'In Progress',
-      value: inProgressIncidents,
+      title: 'Escalated',
+      value: escalatedIncidents,
       icon: <Clock className="h-5 w-5 text-blue-500" />,
       color: 'bg-blue-50 border-blue-200',
       textColor: 'text-blue-700'
