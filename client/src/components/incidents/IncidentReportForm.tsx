@@ -378,11 +378,11 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
                             />
                           </div>
                           
-                          {/* Class/section filter dropdown */}
-                          {classMap.length > 0 && (
+                          {/* Class filter dropdown */}
+                          {classMap && classMap.length > 0 && (
                             <div className="px-3 py-2 border-b">
                               <Select
-                                value={classFilter ? classFilter.toString() : ""}
+                                value={classFilter !== null ? classFilter.toString() : ""}
                                 onValueChange={(value) => {
                                   const classId = value ? parseInt(value, 10) : null;
                                   setClassFilter(classId);
@@ -445,10 +445,10 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
                                       {student.gradeLevel && (
                                         <span>Grade: {student.gradeLevel}</span>
                                       )}
-                                      {student.section && (
+                                      {student.classId && (
                                         <span className="inline-flex items-center">
                                           <span className="mx-1">•</span> 
-                                          Class: {student.section}
+                                          Class: {classMap.find(c => c.id === student.classId)?.name || 'Unknown'}
                                         </span>
                                       )}
                                     </div>
@@ -477,7 +477,7 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
                               onClick={() => toggleStudent(id)}
                             >
                               {student ? `${student.firstName} ${student.lastName}` : `Student #${id}`}
-                              {student?.section && <span className="mx-1 text-muted-foreground">({student.section})</span>}
+                              {student?.classId && <span className="mx-1 text-muted-foreground">({classMap.find(c => c.id === student.classId)?.name || ''})</span>}
                               <X className="ml-1 h-3 w-3 text-muted-foreground hover:text-foreground" />
                             </Badge>
                           );
