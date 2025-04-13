@@ -1,4 +1,5 @@
 import React from 'react';
+import { Award, Trophy, Star } from 'lucide-react';
 import { Class } from '@shared/schema';
 
 interface ClassDashboardCardProps {
@@ -40,26 +41,73 @@ const ClassDashboardCard: React.FC<ClassDashboardCardProps> = ({
   const heightPercentage = Math.max(15, (points / maxPoints) * 100);
   const barHeight = points === 0 ? 40 : Math.max(40, heightPercentage * 1.6); // Scale appropriately with minimum height
 
+  // Generate random student name for demonstration (in production, this would come from actual data)
+  const starStudent = ['Ahmed', 'Sara', 'Liam', 'Emma', 'Noah'][rank % 5];
+
+  // Determine ranking badge
+  const getRankBadge = () => {
+    if (rank === 0) {
+      return (
+        <div className="absolute -top-2 -right-2 bg-yellow-500 rounded-full p-1 shadow-md">
+          <Trophy className="h-4 w-4 text-white" />
+        </div>
+      );
+    } else if (rank === 1) {
+      return (
+        <div className="absolute -top-2 -right-2 bg-gray-400 rounded-full p-1 shadow-md">
+          <Trophy className="h-4 w-4 text-white" />
+        </div>
+      );
+    } else if (rank === 2) {
+      return (
+        <div className="absolute -top-2 -right-2 bg-amber-700 rounded-full p-1 shadow-md">
+          <Trophy className="h-4 w-4 text-white" />
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="flex flex-col items-center">
-      {/* Points circle */}
-      <div 
-        className={`${circleColor} w-14 h-14 rounded-full flex items-center justify-center mb-1 text-gray-800 font-bold text-xl shadow-sm`}
-      >
-        {points}
+      {/* Points circle with rank badge */}
+      <div className="relative">
+        <div 
+          className={`${circleColor} w-14 h-14 rounded-full flex items-center justify-center mb-1 text-gray-800 font-bold text-xl shadow-md`}
+        >
+          {points}
+        </div>
+        {getRankBadge()}
       </div>
       
       {/* Bar chart column */}
       <div className="flex flex-col items-center">
         <div 
-          className={`${barColor} w-16 rounded-t-lg shadow-md`} 
+          className={`${barColor} w-16 rounded-t-lg shadow-md flex flex-col justify-end items-center`} 
           style={{ height: `${barHeight}px` }}
-        />
+        >
+          {/* Streak indicator */ }
+          <div className="w-full flex justify-center items-center pb-1">
+            {rank < 3 && (
+              <div className="flex">
+                {[...Array(3 - rank)].map((_, i) => (
+                  <div key={i} className="w-2 h-2 bg-white rounded-full mx-0.5" />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
         
-        {/* Class name only */}
-        <div className="text-center mt-2">
-          <div className="font-semibold text-gray-700">
+        {/* Class name and star student */}
+        <div className="text-center mt-2 w-full">
+          <div className="font-bold text-gray-800">
             {classItem.name}
+          </div>
+          
+          {/* Star student */}
+          <div className="mt-1 flex items-center justify-center text-xs">
+            <Star className="h-3 w-3 mr-1 text-yellow-500" />
+            <span className="text-gray-600">{starStudent}</span>
           </div>
         </div>
       </div>

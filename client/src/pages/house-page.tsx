@@ -294,43 +294,72 @@ export default function PodPage() {
               {isDashboard && (
                 <div className={isFullscreen ? "fixed inset-0 z-50 bg-slate-50 overflow-auto p-6" : ""}>
                   <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
-                    <div className="mb-6 flex justify-between items-center">
-                      <div className="flex items-center">
-                        {isFullscreen && (
-                          <div className="fixed top-0 left-0 right-0 bg-primary text-white py-2 px-4 z-[60] flex items-center">
-                            <button 
-                              onClick={() => {
-                                setIsFullscreen(false);
-                                // Stay on the same page, just exit fullscreen
-                              }}
-                              className="flex items-center text-white hover:bg-primary/80 font-medium"
-                            >
-                              <ArrowLeft className="h-5 w-5 mr-2" />
-                              <span>Back</span>
-                            </button>
+                    <div className="mb-6">
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center">
+                          {isFullscreen && (
+                            <div className="fixed top-0 left-0 right-0 bg-primary text-white py-2 px-4 z-[60] flex items-center">
+                              <button 
+                                onClick={() => {
+                                  setIsFullscreen(false);
+                                  // Stay on the same page, just exit fullscreen
+                                }}
+                                className="flex items-center text-white hover:bg-primary/80 font-medium"
+                              >
+                                <ArrowLeft className="h-5 w-5 mr-2" />
+                                <span>Back</span>
+                              </button>
+                            </div>
+                          )}
+                          <div>
+                            <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+                              <span>Class Competition</span>
+                              {selectedPod && (
+                                <div 
+                                  className="ml-3 px-3 py-1 rounded-full text-white text-sm font-medium" 
+                                  style={{ backgroundColor: selectedPod.color }}
+                                >
+                                  {selectedPod.name}
+                                </div>
+                              )}
+                            </h2>
                           </div>
-                        )}
-                        <h2 className="text-2xl font-bold text-gray-800">
-                          Classes Dashboard
-                        </h2>
-                        {selectedPod && (
-                          <p className="text-gray-600 ml-2">{selectedPod.name}</p>
-                        )}
+                        </div>
+                        <button 
+                          onClick={() => setIsFullscreen(!isFullscreen)}
+                          className="p-2 rounded-full hover:bg-gray-100"
+                          title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+                        >
+                          {isFullscreen ? 
+                            <Minimize2 className="h-5 w-5 text-gray-700" /> : 
+                            <Maximize2 className="h-5 w-5 text-gray-700" />
+                          }
+                        </button>
                       </div>
-                      <button 
-                        onClick={() => setIsFullscreen(!isFullscreen)}
-                        className="p-2 rounded-full hover:bg-gray-100"
-                        title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-                      >
-                        {isFullscreen ? 
-                          <Minimize2 className="h-5 w-5 text-gray-700" /> : 
-                          <Maximize2 className="h-5 w-5 text-gray-700" />
-                        }
-                      </button>
+                      
+                      {/* Top student banner */}
+                      {selectedPod && topStudentsByPod && (
+                        <div className="mt-3 bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-lg border border-blue-100">
+                          <div className="flex items-center">
+                            <Award className="h-5 w-5 text-yellow-500 mr-2" />
+                            <span className="text-sm font-medium text-blue-800">Pod Star Student: </span>
+                            <span className="ml-2 font-bold text-blue-900">
+                              {topStudentsByPod.find(ts => ts.podId === selectedPod.id)?.topStudent?.firstName || 'No star student yet'}
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     
                     {/* Bar chart container for classes */}
                     <div className="bg-slate-50 p-4 rounded-lg relative">
+                      {/* Competition banner */}
+                      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-2 px-4 rounded-t-lg mb-4 -mt-1 -mx-1 text-center font-bold text-sm shadow-md flex items-center justify-center">
+                        <Trophy className="h-4 w-4 mr-2" />
+                        THIS WEEK'S CLASS COMPETITION
+                        <Trophy className="h-4 w-4 ml-2" />
+                      </div>
+                      
                       {/* Classes display section */}
                       {!podId ? (
                         <div className="col-span-full text-center py-10">
@@ -379,6 +408,11 @@ export default function PodPage() {
                                 />
                               ));
                             })()}
+                          </div>
+                          
+                          {/* Winner ribbon for 1st place */}
+                          <div className="absolute top-12 left-1/2 transform -translate-x-1/2 bg-yellow-400 text-xs text-yellow-900 font-bold py-0.5 px-3 rounded-full shadow-md">
+                            1st PLACE WINS EXTRA REWARD!
                           </div>
                           
                           {/* Baseline with 0 label */}
