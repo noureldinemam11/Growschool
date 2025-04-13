@@ -335,8 +335,15 @@ export default function IncidentReportFilters() {
                 <Label className="mb-2 block">Date Range</Label>
                 <div className="flex gap-2">
                   <Select 
-                    value={selectedDateRange || ""} 
-                    onValueChange={handleDateRangeChange}
+                    value={selectedDateRange || "all_time"} 
+                    onValueChange={(value) => {
+                      if (value === "all_time") {
+                        setSelectedDateRange(null);
+                        setDateRangeFilter(null, null);
+                      } else {
+                        handleDateRangeChange(value);
+                      }
+                    }}
                   >
                     <SelectTrigger className="flex-1">
                       <SelectValue placeholder="Any time" />
@@ -389,8 +396,8 @@ export default function IncidentReportFilters() {
               <div className="md:col-span-2">
                 <Label className="mb-2 block">Student</Label>
                 <Select 
-                  value={filters.studentId?.toString() || ""} 
-                  onValueChange={(value) => setStudentFilter(value ? parseInt(value) : null)}
+                  value={filters.studentId?.toString() || "all_students"} 
+                  onValueChange={(value) => setStudentFilter(value === "all_students" ? null : (value ? parseInt(value) : null))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Any student" />
