@@ -69,7 +69,7 @@ const TopStudentsPanel: React.FC<TopStudentsPanelProps> = ({
                     {topStudent ? (
                       <>
                         <div className="text-right mr-3">
-                          <div className="font-semibold">{topStudent.firstName} {topStudent.lastName.charAt(0)}</div>
+                          <div className="font-semibold">{topStudent.firstName} {topStudent.lastName}</div>
                           <div className="text-xs text-gray-500">Star Student</div>
                         </div>
                         <div className="bg-primary/10 text-primary px-2 py-1 rounded font-semibold whitespace-nowrap">
