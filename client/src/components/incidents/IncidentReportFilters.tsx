@@ -271,14 +271,14 @@ export default function IncidentReportFilters() {
               <div>
                 <Label className="mb-2 block">Status</Label>
                 <Select 
-                  value={filters.status || ""} 
-                  onValueChange={(value) => setStatusFilter(value || null)}
+                  value={filters.status || "all_status"} 
+                  onValueChange={(value) => setStatusFilter(value === "all_status" ? null : value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Any status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Any status</SelectItem>
+                    <SelectItem value="all_status">Any status</SelectItem>
                     {incidentStatusOptions.map(option => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
@@ -292,14 +292,14 @@ export default function IncidentReportFilters() {
               <div>
                 <Label className="mb-2 block">Incident Type</Label>
                 <Select 
-                  value={filters.type || ""} 
-                  onValueChange={(value) => setTypeFilter(value || null)}
+                  value={filters.type || "all_types"} 
+                  onValueChange={(value) => setTypeFilter(value === "all_types" ? null : value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Any type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Any type</SelectItem>
+                    <SelectItem value="all_types">Any type</SelectItem>
                     {incidentTypeOptions.map(option => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
@@ -313,14 +313,14 @@ export default function IncidentReportFilters() {
               <div>
                 <Label className="mb-2 block">Reporter</Label>
                 <Select 
-                  value={filters.teacherId?.toString() || ""} 
-                  onValueChange={(value) => setTeacherFilter(value ? parseInt(value) : null)}
+                  value={filters.teacherId?.toString() || "all_teachers"} 
+                  onValueChange={(value) => setTeacherFilter(value === "all_teachers" ? null : (value ? parseInt(value) : null))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Any teacher" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Any teacher</SelectItem>
+                    <SelectItem value="all_teachers">Any teacher</SelectItem>
                     {teachers.map(teacher => (
                       <SelectItem key={teacher.id} value={teacher.id.toString()}>
                         {teacher.firstName} {teacher.lastName}
@@ -342,7 +342,7 @@ export default function IncidentReportFilters() {
                       <SelectValue placeholder="Any time" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Any time</SelectItem>
+                      <SelectItem value="all_time">Any time</SelectItem>
                       {predefinedDateRanges.map(option => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
@@ -396,7 +396,7 @@ export default function IncidentReportFilters() {
                     <SelectValue placeholder="Any student" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Any student</SelectItem>
+                    <SelectItem value="all_students">Any student</SelectItem>
                     {students.map(student => (
                       <SelectItem key={student.id} value={student.id.toString()}>
                         {student.firstName} {student.lastName} {student.gradeLevel ? `(${student.gradeLevel})` : ''}
