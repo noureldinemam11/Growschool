@@ -156,11 +156,11 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
   
   // Default values for the form
   const defaultValues: Partial<FormValues> = {
-    type: report?.type || "",
+    type: report?.type || (incidentTypes.length > 0 ? incidentTypes[0] : "disruptive_behavior"), // Default to first incident type
     description: report?.description || "",
     incidentDate: report ? new Date(report.incidentDate) : new Date(),
     studentIds: report?.studentIds || [],
-    actionTaken: report?.actionTaken || "",
+    actionTaken: report?.actionTaken || "No action taken", // Default to "No action taken" instead of empty string
   };
   
   const form = useForm<FormValues>({
@@ -271,7 +271,7 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
                     <FormLabel>Incident Type</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
-                      defaultValue={field.value}
+                      defaultValue={field.value || "No action taken"}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -567,7 +567,7 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
                   <FormLabel>Action Taken by Teacher</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
-                    defaultValue={field.value}
+                    defaultValue={field.value || "No action taken"}
                   >
                     <FormControl>
                       <SelectTrigger>
