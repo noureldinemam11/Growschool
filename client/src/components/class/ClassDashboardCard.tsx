@@ -15,22 +15,33 @@ const ClassDashboardCard: React.FC<ClassDashboardCardProps> = ({
   rank,
   maxPoints = 100 // Default max points for scale
 }) => {
-  // Define fixed class colors - each class gets a consistent color
-  // This helps students associate colors with their own class
-  const getClassColor = (className: string) => {
-    // Use a switch or mapping to assign fixed colors to specific classes
-    switch (className) {
-      case '9L': return 'bg-[#00D1B2]'; // teal
-      case '9M': return 'bg-[#FF69B4]'; // pink
-      case '10A': return 'bg-[#FFB800]'; // amber/gold
-      case '9K': return 'bg-[#59B5F8]'; // blue
-      case '10B': return 'bg-[#A459F8]'; // purple
-      default: return 'bg-[#FFB800]'; // default color
+  // Use the color from the database - this field is now available in the Class object
+  // We add 'bg-' prefix to use it as a Tailwind class
+  // If no color exists in the database, we use a fallback color
+  const getClassBgColor = () => {
+    if (classItem.color) {
+      // Special case for hex colors - we need to use bracketed notation for custom colors
+      if (classItem.color.startsWith('#')) {
+        return `bg-[${classItem.color}]`;
+      }
+      // If it's a named Tailwind color, we can just use it directly
+      return `bg-${classItem.color}`;
     }
+    
+    // Fallback colors based on class name if needed
+    const fallbackColors: { [key: string]: string } = {
+      '9L': 'bg-[#00D1B2]', // teal
+      '9M': 'bg-[#FF69B4]', // pink
+      '10A': 'bg-[#FFB800]', // amber/gold
+      '9K': 'bg-[#59B5F8]', // blue
+      '10B': 'bg-[#A459F8]', // purple
+    };
+    
+    return fallbackColors[classItem.name] || 'bg-[#00D1B2]';
   };
 
-  // Get fixed color for this class
-  const classColor = getClassColor(classItem.name);
+  // Get class color
+  const classColor = getClassBgColor();
 
   // Calculate bar height based on points (min 40px height even for 0 points)
   const heightPercentage = Math.max(15, (points / maxPoints) * 100);

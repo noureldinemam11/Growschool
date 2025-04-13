@@ -29,6 +29,7 @@ export const classes = pgTable("classes", {
   podId: integer("pod_id").notNull().references(() => pods.id),
   gradeLevel: text("grade_level"),
   description: text("description"),
+  color: text("color").default("#00D1B2"), // Default color if none specified
 });
 
 export const insertClassSchema = createInsertSchema(classes).omit({ id: true });
