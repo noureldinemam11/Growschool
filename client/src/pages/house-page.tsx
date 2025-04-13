@@ -361,16 +361,6 @@ export default function PodPage() {
                       {/* Pod section removed to make more space */}
                     </div>
                     
-                    {/* Top Students Panel */}
-                    <div className="mb-6">
-                      <TopStudentsPanel 
-                        classes={classes}
-                        classPoints={classPoints}
-                        topStudentsByClass={topStudentsByClass}
-                        isLoadingClassTopStudents={isLoadingClassTopStudents}
-                      />
-                    </div>
-                    
                     {/* Bar chart container for classes */}
                     <div className="bg-white p-4 rounded-lg relative">
                       {/* Competition banner - styled like the reference image */}
@@ -454,6 +444,16 @@ export default function PodPage() {
                           </div>
                         </>
                       )}
+                    </div>
+
+                    {/* Top Students Panel - Positioned under class competition chart */}
+                    <div className="mt-6">
+                      <TopStudentsPanel 
+                        classes={classes}
+                        classPoints={classPoints}
+                        topStudentsByClass={topStudentsByClass}
+                        isLoadingClassTopStudents={isLoadingClassTopStudents}
+                      />
                     </div>
                   </div>
                 </div>
