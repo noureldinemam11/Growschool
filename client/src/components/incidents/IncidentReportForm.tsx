@@ -34,7 +34,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, Check, ChevronsUpDown, Loader2, X, AlertCircle, Search } from "lucide-react";
+import { CalendarIcon, Check, ChevronsUpDown, Loader2, X, AlertCircle, Search, Layers, Users, GraduationCap } from "lucide-react";
+import { SelectSeparator } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -380,7 +381,11 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
                           
                           {/* Class filter dropdown */}
                           {classMap && classMap.length > 0 && (
-                            <div className="px-3 py-2 border-b">
+                            <div className="px-3 py-3 border-b bg-muted/30">
+                              <div className="mb-1.5 flex items-center">
+                                <Layers className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+                                <span className="text-xs font-medium text-muted-foreground">Filter by Class</span>
+                              </div>
                               <Select
                                 value={classFilter !== null ? classFilter.toString() : "all"}
                                 onValueChange={(value) => {
@@ -406,13 +411,24 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
                                   console.log(`Filtered to ${filtered.length} students in class ${classMap.find(c => c.id === classId)?.name}`);
                                 }}
                               >
-                                <SelectTrigger className="h-8 text-xs font-medium">
-                                  <SelectValue placeholder="Filter by class" />
+                                <SelectTrigger className="h-9 text-sm font-medium bg-background border-border shadow-sm">
+                                  <SelectValue placeholder="Select a class" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="all">All Classes</SelectItem>
+                                  <SelectItem value="all" className="text-muted-foreground">
+                                    <div className="flex items-center">
+                                      <Users className="h-3.5 w-3.5 mr-2 opacity-70" /> 
+                                      All Classes
+                                    </div>
+                                  </SelectItem>
+                                  <SelectSeparator />
                                   {classMap.map(c => (
-                                    <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
+                                    <SelectItem key={c.id} value={c.id.toString()} className="font-medium">
+                                      <div className="flex items-center">
+                                        <GraduationCap className="h-3.5 w-3.5 mr-2 text-primary/70" /> 
+                                        Class {c.name}
+                                      </div>
+                                    </SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
@@ -429,33 +445,37 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
                                 <div
                                   key={student.id}
                                   className={cn(
-                                    "relative flex cursor-pointer select-none items-center rounded-md px-3 py-2 text-sm outline-none",
+                                    "relative flex cursor-pointer select-none items-center rounded-md p-3 text-sm outline-none",
                                     "hover:bg-accent hover:text-accent-foreground transition-colors duration-200",
                                     selectedStudentIds.includes(student.id) 
-                                      ? "bg-primary/10 border-2 border-primary/50 shadow-sm" 
-                                      : "border border-border/40"
+                                      ? "bg-primary/10 border border-primary shadow-md" 
+                                      : "border border-border/40 hover:border-border"
                                   )}
                                   onClick={() => toggleStudent(student.id)}
                                 >
-                                  <Check
-                                    className={cn(
-                                      "mr-2 h-4 w-4 flex-shrink-0",
-                                      selectedStudentIds.includes(student.id)
-                                        ? "text-primary opacity-100"
-                                        : "opacity-0"
-                                    )}
-                                  />
+                                  <div className={cn(
+                                    "absolute top-1 right-1 h-5 w-5 flex items-center justify-center rounded-full transition-opacity",
+                                    selectedStudentIds.includes(student.id)
+                                      ? "bg-primary text-primary-foreground opacity-100"
+                                      : "opacity-0"
+                                  )}>
+                                    <Check className="h-3 w-3" />
+                                  </div>
+                                  
                                   <div className="flex flex-col overflow-hidden">
                                     <span className="font-medium truncate">{student.firstName} {student.lastName}</span>
-                                    <div className="flex items-center text-muted-foreground text-xs space-x-1">
+                                    <div className="flex items-center text-muted-foreground text-xs mt-1">
                                       {student.gradeLevel && (
-                                        <span>Grade: {student.gradeLevel}</span>
+                                        <div className="bg-muted/50 rounded-md px-1.5 py-0.5 inline-flex items-center">
+                                          <GraduationCap className="h-3 w-3 mr-1 opacity-70" />
+                                          <span>Grade {student.gradeLevel}</span>
+                                        </div>
                                       )}
                                       {student.classId && (
-                                        <span className="inline-flex items-center">
-                                          <span className="mx-1">•</span> 
-                                          Class: {classMap.find(c => c.id === student.classId)?.name || 'Unknown'}
-                                        </span>
+                                        <div className="bg-primary/10 rounded-md px-1.5 py-0.5 ml-1.5 inline-flex items-center">
+                                          <Users className="h-3 w-3 mr-1 opacity-70" />
+                                          <span>Class {classMap.find(c => c.id === student.classId)?.name || 'Unknown'}</span>
+                                        </div>
                                       )}
                                     </div>
                                   </div>
@@ -470,21 +490,37 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
                   
                   {/* Display selected students */}
                   {selectedStudentIds.length > 0 && (
-                    <div className="mt-3 border rounded-md p-3 bg-muted/20">
-                      <div className="text-xs font-medium text-muted-foreground mb-2">Selected Students:</div>
+                    <div className="mt-3 border rounded-md p-3 bg-muted/10">
+                      <div className="flex items-center text-xs font-medium text-muted-foreground mb-2.5">
+                        <Users className="h-3.5 w-3.5 mr-1.5" />
+                        Selected Students ({selectedStudentIds.length}):
+                      </div>
                       <div className="flex flex-wrap gap-2">
                         {selectedStudentIds.map(id => {
                           const student = students.find(s => s.id === id);
+                          const className = student?.classId ? classMap.find(c => c.id === student.classId)?.name : '';
                           return (
                             <Badge 
                               key={id} 
-                              variant="secondary"
-                              className="cursor-pointer pl-2 pr-1.5 py-1.5 hover:bg-secondary/80 transition-colors shadow-sm"
+                              variant="outline"
+                              className="cursor-pointer pl-2.5 pr-1.5 py-1.5 hover:bg-primary/5 transition-colors border-primary/40 shadow-sm flex items-center gap-1.5"
                               onClick={() => toggleStudent(id)}
                             >
-                              {student ? `${student.firstName} ${student.lastName}` : `Student #${id}`}
-                              {student?.classId && <span className="mx-1 text-muted-foreground">({classMap.find(c => c.id === student.classId)?.name || ''})</span>}
-                              <X className="ml-1 h-3 w-3 text-muted-foreground hover:text-foreground" />
+                              <div className="flex items-center">
+                                {student ? (
+                                  <>
+                                    <span className="font-medium">{student.firstName} {student.lastName}</span>
+                                    {className && (
+                                      <span className="ml-1.5 bg-primary/10 text-primary-foreground/80 text-[10px] px-1.5 py-0.5 rounded-sm font-medium">
+                                        {className}
+                                      </span>
+                                    )}
+                                  </>
+                                ) : (
+                                  <span>Student #{id}</span>
+                                )}
+                              </div>
+                              <X className="ml-1 h-3.5 w-3.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full p-0.5 transition-colors" />
                             </Badge>
                           );
                         })}
