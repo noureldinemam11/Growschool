@@ -175,7 +175,14 @@ export default function BehaviorCategoriesView({
 
   // Calculate total points from selected categories
   const totalPoints = Object.values(selectedCategories).reduce((sum, category) => {
-    const pointsValue = category.points || category.pointValue || 0;
+    // Get the points value for this category
+    let pointsValue = category.points || category.pointValue || 0;
+    
+    // Ensure negative behaviors have negative point values
+    if (category.isPositive === false && pointsValue > 0) {
+      pointsValue = -Math.abs(pointsValue);
+    }
+    
     return sum + pointsValue;
   }, 0);
 
@@ -283,7 +290,13 @@ export default function BehaviorCategoriesView({
       const pointsEntries: PointEntry[] = [];
       
       Object.values(selectedCategories).forEach(category => {
-        const pointsValue = category.points || category.pointValue || 1;
+        // Get the points value, ensuring negative categories have negative values
+        let pointsValue = category.points || category.pointValue || 1;
+        
+        // Ensure negative behaviors have negative point values
+        if (category.isPositive === false && pointsValue > 0) {
+          pointsValue = -Math.abs(pointsValue);
+        }
         
         // Create an entry for each student
         selectedStudentIds.forEach(studentId => {
@@ -292,7 +305,7 @@ export default function BehaviorCategoriesView({
             categoryId: category.id,
             points: pointsValue,
             teacherId: user?.id || 1,
-            notes: `${category.name} - ${pointsValue} points`,
+            notes: `${category.name} - ${pointsValue > 0 ? '+' : ''}${pointsValue} points`,
           });
         });
       });
@@ -317,14 +330,20 @@ export default function BehaviorCategoriesView({
     } else {
       // Use single student endpoint for backward compatibility
       const promises = Object.values(selectedCategories).map(category => {
-        const pointsValue = category.points || category.pointValue || 1;
+        // Get the points value, ensuring negative categories have negative values
+        let pointsValue = category.points || category.pointValue || 1;
+        
+        // Ensure negative behaviors have negative point values
+        if (category.isPositive === false && pointsValue > 0) {
+          pointsValue = -Math.abs(pointsValue);
+        }
         
         return addPointsMutation.mutateAsync({
           studentId,
           categoryId: category.id,
           points: pointsValue,
           teacherId: user?.id || 1,
-          notes: `${category.name} - ${pointsValue} points`,
+          notes: `${category.name} - ${pointsValue > 0 ? '+' : ''}${pointsValue} points`,
         });
       });
 
