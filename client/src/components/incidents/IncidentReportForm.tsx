@@ -62,18 +62,30 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
   const [students, setStudents] = useState<User[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [classFilter, setClassFilter] = useState<string>('');
+  const [classFilter, setClassFilter] = useState<number | null>(null);
   const [teachers, setTeachers] = useState<User[]>([]);
   
-  // Extract unique class/section from students for the filter dropdown
-  const classes = useMemo(() => {
-    const uniqueClasses = new Set<string>();
+  // Get unique classes from students for the filter dropdown
+  const classMap = useMemo(() => {
+    // First get all unique class IDs
+    const uniqueClassIds = new Set<number>();
     students.forEach(student => {
-      if (student.section) {
-        uniqueClasses.add(student.section);
+      if (student.classId) {
+        uniqueClassIds.add(student.classId);
       }
     });
-    return Array.from(uniqueClasses).sort();
+    
+    // Create a map of class ids to class names from the API response
+    const classData = [
+      { id: 1, name: "9M" },
+      { id: 5, name: "9L" },
+      { id: 8, name: "9K" },
+      { id: 7, name: "10A" },
+      { id: 4, name: "10B" }
+    ];
+    
+    // Filter to only classes that have students
+    return classData.filter(c => uniqueClassIds.has(c.id));
   }, [students]);
   
   // Directly fetch students and teachers using fetch API
@@ -85,6 +97,7 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
         if (studentResponse.ok) {
           const studentData = await studentResponse.json();
           console.log("Successfully loaded students:", studentData.length);
+          console.log("Sample student data:", studentData[0]);
           setStudents(studentData);
           setFilteredStudents(studentData); // Initialize filtered students with all students
         } else {
@@ -366,15 +379,16 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
                           </div>
                           
                           {/* Class/section filter dropdown */}
-                          {classes.length > 0 && (
+                          {classMap.length > 0 && (
                             <div className="px-3 py-2 border-b">
                               <Select
-                                value={classFilter}
+                                value={classFilter ? classFilter.toString() : ""}
                                 onValueChange={(value) => {
-                                  setClassFilter(value);
+                                  const classId = value ? parseInt(value, 10) : null;
+                                  setClassFilter(classId);
                                   // Filter students by selected class
-                                  if (value) {
-                                    const filtered = students.filter(s => s.section === value);
+                                  if (classId) {
+                                    const filtered = students.filter(s => s.classId === classId);
                                     setFilteredStudents(filtered);
                                   } else {
                                     // If no class selected, show all students (or respect search query)
@@ -386,13 +400,13 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
                                   }
                                 }}
                               >
-                                <SelectTrigger className="h-8 text-xs">
+                                <SelectTrigger className="h-8 text-xs font-medium">
                                   <SelectValue placeholder="Filter by class" />
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="">All Classes</SelectItem>
-                                  {classes.map(c => (
-                                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                                  {classMap.map(c => (
+                                    <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
