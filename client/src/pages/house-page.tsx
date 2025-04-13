@@ -3,7 +3,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useQuery } from '@tanstack/react-query';
 import { Pod, User } from '@shared/schema';
 import { globalEventBus } from '@/lib/queryClient';
-import { Loader2, ArrowLeft, Settings, Building, UserPlus, LineChart, Award, Maximize2, Minimize2 } from 'lucide-react';
+import { Loader2, ArrowLeft, Settings, Building, UserPlus, LineChart, Award, Maximize2, Minimize2, Trophy } from 'lucide-react';
 import { useLocation, useRoute } from 'wouter';
 import Navbar from '@/components/layout/Navbar';
 import Sidebar from '@/components/layout/Sidebar';
