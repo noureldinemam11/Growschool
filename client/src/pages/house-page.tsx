@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ClassDashboardCard from '@/components/class/ClassDashboardCard';
+import TopStudentsPanel from '@/components/class/TopStudentsPanel';
 
 export default function PodPage() {
   const { user } = useAuth();
@@ -360,6 +361,16 @@ export default function PodPage() {
                       {/* Pod section removed to make more space */}
                     </div>
                     
+                    {/* Top Students Panel */}
+                    <div className="mb-6">
+                      <TopStudentsPanel 
+                        classes={classes}
+                        classPoints={classPoints}
+                        topStudentsByClass={topStudentsByClass}
+                        isLoadingClassTopStudents={isLoadingClassTopStudents}
+                      />
+                    </div>
+                    
                     {/* Bar chart container for classes */}
                     <div className="bg-white p-4 rounded-lg relative">
                       {/* Competition banner - styled like the reference image */}
@@ -475,35 +486,43 @@ export default function PodPage() {
                                     </div>
                                     
                                     <div className="flex items-center">
-                                      <div className="mr-4">
+                                      <div className="mr-4 w-full">
                                         {/* Use real top student data from API */}
-                                        <div className="font-medium">
+                                        <div className="flex items-center mb-1">
                                           {isLoadingClassTopStudents ? (
                                             <div className="h-4 w-24 bg-gray-200 animate-pulse rounded"></div>
                                           ) : (
-                                            topStudentsByClass && topStudentsByClass.find(
-                                              c => c.classId === classItem.id
-                                            )?.topStudent ? 
-                                            `${topStudentsByClass.find(
-                                              c => c.classId === classItem.id
-                                            )?.topStudent?.firstName || ''} ${topStudentsByClass.find(
-                                              c => c.classId === classItem.id
-                                            )?.topStudent?.lastName.charAt(0) || ''}` :
-                                            'No students'
-                                          )}
-                                        </div>
-                                        <div className="text-xs flex items-center">
-                                          <span className="text-gray-500 mr-1">Star Student</span>
-                                          {!isLoadingClassTopStudents && topStudentsByClass && topStudentsByClass.find(
-                                            c => c.classId === classItem.id
-                                          )?.topStudent && (
-                                            <span className="bg-primary/10 text-primary px-1 rounded-sm font-semibold">
-                                              {topStudentsByClass.find(
+                                            <>
+                                              {topStudentsByClass && topStudentsByClass.find(
                                                 c => c.classId === classItem.id
-                                              )?.topStudent?.totalPoints || 0} pts
-                                            </span>
+                                              )?.topStudent ? (
+                                                <>
+                                                  <div 
+                                                    className="text-white text-xs font-semibold px-2 py-0.5 rounded-sm mr-2" 
+                                                    style={{ backgroundColor: classItem.color }}
+                                                  >
+                                                    Top
+                                                  </div>
+                                                  <div className="font-medium">
+                                                    {topStudentsByClass.find(
+                                                      c => c.classId === classItem.id
+                                                    )?.topStudent?.firstName || ''} {topStudentsByClass.find(
+                                                      c => c.classId === classItem.id
+                                                    )?.topStudent?.lastName.charAt(0) || ''}
+                                                  </div>
+                                                  <div className="ml-auto bg-primary/10 text-primary px-2 rounded font-semibold text-sm">
+                                                    {topStudentsByClass.find(
+                                                      c => c.classId === classItem.id
+                                                    )?.topStudent?.totalPoints || 0} pts
+                                                  </div>
+                                                </>
+                                              ) : (
+                                                <div className="text-gray-500 italic">No students</div>
+                                              )}
+                                            </>
                                           )}
                                         </div>
+                                        <div className="text-xs text-gray-500">Star Student of the Class</div>
                                       </div>
                                       <div className={`w-1 h-10 rounded-full ${
                                         // Use real rank data from API instead of hardcoded index
