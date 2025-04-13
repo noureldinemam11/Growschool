@@ -4,23 +4,16 @@ import { useLocation, Redirect } from 'wouter';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { insertUserSchema, userRoles } from '@shared/schema';
-import { Loader2, Award, Trophy, Star, CheckCircle, Users, ChevronRight, 
-         User, Mail, Lock, School, BookOpen, GraduationCap, Eye, EyeOff,
-         CheckSquare } from 'lucide-react';
+import { Loader2, Award, Trophy, CheckCircle, ChevronRight, User, Lock, Eye, EyeOff } from 'lucide-react';
 import { Checkbox } from "@/components/ui/checkbox";
 
 export default function AuthPage() {
   const [location] = useLocation();
-  const { user, loginMutation, registerMutation } = useAuth();
-  const [activeTab, setActiveTab] = useState<string>("login");
+  const { user, loginMutation } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [fadeIn, setFadeIn] = useState(false);
@@ -56,21 +49,6 @@ export default function AuthPage() {
     password: z.string().min(6, "Password must be at least 6 characters"),
   });
 
-  const registerFormSchema = z.object({
-    username: z.string().min(3, "Username must be at least 3 characters"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
-    confirmPassword: z.string(),
-    firstName: z.string().min(1, "First name is required"),
-    lastName: z.string().min(1, "Last name is required"),
-    email: z.string().email("Please enter a valid email"),
-    role: z.enum(userRoles),
-    gradeLevel: z.string().optional(),
-    section: z.string().optional(),
-  }).refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  });
-
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -79,43 +57,11 @@ export default function AuthPage() {
     },
   });
 
-  const registerForm = useForm<z.infer<typeof registerFormSchema>>({
-    resolver: zodResolver(registerFormSchema),
-    defaultValues: {
-      username: "",
-      password: "",
-      confirmPassword: "",
-      firstName: "",
-      lastName: "",
-      email: "",
-      role: "student",
-      gradeLevel: "",
-      section: "",
-    },
-  });
-
   const onLoginSubmit = (values: z.infer<typeof loginSchema>) => {
     loginMutation.mutate({
       username: values.username,
       password: values.password,
     } as any); // Cast to any to work around type issues
-  };
-
-  const onRegisterSubmit = (values: z.infer<typeof registerFormSchema>) => {
-    const { confirmPassword, ...registrationData } = values;
-    
-    // Create the user object with properly typed fields
-    const userData = {
-      ...registrationData,
-      // Set null values for optional fields if they're empty
-      gradeLevel: registrationData.gradeLevel || null,
-      section: registrationData.section || null,
-      // Initialize other required fields with default values
-      houseId: null,
-      parentId: null
-    };
-    
-    registerMutation.mutate(userData as any); // Cast to any to work around type issues
   };
 
   // Redirect if already logged in
@@ -144,409 +90,110 @@ export default function AuthPage() {
             <span className="ml-3 text-2xl font-heading font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">GrowSchool</span>
           </div>
           
-          <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2 mb-6 bg-secondary/10">
-              <TabsTrigger value="login" className="data-[state=active]:bg-primary data-[state=active]:text-white">Login</TabsTrigger>
-              <TabsTrigger value="register" className="data-[state=active]:bg-primary data-[state=active]:text-white">Register</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="login">
-              <Card className="border-0 shadow-lg bg-white">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">Welcome Back</CardTitle>
-                  <CardDescription className="text-base">
-                    Enter your credentials to access the school behavior platform.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-5">
-                  <Form {...loginForm}>
-                    <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-5">
-                      <FormField
-                        control={loginForm.control}
-                        name="username"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-neutral-darker font-medium">Username</FormLabel>
+          <div className="mb-6">
+            <h3 className="text-center font-medium text-neutral-dark">School Management System</h3>
+          </div>
+          
+          <Card className="border-0 shadow-lg bg-white">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">Welcome Back</CardTitle>
+              <CardDescription className="text-base">
+                Enter your credentials to access the school behavior platform.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <Form {...loginForm}>
+                <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-5">
+                  <FormField
+                    control={loginForm.control}
+                    name="username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-neutral-darker font-medium">Username</FormLabel>
+                        <div className="relative">
+                          <FormControl>
                             <div className="relative">
-                              <FormControl>
-                                <div className="relative">
-                                  <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                                    <User className="h-5 w-5" />
-                                  </div>
-                                  <Input 
-                                    placeholder="Enter your username" 
-                                    {...field} 
-                                    className="h-11 pl-10 border-neutral/30 focus:border-primary focus:ring-primary/20 transition-all duration-200 hover:border-primary/50"
-                                  />
-                                </div>
-                              </FormControl>
-                            </div>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={loginForm.control}
-                        name="password"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-neutral-darker font-medium">Password</FormLabel>
-                            <div className="relative">
-                              <FormControl>
-                                <div className="relative">
-                                  <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                                    <Lock className="h-5 w-5" />
-                                  </div>
-                                  <Input 
-                                    type={showPassword ? "text" : "password"}
-                                    placeholder="Enter your password" 
-                                    {...field} 
-                                    className="h-11 pl-10 pr-10 border-neutral/30 focus:border-primary focus:ring-primary/20 transition-all duration-200 hover:border-primary/50"
-                                  />
-                                  <div 
-                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer hover:text-primary transition-colors"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                  >
-                                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                                  </div>
-                                </div>
-                              </FormControl>
-                            </div>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <div className="flex items-center space-x-2">
-                        <Checkbox id="remember-me" checked={rememberMe} onCheckedChange={(checked) => setRememberMe(checked as boolean)} />
-                        <label
-                          htmlFor="remember-me"
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                        >
-                          Remember me
-                        </label>
-                      </div>
-                      
-                      <Button 
-                        type="submit" 
-                        className="w-full h-11 bg-gradient-to-r from-primary to-blue-600 hover:from-blue-700 hover:to-primary text-white font-medium text-base"
-                        disabled={loginMutation.isPending}
-                      >
-                        {loginMutation.isPending ? (
-                          <>
-                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                            Logging in...
-                          </>
-                        ) : (
-                          <>Log In <ChevronRight className="ml-2 h-4 w-4" /></>
-                        )}
-                      </Button>
-                    </form>
-                  </Form>
-                </CardContent>
-                <CardFooter className="flex justify-center pt-2 pb-4">
-                  <Button 
-                    variant="outline"
-                    onClick={() => setActiveTab("register")}
-                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-300 font-medium"
-                  >
-                    Don't have an account? Register
-                  </Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="register">
-              <Card className="border-0 shadow-lg bg-white">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">Create an Account</CardTitle>
-                  <CardDescription className="text-base">
-                    Join the GrowSchool platform to manage student behavior.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-5">
-                  <Form {...registerForm}>
-                    <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-5">
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={registerForm.control}
-                          name="firstName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-neutral-darker font-medium">First Name</FormLabel>
-                              <div className="relative">
-                                <FormControl>
-                                  <div className="relative">
-                                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                                      <User className="h-5 w-5" />
-                                    </div>
-                                    <Input 
-                                      placeholder="First name" 
-                                      {...field} 
-                                      className="h-11 pl-10 border-neutral/30 focus:border-primary focus:ring-primary/20 transition-all duration-200 hover:border-primary/50"
-                                    />
-                                  </div>
-                                </FormControl>
+                              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                <User className="h-5 w-5" />
                               </div>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={registerForm.control}
-                          name="lastName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-neutral-darker font-medium">Last Name</FormLabel>
-                              <div className="relative">
-                                <FormControl>
-                                  <div className="relative">
-                                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                                      <User className="h-5 w-5" />
-                                    </div>
-                                    <Input 
-                                      placeholder="Last name" 
-                                      {...field} 
-                                      className="h-11 pl-10 border-neutral/30 focus:border-primary focus:ring-primary/20 transition-all duration-200 hover:border-primary/50"
-                                    />
-                                  </div>
-                                </FormControl>
-                              </div>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      
-                      <FormField
-                        control={registerForm.control}
-                        name="username"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-neutral-darker font-medium">Username</FormLabel>
-                            <div className="relative">
-                              <FormControl>
-                                <div className="relative">
-                                  <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                                    <User className="h-5 w-5" />
-                                  </div>
-                                  <Input 
-                                    placeholder="Choose a username" 
-                                    {...field} 
-                                    className="h-11 pl-10 border-neutral/30 focus:border-primary focus:ring-primary/20 transition-all duration-200 hover:border-primary/50"
-                                  />
-                                </div>
-                              </FormControl>
+                              <Input 
+                                placeholder="Enter your username" 
+                                {...field} 
+                                className="h-11 pl-10 border-neutral/30 focus:border-primary focus:ring-primary/20 transition-all duration-200 hover:border-primary/50"
+                              />
                             </div>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={registerForm.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-neutral-darker font-medium">Email</FormLabel>
-                            <div className="relative">
-                              <FormControl>
-                                <div className="relative">
-                                  <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                                    <Mail className="h-5 w-5" />
-                                  </div>
-                                  <Input 
-                                    type="email" 
-                                    placeholder="Enter your email" 
-                                    {...field} 
-                                    className="h-11 pl-10 border-neutral/30 focus:border-primary focus:ring-primary/20 transition-all duration-200 hover:border-primary/50"
-                                  />
-                                </div>
-                              </FormControl>
-                            </div>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={registerForm.control}
-                          name="password"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-neutral-darker font-medium">Password</FormLabel>
-                              <div className="relative">
-                                <FormControl>
-                                  <div className="relative">
-                                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                                      <Lock className="h-5 w-5" />
-                                    </div>
-                                    <Input 
-                                      type={showPassword ? "text" : "password"}
-                                      placeholder="Create a password" 
-                                      {...field} 
-                                      className="h-11 pl-10 pr-10 border-neutral/30 focus:border-primary focus:ring-primary/20 transition-all duration-200 hover:border-primary/50"
-                                    />
-                                    <div 
-                                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer hover:text-primary transition-colors"
-                                      onClick={() => setShowPassword(!showPassword)}
-                                    >
-                                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                                    </div>
-                                  </div>
-                                </FormControl>
-                              </div>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={registerForm.control}
-                          name="confirmPassword"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-neutral-darker font-medium">Confirm Password</FormLabel>
-                              <div className="relative">
-                                <FormControl>
-                                  <div className="relative">
-                                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                                      <Lock className="h-5 w-5" />
-                                    </div>
-                                    <Input 
-                                      type={showPassword ? "text" : "password"}
-                                      placeholder="Confirm password" 
-                                      {...field} 
-                                      className="h-11 pl-10 border-neutral/30 focus:border-primary focus:ring-primary/20 transition-all duration-200 hover:border-primary/50"
-                                    />
-                                  </div>
-                                </FormControl>
-                              </div>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      
-                      <FormField
-                        control={registerForm.control}
-                        name="role"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-neutral-darker font-medium">Role</FormLabel>
-                            <div className="relative">
-                              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10">
-                                <School className="h-5 w-5" />
-                              </div>
-                              <Select
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger className="h-11 pl-10 border-neutral/30 focus:ring-primary/20 transition-all duration-200 hover:border-primary/50">
-                                    <SelectValue placeholder="Select your role" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {userRoles.map((role) => (
-                                    <SelectItem key={role} value={role} className="cursor-pointer transition-colors hover:bg-primary/10">
-                                      {role.charAt(0).toUpperCase() + role.slice(1)}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      {registerForm.watch("role") === "student" && (
-                        <div className="grid grid-cols-2 gap-4">
-                          <FormField
-                            control={registerForm.control}
-                            name="gradeLevel"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-neutral-darker font-medium">Grade Level</FormLabel>
-                                <div className="relative">
-                                  <FormControl>
-                                    <div className="relative">
-                                      <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                                        <GraduationCap className="h-5 w-5" />
-                                      </div>
-                                      <Input 
-                                        placeholder="e.g. 8" 
-                                        {...field} 
-                                        className="h-11 pl-10 border-neutral/30 focus:border-primary focus:ring-primary/20 transition-all duration-200 hover:border-primary/50"
-                                      />
-                                    </div>
-                                  </FormControl>
-                                </div>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          
-                          <FormField
-                            control={registerForm.control}
-                            name="section"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-neutral-darker font-medium">Section</FormLabel>
-                                <div className="relative">
-                                  <FormControl>
-                                    <div className="relative">
-                                      <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                                        <BookOpen className="h-5 w-5" />
-                                      </div>
-                                      <Input 
-                                        placeholder="e.g. A" 
-                                        {...field} 
-                                        className="h-11 pl-10 border-neutral/30 focus:border-primary focus:ring-primary/20 transition-all duration-200 hover:border-primary/50"
-                                      />
-                                    </div>
-                                  </FormControl>
-                                </div>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+                          </FormControl>
                         </div>
-                      )}
-                      
-                      <Button 
-                        type="submit" 
-                        className="w-full h-11 bg-gradient-to-r from-primary to-blue-600 hover:from-blue-700 hover:to-primary text-white font-medium text-base"
-                        disabled={registerMutation.isPending}
-                      >
-                        {registerMutation.isPending ? (
-                          <>
-                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                            Creating account...
-                          </>
-                        ) : (
-                          <>Create Account <ChevronRight className="ml-2 h-4 w-4" /></>
-                        )}
-                      </Button>
-                    </form>
-                  </Form>
-                </CardContent>
-                <CardFooter className="flex justify-center pt-2 pb-4">
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={loginForm.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-neutral-darker font-medium">Password</FormLabel>
+                        <div className="relative">
+                          <FormControl>
+                            <div className="relative">
+                              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                <Lock className="h-5 w-5" />
+                              </div>
+                              <Input 
+                                type={showPassword ? "text" : "password"}
+                                placeholder="Enter your password" 
+                                {...field} 
+                                className="h-11 pl-10 pr-10 border-neutral/30 focus:border-primary focus:ring-primary/20 transition-all duration-200 hover:border-primary/50"
+                              />
+                              <div 
+                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer hover:text-primary transition-colors"
+                                onClick={() => setShowPassword(!showPassword)}
+                              >
+                                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                              </div>
+                            </div>
+                          </FormControl>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="flex items-center space-x-2">
+                    <Checkbox id="remember-me" checked={rememberMe} onCheckedChange={(checked) => setRememberMe(checked as boolean)} />
+                    <label
+                      htmlFor="remember-me"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      Remember me
+                    </label>
+                  </div>
+                  
                   <Button 
-                    variant="outline"
-                    onClick={() => setActiveTab("login")}
-                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-300 font-medium"
+                    type="submit" 
+                    className="w-full h-11 bg-gradient-to-r from-primary to-blue-600 hover:from-blue-700 hover:to-primary text-white font-medium text-base"
+                    disabled={loginMutation.isPending}
                   >
-                    Already have an account? Login
+                    {loginMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Logging in...
+                      </>
+                    ) : (
+                      <>Log In <ChevronRight className="ml-2 h-4 w-4" /></>
+                    )}
                   </Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-          </Tabs>
+                </form>
+              </Form>
+            </CardContent>
+            <CardFooter className="flex justify-center pt-2 pb-4">
+              <p className="text-sm text-gray-500">
+                Please contact your administrator if you need an account
+              </p>
+            </CardFooter>
+          </Card>
         </div>
         
         {/* Hero/Information Section */}
@@ -555,7 +202,7 @@ export default function AuthPage() {
           
           <h1 className="text-5xl font-heading font-bold mb-4">
             <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">GrowSchool</span>
-            <span className="block text-3xl mt-2 text-neutral-darker">Student Growth Platform</span>
+            <span className="block text-3xl mt-2 text-neutral-darker">{typedText}</span>
           </h1>
           
           <p className="text-lg text-neutral-dark mb-10 max-w-lg">
