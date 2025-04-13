@@ -456,12 +456,22 @@ export default function PodPage() {
                                     
                                     <div className="flex items-center">
                                       <div className="mr-4">
-                                        <div className="font-medium">{
-                                          index === 0 ? 'Sophia' :
-                                          index === 1 ? 'Mason' :
-                                          index === 2 ? 'Olivia' :
-                                          index === 3 ? 'Lucas' : 'Emma'
-                                        }</div>
+                                        {/* Use real top student data from API */}
+                                        <div className="font-medium">
+                                          {isLoadingTopStudents ? (
+                                            <div className="h-4 w-24 bg-gray-200 animate-pulse rounded"></div>
+                                          ) : (
+                                            topStudentsByPod && topStudentsByPod.find(
+                                              p => p.podId === classItem.podId
+                                            )?.topStudent ? 
+                                            `${topStudentsByPod.find(
+                                              p => p.podId === classItem.podId
+                                            )?.topStudent?.firstName || ''} ${topStudentsByPod.find(
+                                              p => p.podId === classItem.podId
+                                            )?.topStudent?.lastName.charAt(0) || ''}` :
+                                            'No students'
+                                          )}
+                                        </div>
                                         <div className="text-xs text-gray-500">Star Student</div>
                                       </div>
                                       <div className={`w-1 h-10 rounded-full ${

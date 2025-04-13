@@ -61,6 +61,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Top students by pod
+  app.get("/api/pods-top-students", async (req, res) => {
+    try {
+      const result = [];
+      // Get all pods
+      const pods = await storage.getAllPods();
+      
+      for (const pod of pods) {
+        // Get all classes in this pod
+        const classes = await storage.getClassesByPodId(pod.id);
+        let topStudent = null;
+        let maxPoints = 0;
+        
+        // For each class, get students
+        for (const classItem of classes) {
+          const students = await storage.getStudentsByClassId(classItem.id);
+          
+          // Check each student's points
+          for (const student of students) {
+            // Get behavior points for this student
+            const points = await storage.getBehaviorPointsByStudentId(student.id);
+            const totalPoints = points.reduce((sum, point) => sum + point.points, 0);
+            
+            if (totalPoints > maxPoints) {
+              maxPoints = totalPoints;
+              topStudent = {
+                id: student.id,
+                firstName: student.firstName,
+                lastName: student.lastName,
+                totalPoints: totalPoints
+              };
+            }
+          }
+        }
+        
+        result.push({
+          podId: pod.id,
+          podName: pod.name,
+          podColor: pod.color,
+          podPoints: pod.points,
+          topStudent: topStudent
+        });
+      }
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching top students by pod:", error);
+      res.status(500).json({ error: "Failed to fetch top students by pod" });
+    }
+  });
+  
   app.post("/api/pods", async (req, res) => {
     if (!req.isAuthenticated() || req.user.role !== "admin") {
       return res.status(403).json({ error: "Unauthorized" });
@@ -172,6 +223,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching class points:", error);
       res.status(500).json({ error: "Failed to fetch class points" });
+    }
+  });
+  
+  // Top students by class
+  app.get("/api/classes-top-students", async (req, res) => {
+    try {
+      const result = [];
+      // Get all classes
+      const classes = await storage.getAllClasses();
+      
+      // For each class, get students and their points
+      for (const classItem of classes) {
+        const students = await storage.getStudentsByClassId(classItem.id);
+        let topStudent = null;
+        let maxPoints = 0;
+        
+        // Find student with most points in this class
+        for (const student of students) {
+          // Get behavior points for this student
+          const points = await storage.getBehaviorPointsByStudentId(student.id);
+          const totalPoints = points.reduce((sum, point) => sum + point.points, 0);
+          
+          if (totalPoints > maxPoints) {
+            maxPoints = totalPoints;
+            topStudent = {
+              id: student.id,
+              firstName: student.firstName,
+              lastName: student.lastName,
+              totalPoints: totalPoints
+            };
+          }
+        }
+        
+        // Get total class points
+        const classPoints = await storage.getClassPoints();
+        const classPointsTotal = classPoints[classItem.id] || 0;
+        
+        result.push({
+          classId: classItem.id,
+          className: classItem.name,
+          podId: classItem.podId,
+          classColor: classItem.color,
+          classPoints: classPointsTotal,
+          topStudent: topStudent
+        });
+      }
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching top students by class:", error);
+      res.status(500).json({ error: "Failed to fetch top students by class" });
     }
   });
   
