@@ -337,58 +337,12 @@ export default function PodPage() {
                         </button>
                       </div>
                       
-                      {/* Top student banner */}
+                      {/* Pod section title */}
                       {selectedPod && (
-                        <div className="mt-3 bg-white p-0 rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-                          <div className="bg-blue-600 text-white py-2 px-4 font-bold text-sm flex items-center">
-                            <Trophy className="h-4 w-4 mr-2" />
-                            POD CHAMPIONS
-                          </div>
-                          <div className="p-4 flex items-center justify-between">
-                            <div className="flex items-center">
-                              <div className="w-12 h-12 rounded-full mr-4 overflow-hidden border-2 border-yellow-500 flex items-center justify-center bg-gray-50">
-                                <Award className="h-8 w-8 text-yellow-500" />
-                              </div>
-                              <div>
-                                <div className="text-xs text-gray-500">Top Student</div>
-                                <div className="font-bold text-gray-800 text-lg">
-                                  {
-                                    (() => {
-                                      if (!topStudentsByPod) return "Champion";
-                                      const podTopStudent = topStudentsByPod.find(ts => ts.podId === selectedPod.id);
-                                      return podTopStudent?.topStudent ? 
-                                        `${podTopStudent.topStudent.firstName} ${podTopStudent.topStudent.lastName}` : 
-                                        'Champion'
-                                    })()
-                                  }
-                                </div>
-                                {
-                                  topStudentsByPod && (() => {
-                                    const podTopStudent = topStudentsByPod.find(ts => ts.podId === selectedPod.id);
-                                    return podTopStudent?.topStudent && (
-                                      <div className="text-sm font-medium text-blue-600">
-                                        {podTopStudent.topStudent.totalPoints} points
-                                      </div>
-                                    );
-                                  })()
-                                }
-                              </div>
-                            </div>
-                            
-                            <div className="flex items-center">
-                              <div>
-                                <div className="text-xs text-gray-500">Most Improved</div>
-                                <div className="font-bold text-gray-800">Ethan Johnson</div>
-                                <div className="text-xs text-green-600">+24 points this week</div>
-                              </div>
-                              <div 
-                                className="w-10 h-10 ml-3 rounded-full flex items-center justify-center shadow-sm"
-                                style={{ backgroundColor: selectedPod.color }}
-                              >
-                                <Trophy className="h-5 w-5 text-white" />
-                              </div>
-                            </div>
-                          </div>
+                        <div className="mt-3 mb-1">
+                          <h3 className="text-lg font-semibold text-gray-700">
+                            {selectedPod.name} Classes
+                          </h3>
                         </div>
                       )}
                     </div>
