@@ -342,10 +342,27 @@ export default function PodPage() {
                         <div className="mt-3 bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-lg border border-blue-100">
                           <div className="flex items-center">
                             <Award className="h-5 w-5 text-yellow-500 mr-2" />
-                            <span className="text-sm font-medium text-blue-800">Pod Star Student: </span>
+                            <span className="text-sm font-medium text-blue-800">Pod Champion: </span>
                             <span className="ml-2 font-bold text-blue-900">
-                              {topStudentsByPod.find(ts => ts.podId === selectedPod.id)?.topStudent?.firstName || 'No star student yet'}
+                              {
+                                (() => {
+                                  const podTopStudent = topStudentsByPod.find(ts => ts.podId === selectedPod.id);
+                                  return podTopStudent?.topStudent ? 
+                                    `${podTopStudent.topStudent.firstName} ${podTopStudent.topStudent.lastName}` : 
+                                    'Best Student'
+                                })()
+                              }
                             </span>
+                            {
+                              (() => {
+                                const podTopStudent = topStudentsByPod.find(ts => ts.podId === selectedPod.id);
+                                return podTopStudent?.topStudent && (
+                                  <span className="ml-2 font-medium text-blue-600">
+                                    ({podTopStudent.topStudent.totalPoints} pts)
+                                  </span>
+                                );
+                              })()
+                            }
                           </div>
                         </div>
                       )}

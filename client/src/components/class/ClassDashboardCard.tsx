@@ -41,8 +41,8 @@ const ClassDashboardCard: React.FC<ClassDashboardCardProps> = ({
   const heightPercentage = Math.max(15, (points / maxPoints) * 100);
   const barHeight = points === 0 ? 40 : Math.max(40, heightPercentage * 1.6); // Scale appropriately with minimum height
 
-  // Generate random student name for demonstration (in production, this would come from actual data)
-  const starStudent = ['Ahmed', 'Sara', 'Liam', 'Emma', 'Noah'][rank % 5];
+  // Use a consistent "Star Student" label since we don't have real student data per class
+  const starStudent = rank === 0 ? "Star Student" : (rank < 3 ? "Top Student" : "Class Leader");
 
   // Determine ranking badge
   const getRankBadge = () => {
