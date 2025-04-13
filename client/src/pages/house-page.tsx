@@ -109,7 +109,7 @@ export default function PodPage() {
     }
   }, [classes]);
   
-  // Define an interface for the top student data
+  // Define interfaces for the top student data
   interface TopStudentData {
     podId: number;
     podName: string;
@@ -123,9 +123,29 @@ export default function PodPage() {
     } | null;
   }
   
+  interface ClassTopStudentData {
+    classId: number;
+    className: string;
+    podId: number;
+    classColor: string;
+    classPoints: number;
+    topStudent: {
+      id: number;
+      firstName: string;
+      lastName: string;
+      totalPoints: number;
+    } | null;
+  }
+  
   // Get top students for each pod
   const { data: topStudentsByPod, isLoading: isLoadingTopStudents } = useQuery<TopStudentData[]>({
     queryKey: ['/api/pods-top-students', refreshCounter],
+    refetchInterval: 2000, // Refresh every 2 seconds to keep data in sync
+  });
+  
+  // Get top students for each class
+  const { data: topStudentsByClass, isLoading: isLoadingClassTopStudents } = useQuery<ClassTopStudentData[]>({
+    queryKey: ['/api/classes-top-students', refreshCounter],
     refetchInterval: 2000, // Refresh every 2 seconds to keep data in sync
   });
   
@@ -458,16 +478,16 @@ export default function PodPage() {
                                       <div className="mr-4">
                                         {/* Use real top student data from API */}
                                         <div className="font-medium">
-                                          {isLoadingTopStudents ? (
+                                          {isLoadingClassTopStudents ? (
                                             <div className="h-4 w-24 bg-gray-200 animate-pulse rounded"></div>
                                           ) : (
-                                            topStudentsByPod && topStudentsByPod.find(
-                                              p => p.podId === classItem.podId
+                                            topStudentsByClass && topStudentsByClass.find(
+                                              c => c.classId === classItem.id
                                             )?.topStudent ? 
-                                            `${topStudentsByPod.find(
-                                              p => p.podId === classItem.podId
-                                            )?.topStudent?.firstName || ''} ${topStudentsByPod.find(
-                                              p => p.podId === classItem.podId
+                                            `${topStudentsByClass.find(
+                                              c => c.classId === classItem.id
+                                            )?.topStudent?.firstName || ''} ${topStudentsByClass.find(
+                                              c => c.classId === classItem.id
                                             )?.topStudent?.lastName.charAt(0) || ''}` :
                                             'No students'
                                           )}
@@ -475,14 +495,57 @@ export default function PodPage() {
                                         <div className="text-xs text-gray-500">Star Student</div>
                                       </div>
                                       <div className={`w-1 h-10 rounded-full ${
-                                        index === 0 ? 'bg-yellow-500' : 
-                                        index === 1 ? 'bg-gray-400' : 
-                                        index === 2 ? 'bg-amber-700' : 'bg-gray-200'
+                                        // Use real rank data from API instead of hardcoded index
+                                        !isLoadingClassTopStudents && topStudentsByClass
+                                          ? topStudentsByClass.find(c => c.classId === classItem.id)?.topStudent
+                                            ? 'bg-green-500' // Has top student
+                                            : 'bg-gray-300' // No top student
+                                          : 'bg-gray-200' // Loading state
                                       }`}></div>
                                     </div>
                                   </div>
                                 ));
                               })()}
+                            </div>
+                            
+                            {/* Top Students Section */}
+                            <div className="mt-8 bg-slate-50 p-4 rounded-lg">
+                              <h3 className="text-lg font-semibold mb-4 flex items-center">
+                                <Trophy className="h-5 w-5 mr-2 text-yellow-500" />
+                                Top Performing Students
+                              </h3>
+                              
+                              {isLoadingClassTopStudents ? (
+                                <div className="flex justify-center p-4">
+                                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                                </div>
+                              ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                  {topStudentsByClass?.filter(c => c.topStudent).map((classData) => (
+                                    <div 
+                                      key={classData.classId} 
+                                      className="p-3 rounded-lg border flex items-center"
+                                      style={{ borderColor: classData.classColor }}
+                                    >
+                                      <div 
+                                        className="w-2 h-full rounded-full mr-3"
+                                        style={{ backgroundColor: classData.classColor }}
+                                      ></div>
+                                      <div>
+                                        <div className="text-sm text-gray-500">
+                                          {classData.className}
+                                        </div>
+                                        <div className="font-semibold">
+                                          {classData.topStudent?.firstName} {classData.topStudent?.lastName.charAt(0)}.
+                                        </div>
+                                        <div className="text-xs text-gray-500">
+                                          {classData.topStudent?.totalPoints} points
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </>
