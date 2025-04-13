@@ -42,7 +42,7 @@ export const users = pgTable("users", {
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   role: text("role", { enum: userRoles }).notNull(),
-  email: text("email").notNull().unique(),
+  email: text("email"),
   gradeLevel: text("grade_level"),
   section: text("section"),
   parentId: integer("parent_id"), // This will reference the users table but not with a direct reference

@@ -289,7 +289,7 @@ export default function UserManagement() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="edit-email">Email</Label>
+                  <Label htmlFor="edit-email">Email (Optional)</Label>
                   <Input 
                     id="edit-email" 
                     type="email" 
@@ -505,11 +505,11 @@ export default function UserManagement() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Email (Optional)</Label>
                 <Input 
                   id="email" 
                   type="email" 
-                  placeholder="Enter email address" 
+                  placeholder="Enter email address (optional)" 
                   value={createFormData.email}
                   onChange={(e) => setCreateFormData({...createFormData, email: e.target.value})}
                 />
