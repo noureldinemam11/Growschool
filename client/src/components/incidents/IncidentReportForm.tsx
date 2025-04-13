@@ -34,7 +34,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, Check, ChevronsUpDown, Loader2, AlertCircle, Search } from "lucide-react";
+import { CalendarIcon, Check, ChevronsUpDown, Loader2, X, AlertCircle, Search } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -42,6 +42,7 @@ import { IncidentReport, InsertIncidentReport, User, incidentTypes, actionTakenO
 import { useAuth } from "@/hooks/use-auth";
 import { useIncidentReports } from "@/hooks/incident-report-context";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 
 interface IncidentReportFormProps {
   report?: IncidentReport;
@@ -51,6 +52,7 @@ interface IncidentReportFormProps {
 export default function IncidentReportForm({ report, onSuccess }: IncidentReportFormProps) {
   const { user } = useAuth();
   const { createReport, updateReport } = useIncidentReports();
+  const { toast } = useToast();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedStudentIds, setSelectedStudentIds] = useState<number[]>(
@@ -144,9 +146,14 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
     try {
       setIsSubmitting(true);
       
+      // Cast the type to the expected IncidentType using type assertion
+      // since we know the form only allows valid types from the dropdown
       const reportData: InsertIncidentReport = {
         ...values,
+        type: values.type as any, // Type assertion to handle the enum conversion
         teacherId: user?.id || 0,
+        // Ensure studentIds is properly formatted as an array of numbers
+        studentIds: values.studentIds.map(id => Number(id)),
       };
       
       if (report) {
@@ -320,32 +327,38 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
                           <div className="py-6 text-center text-sm">No students found.</div>
                         ) : (
                           <div className="max-h-64 overflow-auto p-1">
-                            {filteredStudents.map((student) => (
-                              <div
-                                key={student.id}
-                                className={cn(
-                                  "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none",
-                                  "hover:bg-accent hover:text-accent-foreground",
-                                  selectedStudentIds.includes(student.id) && "bg-accent/50"
-                                )}
-                                onClick={() => toggleStudent(student.id)}
-                              >
-                                <Check
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+                              {filteredStudents.map((student) => (
+                                <div
+                                  key={student.id}
                                   className={cn(
-                                    "mr-2 h-4 w-4",
-                                    selectedStudentIds.includes(student.id)
-                                      ? "opacity-100"
-                                      : "opacity-0"
+                                    "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none",
+                                    "hover:bg-accent hover:text-accent-foreground",
+                                    selectedStudentIds.includes(student.id) 
+                                      ? "bg-primary/10 border border-primary/30" 
+                                      : "border border-transparent"
                                   )}
-                                />
-                                <span>{student.firstName} {student.lastName}</span>
-                                {student.gradeLevel && (
-                                  <span className="ml-2 text-muted-foreground text-xs">
-                                    (Grade: {student.gradeLevel})
-                                  </span>
-                                )}
-                              </div>
-                            ))}
+                                  onClick={() => toggleStudent(student.id)}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4 text-primary",
+                                      selectedStudentIds.includes(student.id)
+                                        ? "opacity-100"
+                                        : "opacity-0"
+                                    )}
+                                  />
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">{student.firstName} {student.lastName}</span>
+                                    {student.gradeLevel && (
+                                      <span className="text-muted-foreground text-xs">
+                                        Grade: {student.gradeLevel}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -361,11 +374,11 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
                           <Badge 
                             key={id} 
                             variant="secondary"
-                            className="cursor-pointer"
+                            className="cursor-pointer pl-2 pr-1.5 py-1 hover:bg-secondary/80 transition-colors"
                             onClick={() => toggleStudent(id)}
                           >
                             {student ? `${student.firstName} ${student.lastName}` : `Student #${id}`}
-                            <AlertCircle className="ml-1 h-3 w-3" />
+                            <X className="ml-1.5 h-3 w-3 text-muted-foreground hover:text-foreground" />
                           </Badge>
                         );
                       })}
@@ -419,7 +432,7 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="none">No action taken</SelectItem>
+                      <SelectItem value="No action taken">No action taken</SelectItem>
                       {actionTakenOptions.map(action => (
                         <SelectItem key={action} value={action}>
                           {action}
@@ -435,8 +448,16 @@ export default function IncidentReportForm({ report, onSuccess }: IncidentReport
               )}
             />
             
-            <div className="flex justify-end space-x-2">
-              <Button type="submit" disabled={isSubmitting}>
+            <div className="flex justify-between items-center pt-4 border-t mt-8">
+              <Button 
+                variant="ghost" 
+                onClick={() => onSuccess && onSuccess()}
+                type="button"
+              >
+                Cancel
+              </Button>
+              
+              <Button type="submit" disabled={isSubmitting} className="px-8">
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
