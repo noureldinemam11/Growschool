@@ -90,7 +90,7 @@ function PointOption({ icon, title, points = 0, description, onClick, isSelected
       <div className="text-center mt-2">
         <div className="text-sm font-medium">{title}</div>
         <div className={`text-xs ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-          {isPositive ? '+' : '-'}{Math.abs(points)} {Math.abs(points) === 1 ? 'point' : 'points'}
+          {isPositive ? `+${Math.abs(points)}` : `-${Math.abs(points)}`} {Math.abs(points) === 1 ? 'point' : 'points'}
         </div>
       </div>
     </div>
