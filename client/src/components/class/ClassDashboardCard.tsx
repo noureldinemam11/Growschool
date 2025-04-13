@@ -15,33 +15,27 @@ const ClassDashboardCard: React.FC<ClassDashboardCardProps> = ({
   rank,
   maxPoints = 100 // Default max points for scale
 }) => {
-  // Use the color from the database - this field is now available in the Class object
-  // We add 'bg-' prefix to use it as a Tailwind class
-  // If no color exists in the database, we use a fallback color
-  const getClassBgColor = () => {
+  // Get color for the class - either from database or fallback
+  const getClassColor = () => {
+    // First priority: use the color from the database
     if (classItem.color) {
-      // Special case for hex colors - we need to use bracketed notation for custom colors
-      if (classItem.color.startsWith('#')) {
-        return `bg-[${classItem.color}]`;
-      }
-      // If it's a named Tailwind color, we can just use it directly
-      return `bg-${classItem.color}`;
+      return classItem.color;
     }
     
-    // Fallback colors based on class name if needed
+    // Fallback colors if database color doesn't exist
     const fallbackColors: { [key: string]: string } = {
-      '9L': 'bg-[#00D1B2]', // teal
-      '9M': 'bg-[#FF69B4]', // pink
-      '10A': 'bg-[#FFB800]', // amber/gold
-      '9K': 'bg-[#59B5F8]', // blue
-      '10B': 'bg-[#A459F8]', // purple
+      '9L': '#00D1B2', // teal
+      '9M': '#FF69B4', // pink
+      '10A': '#FFB800', // amber/gold
+      '9K': '#59B5F8', // blue
+      '10B': '#A459F8', // purple
     };
     
-    return fallbackColors[classItem.name] || 'bg-[#00D1B2]';
+    return fallbackColors[classItem.name] || '#00D1B2';
   };
 
-  // Get class color
-  const classColor = getClassBgColor();
+  // Get the actual color (hex value)
+  const classColorHex = getClassColor();
 
   // Calculate bar height based on points (min 40px height even for 0 points)
   const heightPercentage = Math.max(15, (points / maxPoints) * 100);
@@ -76,7 +70,8 @@ const ClassDashboardCard: React.FC<ClassDashboardCardProps> = ({
       {/* Points circle with medal badge */}
       <div className="relative">
         <div 
-          className={`${classColor} w-14 h-14 rounded-full flex items-center justify-center mb-1 text-white font-bold text-xl shadow-md`}
+          className="w-14 h-14 rounded-full flex items-center justify-center mb-1 text-white font-bold text-xl shadow-md"
+          style={{ backgroundColor: classColorHex }}
         >
           {points}
         </div>
@@ -86,8 +81,11 @@ const ClassDashboardCard: React.FC<ClassDashboardCardProps> = ({
       {/* Bar chart column */}
       <div className="flex flex-col items-center">
         <div 
-          className={`${classColor} w-16 rounded-t-lg shadow-md flex flex-col justify-end items-center transition-all duration-500`} 
-          style={{ height: `${barHeight}px` }}
+          className="w-16 rounded-t-lg shadow-md flex flex-col justify-end items-center transition-all duration-500" 
+          style={{ 
+            height: `${barHeight}px`,
+            backgroundColor: classColorHex 
+          }}
         >
           {/* Streak indicator dots - shown for top 3 ranks */}
           <div className="w-full flex justify-center items-center pb-1">
