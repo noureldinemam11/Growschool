@@ -504,16 +504,7 @@ export default function UserManagement() {
                 </div>
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="email">Email (Optional)</Label>
-                <Input 
-                  id="email" 
-                  type="email" 
-                  placeholder="Enter email address (optional)" 
-                  value={createFormData.email}
-                  onChange={(e) => setCreateFormData({...createFormData, email: e.target.value})}
-                />
-              </div>
+              {/* Email field removed as requested */}
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
