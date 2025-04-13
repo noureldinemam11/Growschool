@@ -341,9 +341,9 @@ export default function PodPage() {
                     </div>
                     
                     {/* Bar chart container for classes */}
-                    <div className="bg-slate-50 p-4 rounded-lg relative">
-                      {/* Competition banner */}
-                      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-2 px-4 rounded-t-lg mb-4 -mt-1 -mx-1 text-center font-bold text-sm shadow-md flex items-center justify-center">
+                    <div className="bg-white p-4 rounded-lg relative">
+                      {/* Competition banner - styled like the reference image */}
+                      <div className="bg-blue-600 text-white py-2 px-4 rounded-t-lg mb-4 -mt-1 -mx-1 text-center font-bold text-sm shadow-md flex items-center justify-center">
                         <Trophy className="h-4 w-4 mr-2" />
                         THIS WEEK'S CLASS COMPETITION
                         <Trophy className="h-4 w-4 ml-2" />
@@ -399,8 +399,8 @@ export default function PodPage() {
                             })()}
                           </div>
                           
-                          {/* Winner ribbon for 1st place */}
-                          <div className="absolute top-12 left-1/2 transform -translate-x-1/2 bg-yellow-400 text-xs text-yellow-900 font-bold py-0.5 px-3 rounded-full shadow-md">
+                          {/* Winner ribbon for 1st place - styled like the reference image */}
+                          <div className="absolute top-12 left-1/2 transform -translate-x-1/2 bg-yellow-400 text-xs text-yellow-900 font-bold py-0.5 px-4 rounded-full shadow-md">
                             1st PLACE WINS EXTRA REWARD!
                           </div>
                           
