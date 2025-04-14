@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Trophy } from 'lucide-react';
 import { Class } from '@shared/schema';
 import { motion, AnimatePresence } from 'framer-motion';
+import { globalEventBus } from '@/lib/queryClient';
 
 interface ClassDashboardCardProps {
   classItem: Class;
@@ -66,7 +67,49 @@ const ClassDashboardCard: React.FC<ClassDashboardCardProps> = ({
       }
     }
     prevPointsRef.current = points;
+    setPrevPoints(points);
   }, [points]);
+  
+  // Listen for global events to trigger animations even when the prop doesn't change
+  // This is crucial for real-time updates across components
+  useEffect(() => {
+    // Listen for class-specific updates
+    const handleClassUpdated = () => {
+      // Trigger animation effect even without prop changes
+      setShowPointsChange(true);
+      
+      setTimeout(() => {
+        setShowPointsChange(false);
+      }, 1500);
+    };
+    
+    // Listen for global point updates
+    const handlePointsUpdated = () => {
+      // For any global point updates, check if they might affect this class
+      // and gently animate the bar to draw attention
+      const animateBar = () => {
+        const pointsElement = document.querySelector(`[data-class-id="${classItem.id}"] .points-value`);
+        if (pointsElement) {
+          pointsElement.classList.add('animate-pulse');
+          setTimeout(() => {
+            pointsElement.classList.remove('animate-pulse');
+          }, 1000);
+        }
+      };
+      
+      animateBar();
+    };
+    
+    // Subscribe to events
+    globalEventBus.subscribe(`class-${classItem.id}-updated`, handleClassUpdated);
+    globalEventBus.subscribe('points-updated', handlePointsUpdated);
+    
+    return () => {
+      // Clean up subscriptions
+      globalEventBus.unsubscribe(`class-${classItem.id}-updated`, handleClassUpdated);
+      globalEventBus.unsubscribe('points-updated', handlePointsUpdated);
+    };
+  }, [classItem.id]);
 
   // Get medal badge for top 3 - these are based on rank, not class positions
   const getMedalBadge = () => {
@@ -93,7 +136,7 @@ const ClassDashboardCard: React.FC<ClassDashboardCardProps> = ({
   };
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center" data-class-id={classItem.id}>
       {/* Points circle with medal badge */}
       <div className="relative">
         <motion.div 
@@ -107,6 +150,7 @@ const ClassDashboardCard: React.FC<ClassDashboardCardProps> = ({
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
+            className="points-value"
           >
             {points}
           </motion.span>

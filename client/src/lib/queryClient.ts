@@ -51,14 +51,30 @@ export const globalEventBus = {
     }
     this.listeners.get(event)?.add(callback);
     
-    return () => {
-      this.listeners.get(event)?.delete(callback);
-    };
+    // Old method returned a function, but now we're using explicit unsubscribe
+    return callback;
+  },
+  
+  unsubscribe(event: string, callback: () => void) {
+    this.listeners.get(event)?.delete(callback);
+    
+    // If no more listeners for this event, clean up the set
+    if (this.listeners.get(event)?.size === 0) {
+      this.listeners.delete(event);
+    }
   },
   
   publish(event: string) {
+    console.log(`Publishing event: ${event}`);
+    
     if (this.listeners.has(event)) {
-      this.listeners.get(event)?.forEach(callback => callback());
+      this.listeners.get(event)?.forEach(callback => {
+        try {
+          callback();
+        } catch (error) {
+          console.error(`Error in event handler for ${event}:`, error);
+        }
+      });
     }
     
     // Invalidate any related queries to ensure data refresh
@@ -76,10 +92,16 @@ export const globalEventBus = {
       queryClient.invalidateQueries({ queryKey: ['/api/pods'] }); // Pods may need refresh due to class changes
       queryClient.invalidateQueries({ queryKey: ['/api/classes-top-students'] });
     } else if (event === 'points-updated') {
+      // Immediately force refetch the most critical data
+      queryClient.refetchQueries({ queryKey: ['/api/behavior-points/recent'] });
+      queryClient.refetchQueries({ queryKey: ['/api/users/role/student'] });
+      
+      // Then invalidate all related queries to ensure they update on their next poll
       queryClient.invalidateQueries({ queryKey: ['/api/behavior-points'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/houses'] }); // Houses may need refresh due to point changes
-      queryClient.invalidateQueries({ queryKey: ['/api/pods'] }); // Pods may need refresh due to point changes
-      queryClient.invalidateQueries({ queryKey: ['/api/classes/points'] }); // Update class points immediately
+      queryClient.invalidateQueries({ queryKey: ['/api/behavior-points/recent'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/houses'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/pods'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/classes/points'] });
       queryClient.invalidateQueries({ queryKey: ['/api/classes-top-students'] });
       queryClient.invalidateQueries({ queryKey: ['/api/pods-top-students'] });
     }
