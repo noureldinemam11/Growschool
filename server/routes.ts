@@ -530,6 +530,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertBehaviorPointSchema.parse(req.body);
       const behaviorPoint = await storage.createBehaviorPoint(validatedData);
+      
+      // Broadcast WebSocket event for real-time updates
+      broadcastEvent(EventTypes.POINTS_UPDATED, {
+        point: behaviorPoint,
+        studentId: behaviorPoint.studentId
+      });
+      
       res.status(201).json(behaviorPoint);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -568,6 +575,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           console.log("Processing point:", pointData);
           const point = await storage.createBehaviorPoint(pointData);
+          
+          // Broadcast WebSocket event for each point created
+          broadcastEvent(EventTypes.POINTS_UPDATED, {
+            point: point,
+            studentId: point.studentId
+          });
+          
           createdPoints.push(point);
         } catch (error) {
           console.error("Error creating individual point:", error);
