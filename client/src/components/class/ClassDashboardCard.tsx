@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Trophy } from 'lucide-react';
 import { Class } from '@shared/schema';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface ClassDashboardCardProps {
   classItem: Class;
@@ -15,6 +16,12 @@ const ClassDashboardCard: React.FC<ClassDashboardCardProps> = ({
   rank,
   maxPoints = 100 // Default max points for scale
 }) => {
+  // Track previous and current points for animation
+  const [prevPoints, setPrevPoints] = useState(points);
+  const [showPointsChange, setShowPointsChange] = useState(false);
+  const [pointsDiff, setPointsDiff] = useState(0);
+  const prevPointsRef = useRef(points);
+  
   // Get color for the class - either from database or fallback
   const getClassColor = () => {
     // First priority: use the color from the database
@@ -40,6 +47,26 @@ const ClassDashboardCard: React.FC<ClassDashboardCardProps> = ({
   // Calculate bar height based on points (min 40px height even for 0 points)
   const heightPercentage = Math.max(15, (points / maxPoints) * 100);
   const barHeight = points === 0 ? 40 : Math.max(40, heightPercentage * 1.6); // Scale appropriately with minimum height
+  
+  // Check for points changes and display animation
+  useEffect(() => {
+    if (prevPointsRef.current !== points) {
+      // Calculate the difference for the animation
+      const diff = points - prevPointsRef.current;
+      if (diff !== 0) {
+        setPointsDiff(diff);
+        setShowPointsChange(true);
+        
+        // Hide the animation after 1.5 seconds
+        const timeout = setTimeout(() => {
+          setShowPointsChange(false);
+        }, 1500);
+        
+        return () => clearTimeout(timeout);
+      }
+    }
+    prevPointsRef.current = points;
+  }, [points]);
 
   // Get medal badge for top 3 - these are based on rank, not class positions
   const getMedalBadge = () => {
@@ -69,22 +96,50 @@ const ClassDashboardCard: React.FC<ClassDashboardCardProps> = ({
     <div className="flex flex-col items-center">
       {/* Points circle with medal badge */}
       <div className="relative">
-        <div 
+        <motion.div 
           className="w-14 h-14 rounded-full flex items-center justify-center mb-1 text-white font-bold text-xl shadow-md"
           style={{ backgroundColor: classColorHex }}
+          animate={{ scale: showPointsChange ? [1, 1.15, 1] : 1 }}
+          transition={{ duration: 0.5 }}
         >
-          {points}
-        </div>
+          <motion.span
+            key={points}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {points}
+          </motion.span>
+        </motion.div>
+        
+        {/* Points change indicator - shows a floating number */}
+        <AnimatePresence>
+          {showPointsChange && (
+            <motion.div
+              initial={{ opacity: 0, y: 0 }}
+              animate={{ opacity: 1, y: -20 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5 }}
+              className={`absolute -top-2 left-1/2 transform -translate-x-1/2 font-bold text-sm ${
+                pointsDiff > 0 ? 'text-green-500' : 'text-red-500'
+              }`}
+            >
+              {pointsDiff > 0 ? `+${pointsDiff}` : pointsDiff}
+            </motion.div>
+          )}
+        </AnimatePresence>
+        
         {getMedalBadge()}
       </div>
       
       {/* Bar chart column */}
       <div className="flex flex-col items-center">
-        <div 
-          className="w-16 rounded-t-lg shadow-md flex flex-col justify-end items-center transition-all duration-500" 
-          style={{ 
-            height: `${barHeight}px`,
-            backgroundColor: classColorHex 
+        <motion.div 
+          className="w-16 rounded-t-lg shadow-md flex flex-col justify-end items-center"
+          style={{ backgroundColor: classColorHex }}
+          animate={{ 
+            height: barHeight,
+            transition: { type: "spring", stiffness: 300, damping: 20 }
           }}
         >
           {/* Streak indicator dots - shown for top 3 ranks */}
@@ -97,7 +152,7 @@ const ClassDashboardCard: React.FC<ClassDashboardCardProps> = ({
               </div>
             )}
           </div>
-        </div>
+        </motion.div>
         
         {/* Class name and grade level */}
         <div className="text-center mt-2 w-full">

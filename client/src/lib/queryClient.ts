@@ -64,9 +64,24 @@ export const globalEventBus = {
     // Invalidate any related queries to ensure data refresh
     if (event === 'house-updated') {
       queryClient.invalidateQueries({ queryKey: ['/api/houses'] });
+    } else if (event === 'pod-updated') {
+      queryClient.invalidateQueries({ queryKey: ['/api/pods'] });
+      // Also invalidate any related class queries
+      queryClient.invalidateQueries({ queryKey: ['/api/classes'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/classes/points'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/classes-top-students'] });
+    } else if (event === 'class-updated') {
+      queryClient.invalidateQueries({ queryKey: ['/api/classes'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/classes/points'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/pods'] }); // Pods may need refresh due to class changes
+      queryClient.invalidateQueries({ queryKey: ['/api/classes-top-students'] });
     } else if (event === 'points-updated') {
       queryClient.invalidateQueries({ queryKey: ['/api/behavior-points'] });
       queryClient.invalidateQueries({ queryKey: ['/api/houses'] }); // Houses may need refresh due to point changes
+      queryClient.invalidateQueries({ queryKey: ['/api/pods'] }); // Pods may need refresh due to point changes
+      queryClient.invalidateQueries({ queryKey: ['/api/classes/points'] }); // Update class points immediately
+      queryClient.invalidateQueries({ queryKey: ['/api/classes-top-students'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/pods-top-students'] });
     }
   }
 };

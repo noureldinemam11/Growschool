@@ -93,7 +93,7 @@ export default function PodPage() {
   }, [podId]);
   
   // Fetch class points
-  useEffect(() => {
+  const fetchClassPoints = () => {
     if (classes.length > 0) {
       setIsLoadingClassPoints(true);
       // Fetch class points from API
@@ -108,6 +108,31 @@ export default function PodPage() {
           setIsLoadingClassPoints(false);
         });
     }
+  };
+  
+  // Initial fetch of class points
+  useEffect(() => {
+    fetchClassPoints();
+  }, [classes]);
+  
+  // Listen for points-updated events to refresh points in real-time
+  useEffect(() => {
+    // Subscribe to points-updated and class-updated events
+    const unsubscribePoints = globalEventBus.subscribe('points-updated', () => {
+      console.log('Points updated event received, refreshing class points');
+      fetchClassPoints();
+    });
+    
+    const unsubscribeClass = globalEventBus.subscribe('class-updated', () => {
+      console.log('Class updated event received, refreshing class points');
+      fetchClassPoints();
+    });
+    
+    // Clean up subscription on unmount
+    return () => {
+      unsubscribePoints();
+      unsubscribeClass();
+    };
   }, [classes]);
   
   // Define interfaces for the top student data
