@@ -45,39 +45,54 @@ export default function AwardPointsModal({ onClose, preSelectedStudentId }: Awar
       return await res.json();
     },
     onSuccess: (data) => {
+      const totalPoints = (selectedCategoryRef?.pointValue || 0) * points;
+      const studentIdNum = parseInt(studentId, 10);
+      
+      // Show success toast with animation
       toast({
         title: "Points awarded successfully",
-        description: `${selectedCategoryRef?.pointValue || 0} × ${points} = ${(selectedCategoryRef?.pointValue || 0) * points} points have been awarded to the student.`
+        description: `${selectedCategoryRef?.pointValue || 0} × ${points} = ${totalPoints} points have been awarded to the student.`,
+        className: "animate-in slide-in-from-bottom-5 zoom-in-95 duration-300"
       });
       
-      // Invalidate all affected queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/behavior-points/recent'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/houses'] }); // Refresh house standings
-      queryClient.invalidateQueries({ queryKey: ['/api/classes/points'] }); // Refresh class points
-      queryClient.invalidateQueries({ queryKey: ['/api/pods'] }); // Refresh pod data
-      
-      // Invalidate the selected student's points specifically
-      const studentIdNum = parseInt(studentId, 10);
-      queryClient.invalidateQueries({ 
-        queryKey: ['/api/behavior-points/student', studentIdNum]
-      });
-      
-      // Trigger event bus for immediate UI updates
+      // Immediately trigger events before waiting for invalidation to complete
+      // This provides instant feedback in the UI
       globalEventBus.publish('points-updated');
       globalEventBus.publish(`student-${studentIdNum}-updated`);
       globalEventBus.publish('class-updated');
       globalEventBus.publish('pod-updated');
       
       // Try to send WebSocket message for real-time updates to other users
+      // Do this before invalidating queries for faster propagation
       try {
         sendWebSocketMessage('points-updated', { 
           studentId: studentIdNum,
-          pointsAdded: (selectedCategoryRef?.pointValue || 0) * points
+          pointsAdded: totalPoints,
+          timestamp: new Date().toISOString()
         });
       } catch (error) {
         console.warn('WebSocket message not sent:', error);
       }
       
+      // Force immediate refetch of critical data
+      // This will update the UI with the latest data right away
+      queryClient.fetchQuery({ queryKey: ['/api/behavior-points/recent'] });
+      queryClient.fetchQuery({ queryKey: ['/api/behavior-points/student', studentIdNum] });
+      
+      // Then invalidate all other affected queries
+      queryClient.invalidateQueries({ queryKey: ['/api/behavior-points/recent'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/behavior-points'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/houses'] }); 
+      queryClient.invalidateQueries({ queryKey: ['/api/classes-top-students'] }); 
+      queryClient.invalidateQueries({ queryKey: ['/api/pods-top-students'] }); 
+      queryClient.invalidateQueries({ queryKey: ['/api/classes/points'] }); 
+      queryClient.invalidateQueries({ queryKey: ['/api/pods'] }); 
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/behavior-points/student', studentIdNum]
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/users/role/student'] });
+      
+      // Close the modal
       onClose();
     },
     onError: (error: Error) => {
