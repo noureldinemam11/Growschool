@@ -72,28 +72,43 @@ const ClassDashboardCard: React.FC<ClassDashboardCardProps> = ({
   
   // Listen for global events to trigger animations even when the prop doesn't change
   useEffect(() => {
-    // Simplified handler for both types of updates
-    const handleUpdates = () => {
-      // Only show animation if not already showing
-      if (!showPointsChange) {
+    // Unified handler for all types of point updates
+    const handleAnyPointsUpdate = () => {
+      // Always show animation on global update, regardless of previous state
+      // Calculate the difference again in case it was updated directly
+      const diff = points - prevPointsRef.current;
+      setPointsDiff(diff);
+      
+      // Reset the animation state
+      setShowPointsChange(false);
+      
+      // Trigger animation on next tick to ensure it plays even if there was already an animation
+      setTimeout(() => {
         setShowPointsChange(true);
         
-        // Hide animation after a short time
+        // Hide animation after display time
         setTimeout(() => {
           setShowPointsChange(false);
         }, 1500);
-      }
+      }, 10);
+      
+      // Update reference for next comparison
+      prevPointsRef.current = points;
     };
     
-    // Subscribe to class-specific event - more targeted
-    const classEventName = `class-${classItem.id}-updated`;
-    globalEventBus.subscribe(classEventName, handleUpdates);
+    // Subscribe to multiple events - both global and class-specific
+    const classEventName = `class-${classItem.id}-updated`; // Class-specific event
+    const subscriptions = [
+      globalEventBus.subscribe('points-updated', handleAnyPointsUpdate),
+      globalEventBus.subscribe(classEventName, handleAnyPointsUpdate),
+      globalEventBus.subscribe('class-updated', handleAnyPointsUpdate)
+    ];
     
     return () => {
-      // Clean up subscription
-      globalEventBus.unsubscribe(classEventName, handleUpdates);
+      // Clean up all subscriptions
+      subscriptions.forEach(unsubscribe => unsubscribe());
     };
-  }, [classItem.id, showPointsChange]);
+  }, [classItem.id, points]);
 
   // Get medal badge for top 3 - these are based on rank, not class positions
   const getMedalBadge = () => {
@@ -126,30 +141,50 @@ const ClassDashboardCard: React.FC<ClassDashboardCardProps> = ({
         <motion.div 
           className="w-14 h-14 rounded-full flex items-center justify-center mb-1 text-white font-bold text-xl shadow-md"
           style={{ backgroundColor: classColorHex }}
-          animate={{ scale: showPointsChange ? [1, 1.15, 1] : 1 }}
-          transition={{ duration: 0.5 }}
+          animate={{ 
+            scale: showPointsChange ? [1, 1.2, 1] : 1,
+            boxShadow: showPointsChange 
+              ? ["0px 0px 0px rgba(0,0,0,0.2)", "0px 0px 15px rgba(0,0,0,0.35)", "0px 0px 0px rgba(0,0,0,0.2)"] 
+              : "0px 0px 0px rgba(0,0,0,0.2)"
+          }}
+          transition={{ 
+            duration: 0.5, 
+            type: "spring", 
+            stiffness: 300, 
+            damping: 15 
+          }}
         >
           <motion.span
             key={points}
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ 
+              duration: 0.3,
+              type: "spring"
+            }}
             className="points-value"
           >
             {points}
           </motion.span>
         </motion.div>
         
-        {/* Points change indicator - shows a floating number */}
+        {/* Points change indicator - shows a floating number with enhanced animation */}
         <AnimatePresence>
           {showPointsChange && (
             <motion.div
-              initial={{ opacity: 0, y: 0 }}
-              animate={{ opacity: 1, y: -20 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.5 }}
-              className={`absolute -top-2 left-1/2 transform -translate-x-1/2 font-bold text-sm ${
-                pointsDiff > 0 ? 'text-green-500' : 'text-red-500'
+              initial={{ opacity: 0, y: 0, scale: 0.5 }}
+              animate={{ opacity: 1, y: -25, scale: 1.2 }}
+              exit={{ opacity: 0, y: -40, scale: 0.8 }}
+              transition={{ 
+                duration: 0.8,
+                type: "spring",
+                stiffness: 200,
+                damping: 20
+              }}
+              className={`absolute -top-2 left-1/2 transform -translate-x-1/2 font-bold text-base z-10 px-2 py-0.5 rounded-full ${
+                pointsDiff > 0 
+                  ? 'text-green-600 bg-green-100 border border-green-200' 
+                  : 'text-red-600 bg-red-100 border border-red-200'
               }`}
             >
               {pointsDiff > 0 ? `+${pointsDiff}` : pointsDiff}
@@ -163,13 +198,30 @@ const ClassDashboardCard: React.FC<ClassDashboardCardProps> = ({
       {/* Bar chart column */}
       <div className="flex flex-col items-center">
         <motion.div 
-          className="w-16 rounded-t-lg shadow-md flex flex-col justify-end items-center"
+          className="w-16 rounded-t-lg shadow-md flex flex-col justify-end items-center overflow-hidden"
           style={{ backgroundColor: classColorHex }}
           animate={{ 
             height: barHeight,
-            transition: { type: "spring", stiffness: 300, damping: 20 }
+            boxShadow: showPointsChange 
+              ? ["0px 0px 0px rgba(0,0,0,0.2)", "0px 0px 10px rgba(0,0,0,0.3)", "0px 0px 0px rgba(0,0,0,0.2)"] 
+              : "0px 0px 0px rgba(0,0,0,0.2)"
+          }}
+          transition={{ 
+            type: "spring", 
+            stiffness: 400, 
+            damping: 25,
+            bounce: showPointsChange ? 0.5 : 0.25 // More bounce when points change
           }}
         >
+          {/* Add a pulsing effect when points change */}
+          {showPointsChange && pointsDiff > 0 && (
+            <motion.div
+              className="absolute inset-0 bg-white"
+              initial={{ opacity: 0.7 }}
+              animate={{ opacity: 0 }}
+              transition={{ duration: 0.8 }}
+            />
+          )}
           {/* Streak indicator dots - shown for top 3 ranks */}
           <div className="w-full flex justify-center items-center pb-1">
             {rank < 3 && (
