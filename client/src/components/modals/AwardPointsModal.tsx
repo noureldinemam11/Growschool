@@ -8,9 +8,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { apiRequest, queryClient } from '@/lib/queryClient';
+import { apiRequest, queryClient, globalEventBus } from '@/lib/queryClient';
 import { User, BehaviorCategory } from '@shared/schema';
 import { Loader2, Plus, Minus } from 'lucide-react';
+import { sendWebSocketMessage } from '@/lib/websocket';
 
 interface AwardPointsModalProps {
   onClose: () => void;
@@ -43,20 +44,40 @@ export default function AwardPointsModal({ onClose, preSelectedStudentId }: Awar
       const res = await apiRequest("POST", "/api/behavior-points", data);
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: "Points awarded successfully",
         description: `${selectedCategoryRef?.pointValue || 0} × ${points} = ${(selectedCategoryRef?.pointValue || 0) * points} points have been awarded to the student.`
       });
+      
       // Invalidate all affected queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/behavior-points/recent'] });
       queryClient.invalidateQueries({ queryKey: ['/api/houses'] }); // Refresh house standings
+      queryClient.invalidateQueries({ queryKey: ['/api/classes/points'] }); // Refresh class points
+      queryClient.invalidateQueries({ queryKey: ['/api/pods'] }); // Refresh pod data
       
       // Invalidate the selected student's points specifically
       const studentIdNum = parseInt(studentId, 10);
       queryClient.invalidateQueries({ 
         queryKey: ['/api/behavior-points/student', studentIdNum]
       });
+      
+      // Trigger event bus for immediate UI updates
+      globalEventBus.publish('points-updated');
+      globalEventBus.publish(`student-${studentIdNum}-updated`);
+      globalEventBus.publish('class-updated');
+      globalEventBus.publish('pod-updated');
+      
+      // Try to send WebSocket message for real-time updates to other users
+      try {
+        sendWebSocketMessage('points-updated', { 
+          studentId: studentIdNum,
+          pointsAdded: (selectedCategoryRef?.pointValue || 0) * points
+        });
+      } catch (error) {
+        console.warn('WebSocket message not sent:', error);
+      }
+      
       onClose();
     },
     onError: (error: Error) => {

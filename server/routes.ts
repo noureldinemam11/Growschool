@@ -2169,6 +2169,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
-
+  
+  // Initialize WebSocket server
+  initWebSocket(httpServer);
+  
   return httpServer;
 }

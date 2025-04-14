@@ -23,6 +23,7 @@ import AppHeader from "@/components/ui/AppHeader";
 import MobileNavbar from "@/components/layout/MobileNavbar";
 import AwardPointsModal from "@/components/modals/AwardPointsModal";
 import DeductPointsModal from "@/components/modals/DeductPointsModal";
+import { initWebSocket } from "./lib/websocket";
 
 // Force cache refresh with version number
 console.log("App Version: 1.0.1 - Mobile UI Improvements");
@@ -195,6 +196,14 @@ function App() {
     location.startsWith('/points') || 
     location === '/profile' || 
     location === '/change-password';
+  
+  // Initialize WebSocket connection on app start
+  useEffect(() => {
+    // Only initialize WebSocket if not on auth page
+    if (!location.startsWith('/auth')) {
+      initWebSocket();
+    }
+  }, [location]);
   
   // Set up event listeners for the custom events from StudentDetail component
   useEffect(() => {

@@ -1,14 +1,15 @@
 import { Server } from 'http';
-import WebSocket from 'ws';
+import { WebSocketServer, WebSocket as WSWebSocket } from 'ws';
 import { log } from './vite';
 
-let wss: WebSocket.Server | null = null;
+let wss: WebSocketServer | null = null;
 
 // Initialize WebSocket server
 export function initWebSocket(server: Server) {
-  wss = new WebSocket.Server({ server });
+  // Create WebSocket server on a separate port to avoid conflicts with Vite's WebSocket
+  wss = new WebSocketServer({ port: 5001 });
   
-  wss.on('connection', (ws) => {
+  wss.on('connection', (ws: WSWebSocket) => {
     log('WebSocket client connected');
     
     // Send welcome message
@@ -17,11 +18,12 @@ export function initWebSocket(server: Server) {
       message: 'Connected to school behavior management system'
     }));
     
-    ws.on('message', (message) => {
-      log(`Received WebSocket message: ${message}`);
+    // Use the ws .on method for events
+    ws.addEventListener('message', (event) => {
+      log(`Received WebSocket message: ${event.data}`);
     });
     
-    ws.on('close', () => {
+    ws.addEventListener('close', () => {
       log('WebSocket client disconnected');
     });
   });
@@ -45,8 +47,8 @@ export function broadcastEvent(eventType: string, data: any) {
   
   log(`Broadcasting event: ${eventType}`);
   
-  wss.clients.forEach(client => {
-    if (client.readyState === WebSocket.OPEN) {
+  wss.clients.forEach((client: WSWebSocket) => {
+    if (client.readyState === WSWebSocket.OPEN) {
       client.send(message);
     }
   });
