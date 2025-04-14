@@ -179,7 +179,7 @@ const ClassDashboardCard: React.FC<ClassDashboardCardProps> = ({
         {/* Points change indicator - simplified animation */}
         {showPointsChange && (
           <div
-            className={`absolute -top-2 left-1/2 transform -translate-x-1/2 font-bold text-base z-10 px-2 py-0.5 rounded-full animate-fadeInUp ${
+            className={`absolute -top-2 left-1/2 transform -translate-x-1/2 font-bold text-base z-10 px-2 py-0.5 rounded-full ${
               pointsDiff > 0 
                 ? 'text-green-600 bg-green-100 border border-green-200' 
                 : 'text-red-600 bg-red-100 border border-red-200'
@@ -208,7 +208,7 @@ const ClassDashboardCard: React.FC<ClassDashboardCardProps> = ({
         >
           {/* Simpler flash effect */}
           {showPointsChange && pointsDiff > 0 && (
-            <div className="absolute inset-0 bg-white opacity-30 animate-pulse" />
+            <div className="absolute inset-0 bg-white opacity-30" />
           )}
           {/* Streak indicator dots - shown for top 3 ranks */}
           <div className="w-full flex justify-center items-center pb-1">
