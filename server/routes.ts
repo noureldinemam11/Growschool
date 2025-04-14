@@ -11,6 +11,7 @@ import { insertBehaviorPointSchema, insertRewardRedemptionSchema, userRoles, use
 import { z } from "zod";
 import { fileURLToPath } from "url";
 import { eq } from "drizzle-orm";
+import { initWebSocket, broadcastEvent, EventTypes } from "./websocket";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
