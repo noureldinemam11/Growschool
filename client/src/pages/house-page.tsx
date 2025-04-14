@@ -50,7 +50,7 @@ export default function PodPage() {
   // Get pods data with refresh counter to force refetch
   const { data: pods, isLoading: isLoadingPods, refetch: podRefetch } = useQuery<Pod[]>({
     queryKey: ['/api/pods', refreshCounter],
-    refetchInterval: 2000, // Refresh every 2 seconds to keep data in sync
+    refetchInterval: 1000, // More frequent refresh for real-time data
   });
   
   // State for classes in the selected pod
@@ -166,28 +166,37 @@ export default function PodPage() {
   // Get top students for each pod
   const { data: topStudentsByPod, isLoading: isLoadingTopStudents } = useQuery<TopStudentData[]>({
     queryKey: ['/api/pods-top-students', refreshCounter],
-    refetchInterval: 2000, // Refresh every 2 seconds to keep data in sync
+    refetchInterval: 1000, // More frequent refresh for real-time data
   });
   
   // Get top students for each class
   const { data: topStudentsByClass, isLoading: isLoadingClassTopStudents } = useQuery<ClassTopStudentData[]>({
     queryKey: ['/api/classes-top-students', refreshCounter],
-    refetchInterval: 2000, // Refresh every 2 seconds to keep data in sync
+    refetchInterval: 1000, // More frequent refresh for real-time data
   });
   
-  // Subscribe to pod-updated events to refresh data immediately
+  // Subscribe to pod-updated and points-updated events to refresh data immediately
   useEffect(() => {
     // Subscribe to pod-updated events
-    const unsubscribe = globalEventBus.subscribe('pod-updated', () => {
+    const unsubscribePod = globalEventBus.subscribe('pod-updated', () => {
       // Increment refresh counter to trigger a refetch
       setRefreshCounter(prev => prev + 1);
       // Also do an explicit refetch for immediate update
       podRefetch();
     });
     
-    // Clean up subscription on unmount
+    // Subscribe to points-updated events
+    const unsubscribePoints = globalEventBus.subscribe('points-updated', () => {
+      // Increment refresh counter to trigger a refetch
+      setRefreshCounter(prev => prev + 1);
+      // Also do an explicit refetch for immediate update
+      podRefetch();
+    });
+    
+    // Clean up subscriptions on unmount
     return () => {
-      unsubscribe();
+      unsubscribePod();
+      unsubscribePoints();
     };
   }, [podRefetch]);
   
