@@ -44,30 +44,37 @@ export function initWebSocket(): WebSocket | null {
       setTimeout(initWebSocket, 5000);
     });
     
-    // Listen for messages
+    // Listen for messages with debouncing to prevent excessive updates
+    let debounceTimers: Record<string, number> = {};
+    
     socket.addEventListener('message', (event) => {
       try {
         const data = JSON.parse(event.data);
+        const eventType = data.type;
         
-        // Dispatch events to the event bus based on message type
-        if (data.type === 'points-updated') {
-          console.log('WebSocket points updated event received:', data);
-          globalEventBus.publish('points-updated');
+        // Skip processing if no valid event type
+        if (!eventType) return;
+        
+        // Clear any pending timers for this event type
+        if (debounceTimers[eventType]) {
+          clearTimeout(debounceTimers[eventType]);
+        }
+        
+        // Set a debounce timer for this event type (100ms)
+        debounceTimers[eventType] = window.setTimeout(() => {
+          console.log(`WebSocket ${eventType} event received`);
+          
+          // Dispatch events to the event bus based on message type
+          globalEventBus.publish(eventType);
           
           // Also invalidate specific student queries if student ID is provided
-          if (data.data && data.data.studentId) {
+          if (data.data && data.data.studentId && eventType === 'points-updated') {
             globalEventBus.publish(`student-${data.data.studentId}-updated`);
           }
-        } else if (data.type === 'pod-updated') {
-          console.log('WebSocket pod updated event received:', data);
-          globalEventBus.publish('pod-updated');
-        } else if (data.type === 'class-updated') {
-          console.log('WebSocket class updated event received:', data);
-          globalEventBus.publish('class-updated');
-        } else if (data.type === 'house-updated') {
-          console.log('WebSocket house updated event received:', data);
-          globalEventBus.publish('house-updated');
-        }
+          
+          // Clear the timer reference
+          delete debounceTimers[eventType];
+        }, 100);
       } catch (error) {
         console.error('Error processing WebSocket message:', error);
       }

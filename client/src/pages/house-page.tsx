@@ -172,37 +172,56 @@ export default function PodPage() {
     staleTime: 0, // Consider data immediately stale for fresh fetches
   });
   
-  // Subscribe to events for updating all data immediately in a single effect
+  // Subscribe to events for updating data - optimized for performance
   useEffect(() => {
+    // Debounce the updates to prevent excessive refreshes
+    let debounceTimer: number | null = null;
+    
     // Create a single handler for any update events
     const handleAnyUpdate = () => {
-      console.log('Global update event received - refreshing all data');
+      // Clear any pending update
+      if (debounceTimer) {
+        window.clearTimeout(debounceTimer);
+      }
       
-      // Immediate refetch for all main data sources
-      podRefetch();
-      refetchClassPoints();
-      refetchPodTopStudents();
-      refetchClassTopStudents();
+      // Set a new timer for delayed update (200ms)
+      debounceTimer = window.setTimeout(() => {
+        console.log('Debounced update triggered - refreshing data');
+        
+        // Immediate refetch for main data sources
+        podRefetch();
+        refetchClassPoints();
+        
+        // Only refetch top students if we're displaying them (podId is set)
+        if (podId) {
+          refetchPodTopStudents();
+          refetchClassTopStudents();
+        }
+        
+        debounceTimer = null;
+      }, 200);
     };
     
-    // Subscribe to all relevant events with the same handler
-    const unsubscribePod = globalEventBus.subscribe('pod-updated', handleAnyUpdate);
+    // Subscribe only to the most critical events
     const unsubscribePoints = globalEventBus.subscribe('points-updated', handleAnyUpdate);
     const unsubscribeClass = globalEventBus.subscribe('class-updated', handleAnyUpdate);
-    const unsubscribeHouse = globalEventBus.subscribe('house-updated', handleAnyUpdate);
     
-    // Also listen for WebSocket connection events to trigger updates when reconnected
+    // WebSocket reconnection should trigger a refresh
     const unsubscribeConnection = globalEventBus.subscribe('websocket-connected', handleAnyUpdate);
     
-    // Clean up all subscriptions on unmount
+    // Clean up
     return () => {
-      unsubscribePod();
+      // Clear any pending timer
+      if (debounceTimer) {
+        window.clearTimeout(debounceTimer);
+      }
+      
+      // Unsubscribe from events
       unsubscribePoints();
       unsubscribeClass();
-      unsubscribeHouse();
       unsubscribeConnection();
     };
-  }, [podRefetch, refetchClassPoints, refetchPodTopStudents, refetchClassTopStudents]);
+  }, [podRefetch, refetchClassPoints, refetchPodTopStudents, refetchClassTopStudents, podId]);
   
 
 
