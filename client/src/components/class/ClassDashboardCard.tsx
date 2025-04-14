@@ -71,45 +71,29 @@ const ClassDashboardCard: React.FC<ClassDashboardCardProps> = ({
   }, [points]);
   
   // Listen for global events to trigger animations even when the prop doesn't change
-  // This is crucial for real-time updates across components
   useEffect(() => {
-    // Listen for class-specific updates
-    const handleClassUpdated = () => {
-      // Trigger animation effect even without prop changes
-      setShowPointsChange(true);
-      
-      setTimeout(() => {
-        setShowPointsChange(false);
-      }, 1500);
+    // Simplified handler for both types of updates
+    const handleUpdates = () => {
+      // Only show animation if not already showing
+      if (!showPointsChange) {
+        setShowPointsChange(true);
+        
+        // Hide animation after a short time
+        setTimeout(() => {
+          setShowPointsChange(false);
+        }, 1500);
+      }
     };
     
-    // Listen for global point updates
-    const handlePointsUpdated = () => {
-      // For any global point updates, check if they might affect this class
-      // and gently animate the bar to draw attention
-      const animateBar = () => {
-        const pointsElement = document.querySelector(`[data-class-id="${classItem.id}"] .points-value`);
-        if (pointsElement) {
-          pointsElement.classList.add('animate-pulse');
-          setTimeout(() => {
-            pointsElement.classList.remove('animate-pulse');
-          }, 1000);
-        }
-      };
-      
-      animateBar();
-    };
-    
-    // Subscribe to events
-    globalEventBus.subscribe(`class-${classItem.id}-updated`, handleClassUpdated);
-    globalEventBus.subscribe('points-updated', handlePointsUpdated);
+    // Subscribe to class-specific event - more targeted
+    const classEventName = `class-${classItem.id}-updated`;
+    globalEventBus.subscribe(classEventName, handleUpdates);
     
     return () => {
-      // Clean up subscriptions
-      globalEventBus.unsubscribe(`class-${classItem.id}-updated`, handleClassUpdated);
-      globalEventBus.unsubscribe('points-updated', handlePointsUpdated);
+      // Clean up subscription
+      globalEventBus.unsubscribe(classEventName, handleUpdates);
     };
-  }, [classItem.id]);
+  }, [classItem.id, showPointsChange]);
 
   // Get medal badge for top 3 - these are based on rank, not class positions
   const getMedalBadge = () => {

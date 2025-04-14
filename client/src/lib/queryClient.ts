@@ -42,8 +42,19 @@ export const getQueryFn: <T>(options: {
   };
 
 // Create a global event bus for real-time updates
-export const globalEventBus = {
+interface EventBus {
+  listeners: Map<string, Set<() => void>>;
+  lastEventTime: Record<string, number>;
+  subscribe(event: string, callback: () => void): () => void;
+  unsubscribe(event: string, callback: () => void): void;
+  publish(event: string): void;
+}
+
+export const globalEventBus: EventBus = {
   listeners: new Map<string, Set<() => void>>(),
+  
+  // Track last event time to prevent spamming
+  lastEventTime: {} as Record<string, number>,
   
   subscribe(event: string, callback: () => void) {
     if (!this.listeners.has(event)) {
@@ -51,7 +62,7 @@ export const globalEventBus = {
     }
     this.listeners.get(event)?.add(callback);
     
-    // Old method returned a function, but now we're using explicit unsubscribe
+    // Return the callback for consistency
     return callback;
   },
   
@@ -64,9 +75,21 @@ export const globalEventBus = {
     }
   },
   
+  // Function to conditionally publish events with throttling
   publish(event: string) {
+    const now = Date.now();
+    const lastTime = this.lastEventTime[event] || 0;
+    
+    // Throttle events to prevent performance issues (only process if > 1s since last event)
+    if (now - lastTime < 1000) {
+      return; // Skip this event if we just processed one like it
+    }
+    
+    // Update last event time
+    this.lastEventTime[event] = now;
     console.log(`Publishing event: ${event}`);
     
+    // Notify event subscribers
     if (this.listeners.has(event)) {
       this.listeners.get(event)?.forEach(callback => {
         try {
@@ -77,33 +100,35 @@ export const globalEventBus = {
       });
     }
     
-    // Invalidate any related queries to ensure data refresh
+    // Handle data updates selectively based on event type
     if (event === 'house-updated') {
+      // Only refresh house data
       queryClient.invalidateQueries({ queryKey: ['/api/houses'] });
-    } else if (event === 'pod-updated') {
-      queryClient.invalidateQueries({ queryKey: ['/api/pods'] });
-      // Also invalidate any related class queries
-      queryClient.invalidateQueries({ queryKey: ['/api/classes'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/classes/points'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/classes-top-students'] });
-    } else if (event === 'class-updated') {
-      queryClient.invalidateQueries({ queryKey: ['/api/classes'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/classes/points'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/pods'] }); // Pods may need refresh due to class changes
-      queryClient.invalidateQueries({ queryKey: ['/api/classes-top-students'] });
-    } else if (event === 'points-updated') {
-      // Immediately force refetch the most critical data
-      queryClient.refetchQueries({ queryKey: ['/api/behavior-points/recent'] });
-      queryClient.refetchQueries({ queryKey: ['/api/users/role/student'] });
       
-      // Then invalidate all related queries to ensure they update on their next poll
-      queryClient.invalidateQueries({ queryKey: ['/api/behavior-points'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/behavior-points/recent'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/houses'] });
+    } else if (event === 'pod-updated') {
+      // Only refresh pod data
       queryClient.invalidateQueries({ queryKey: ['/api/pods'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/classes/points'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/classes-top-students'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/pods-top-students'] });
+      
+    } else if (event === 'class-updated') {
+      // Only refresh class data
+      queryClient.invalidateQueries({ queryKey: ['/api/classes'] });
+      
+    } else if (event === 'points-updated') {
+      // For points updates, only refresh the most critical data
+      // Use setTimeout to stagger the updates and prevent UI jank
+      setTimeout(() => {
+        queryClient.refetchQueries({ queryKey: ['/api/behavior-points/recent'] });
+      }, 0);
+      
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['/api/behavior-points'] });
+      }, 500);
+      
+      // Delay less critical updates further
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['/api/classes-top-students'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/pods-top-students'] });
+      }, 1000);
     }
   }
 };
@@ -112,17 +137,15 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: getQueryFn({ on401: "throw" }),
-      refetchInterval: 1000, // Reduced to 1 second for more responsive updates
+      refetchInterval: 5000, // Increased to 5 seconds to reduce server load
       refetchOnWindowFocus: true,
-      staleTime: 0, // Set stale time to 0 to make data always refetch
+      staleTime: 2000, // Add 2 seconds stale time to reduce unnecessary fetches
       retry: 1,
     },
     mutations: {
       retry: 1,
       onSuccess: () => {
-        // Force refresh all essential data whenever any mutation succeeds
-        queryClient.invalidateQueries({ queryKey: ['/api/houses'] });
-        queryClient.invalidateQueries({ queryKey: ['/api/behavior-points'] });
+        // Only invalidate queries as needed, controlled by the event bus
       },
     },
   },
