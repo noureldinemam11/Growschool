@@ -223,7 +223,7 @@ export class MemStorage implements IStorage {
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(
-      (user) => user.username === username
+      (user) => user.username.toLowerCase() === username.toLowerCase()
     );
   }
 
@@ -1105,7 +1105,7 @@ export class DatabaseStorage implements IStorage {
       const client = await pool.connect();
       try {
         const result = await client.query(
-          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", pod_id AS "podId", class_id AS "classId" FROM users WHERE username = $1',
+          'SELECT id, username, password, first_name AS "firstName", last_name AS "lastName", role, email, grade_level AS "gradeLevel", section, parent_id AS "parentId", pod_id AS "podId", class_id AS "classId" FROM users WHERE LOWER(username) = LOWER($1)',
           [username]
         );
         

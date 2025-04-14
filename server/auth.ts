@@ -48,6 +48,7 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
+        // getUserByUsername now handles case insensitivity internally
         const user = await storage.getUserByUsername(username);
         
         // Check if user exists and password is correct
@@ -81,6 +82,7 @@ export function setupAuth(app: Express) {
 
   app.post("/api/register", async (req, res, next) => {
     try {
+      // Check for existing username (case insensitive check already handled in storage.getUserByUsername)
       const existingUser = await storage.getUserByUsername(req.body.username);
       if (existingUser) {
         return res.status(400).send("Username already exists");
