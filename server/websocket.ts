@@ -1,13 +1,18 @@
 import { Server } from 'http';
 import { WebSocketServer, WebSocket as WSWebSocket } from 'ws';
 import { log } from './vite';
+import express from 'express';
 
 let wss: WebSocketServer | null = null;
 
 // Initialize WebSocket server
 export function initWebSocket(server: Server) {
-  // Create WebSocket server on a separate port to avoid conflicts with Vite's WebSocket
-  wss = new WebSocketServer({ port: 5001 });
+  // Create WebSocket server using the same HTTP server but at path /ws
+  // This avoids port conflicts in Replit environment
+  wss = new WebSocketServer({ 
+    server: server,
+    path: '/ws'
+  });
   
   wss.on('connection', (ws: WSWebSocket) => {
     log('WebSocket client connected');

@@ -47,17 +47,15 @@ export default function PodPage() {
     };
   }, [isFullscreen]);
   
-  // Get pods data with refresh counter to force refetch
+  // Get pods data with immediate updates on demand
   const { data: pods, isLoading: isLoadingPods, refetch: podRefetch } = useQuery<Pod[]>({
-    queryKey: ['/api/pods', refreshCounter],
-    refetchInterval: 1000, // More frequent refresh for real-time data
+    queryKey: ['/api/pods'],
+    staleTime: 0, // Consider data immediately stale to ensure fresh fetches
   });
   
   // State for classes in the selected pod
   const [classes, setClasses] = useState<any[]>([]);
   const [isLoadingClasses, setIsLoadingClasses] = useState(true);
-  const [classPoints, setClassPoints] = useState<Record<number, number>>({});
-  const [isLoadingClassPoints, setIsLoadingClassPoints] = useState(true);
   
   // Get pod ID from URL query params
   const params = new URLSearchParams(window.location.search);
@@ -92,48 +90,39 @@ export default function PodPage() {
     }
   }, [podId]);
   
-  // Fetch class points
-  const fetchClassPoints = () => {
-    if (classes.length > 0) {
-      setIsLoadingClassPoints(true);
-      // Fetch class points from API
-      fetch(`/api/classes/points`)
-        .then(res => res.json())
-        .then(data => {
-          setClassPoints(data);
-          setIsLoadingClassPoints(false);
-        })
-        .catch(err => {
-          console.error("Error fetching class points:", err);
-          setIsLoadingClassPoints(false);
-        });
-    }
-  };
+  // Fetch class points using React Query for immediate updates
+  const { 
+    data: classPointsData = {}, 
+    isLoading: isLoadingClassPoints,
+    refetch: refetchClassPoints
+  } = useQuery<Record<number, number>>({
+    queryKey: ['/api/classes/points'],
+    enabled: classes.length > 0,
+    staleTime: 0, // Consider data always stale to ensure fresh fetches
+  });
   
-  // Initial fetch of class points
-  useEffect(() => {
-    fetchClassPoints();
-  }, [classes]);
+  // Set class points from the query result
+  const classPoints = classPointsData;
   
-  // Listen for points-updated events to refresh points in real-time
+  // Listen for points-updated events to refresh points in real-time with immediate update
   useEffect(() => {
-    // Subscribe to points-updated and class-updated events
-    const unsubscribePoints = globalEventBus.subscribe('points-updated', () => {
-      console.log('Points updated event received, refreshing class points');
-      fetchClassPoints();
-    });
+    // Force immediate refetch when points are updated
+    const handlePointsUpdate = () => {
+      console.log('Points update event received - immediately refreshing class points');
+      // Force an immediate refetch
+      refetchClassPoints();
+    };
     
-    const unsubscribeClass = globalEventBus.subscribe('class-updated', () => {
-      console.log('Class updated event received, refreshing class points');
-      fetchClassPoints();
-    });
+    // Subscribe to various update events
+    const unsubscribePoints = globalEventBus.subscribe('points-updated', handlePointsUpdate);
+    const unsubscribeClass = globalEventBus.subscribe('class-updated', handlePointsUpdate);
     
     // Clean up subscription on unmount
     return () => {
       unsubscribePoints();
       unsubscribeClass();
     };
-  }, [classes]);
+  }, [refetchClassPoints]);
   
   // Define interfaces for the top student data
   interface TopStudentData {
@@ -164,41 +153,56 @@ export default function PodPage() {
   }
   
   // Get top students for each pod
-  const { data: topStudentsByPod, isLoading: isLoadingTopStudents } = useQuery<TopStudentData[]>({
-    queryKey: ['/api/pods-top-students', refreshCounter],
-    refetchInterval: 1000, // More frequent refresh for real-time data
+  const { 
+    data: topStudentsByPod, 
+    isLoading: isLoadingTopStudents,
+    refetch: refetchPodTopStudents
+  } = useQuery<TopStudentData[]>({
+    queryKey: ['/api/pods-top-students'],
+    staleTime: 0, // Consider data immediately stale for fresh fetches
   });
   
   // Get top students for each class
-  const { data: topStudentsByClass, isLoading: isLoadingClassTopStudents } = useQuery<ClassTopStudentData[]>({
-    queryKey: ['/api/classes-top-students', refreshCounter],
-    refetchInterval: 1000, // More frequent refresh for real-time data
+  const { 
+    data: topStudentsByClass, 
+    isLoading: isLoadingClassTopStudents,
+    refetch: refetchClassTopStudents
+  } = useQuery<ClassTopStudentData[]>({
+    queryKey: ['/api/classes-top-students'],
+    staleTime: 0, // Consider data immediately stale for fresh fetches
   });
   
-  // Subscribe to pod-updated and points-updated events to refresh data immediately
+  // Subscribe to events for updating all data immediately in a single effect
   useEffect(() => {
-    // Subscribe to pod-updated events
-    const unsubscribePod = globalEventBus.subscribe('pod-updated', () => {
-      // Increment refresh counter to trigger a refetch
-      setRefreshCounter(prev => prev + 1);
-      // Also do an explicit refetch for immediate update
+    // Create a single handler for any update events
+    const handleAnyUpdate = () => {
+      console.log('Global update event received - refreshing all data');
+      
+      // Immediate refetch for all main data sources
       podRefetch();
-    });
+      refetchClassPoints();
+      refetchPodTopStudents();
+      refetchClassTopStudents();
+    };
     
-    // Subscribe to points-updated events
-    const unsubscribePoints = globalEventBus.subscribe('points-updated', () => {
-      // Increment refresh counter to trigger a refetch
-      setRefreshCounter(prev => prev + 1);
-      // Also do an explicit refetch for immediate update
-      podRefetch();
-    });
+    // Subscribe to all relevant events with the same handler
+    const unsubscribePod = globalEventBus.subscribe('pod-updated', handleAnyUpdate);
+    const unsubscribePoints = globalEventBus.subscribe('points-updated', handleAnyUpdate);
+    const unsubscribeClass = globalEventBus.subscribe('class-updated', handleAnyUpdate);
+    const unsubscribeHouse = globalEventBus.subscribe('house-updated', handleAnyUpdate);
     
-    // Clean up subscriptions on unmount
+    // Also listen for WebSocket connection events to trigger updates when reconnected
+    const unsubscribeConnection = globalEventBus.subscribe('websocket-connected', handleAnyUpdate);
+    
+    // Clean up all subscriptions on unmount
     return () => {
       unsubscribePod();
       unsubscribePoints();
+      unsubscribeClass();
+      unsubscribeHouse();
+      unsubscribeConnection();
     };
-  }, [podRefetch]);
+  }, [podRefetch, refetchClassPoints, refetchPodTopStudents, refetchClassTopStudents]);
   
 
 

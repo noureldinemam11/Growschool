@@ -12,9 +12,12 @@ export function initWebSocket(): WebSocket | null {
   
   // Determine the WebSocket URL based on the current host
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  // Use port 5001 for our custom WebSocket server
+  // For Replit environment, we need to use the same hostname but with the proper port
   const host = window.location.hostname;
-  const wsUrl = `${protocol}//${host}:5001`;
+  
+  // On Replit, use the main domain with the special WebSocket path
+  // This is more reliable than trying to use a separate port which may be blocked
+  const wsUrl = `${protocol}//${host}/ws`;
   
   try {
     // Create new WebSocket connection
@@ -23,6 +26,8 @@ export function initWebSocket(): WebSocket | null {
     // Connection opened
     socket.addEventListener('open', () => {
       console.log('WebSocket connection established');
+      // Publish an event when WebSocket connects/reconnects
+      globalEventBus.publish('websocket-connected');
     });
     
     // Connection closed
