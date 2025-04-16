@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
+import { useLocation } from 'wouter';
 
 // Direct batch points assignment implementation
 import {
@@ -32,6 +33,7 @@ export default function StudentGrid({ onSelectStudent, selectedDate, teacherFilt
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   
   // State for student selection
   const [selectedStudentIds, setSelectedStudentIds] = useState<number[]>([]);
@@ -203,6 +205,9 @@ export default function StudentGrid({ onSelectStudent, selectedDate, teacherFilt
       queryClient.invalidateQueries({ queryKey: ['/api/behavior-points/recent'] });
       queryClient.invalidateQueries({ queryKey: ['/api/behavior-points/teacher'] });
       queryClient.invalidateQueries({ queryKey: ['/api/houses'] });
+      
+      // Navigate back to the dashboard/home page after successful completion
+      setLocation('/');
     } catch (error) {
       toast({
         title: "Error assigning points",
