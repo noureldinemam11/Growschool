@@ -12,6 +12,8 @@ import type {
 import createMemoryStore from "memorystore";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
+import connectRedis from "connect-redis";
+import IORedis from "ioredis";
 import { and, eq, desc } from "drizzle-orm";
 import { db, pool } from "./db";
 
@@ -36,6 +38,7 @@ function ensureUserType(user: any): User {
 // Create session stores
 const MemoryStore = createMemoryStore(session);
 const PostgresSessionStore = connectPg(session);
+const RedisSessionFactory = connectRedis;
 
 export interface IStorage {
   // User management
@@ -148,9 +151,22 @@ export class MemStorage implements IStorage {
     this.redemptionCurrentId = 1;
     this.incidentCurrentId = 1;
     
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000 // 24 hours
-    });
+    // Prefer Redis when REDIS_URL is provided (production)
+    if (process.env.REDIS_URL) {
+      try {
+        const redisClient = new IORedis(process.env.REDIS_URL);
+        const RedisStore = RedisSessionFactory(session);
+        this.sessionStore = new RedisStore({ client: redisClient });
+        console.log("Using Redis session store");
+      } catch (err) {
+        console.error("Failed to initialize Redis session store, falling back to MemoryStore:", err);
+        this.sessionStore = new MemoryStore({ checkPeriod: 86400000 });
+      }
+    } else {
+      this.sessionStore = new MemoryStore({
+        checkPeriod: 86400000 // 24 hours
+      });
+    }
     
     // Initialize with demo data
     // We can't make the constructor async, so we call the function

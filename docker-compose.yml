@@ -1,0 +1,23 @@
+version: '3.8'
+services:
+  app:
+    build: .
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    depends_on: [] # if you add a DB service here, list it
+
+  # Example Postgres service for local testing (optional)
+  # db:
+  #   image: postgres:15
+  #   environment:
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: postgres
+  #     POSTGRES_DB: neondb
+  #   volumes:
+  #     - db-data:/var/lib/postgresql/data
+
+#volumes:
+#  db-data:

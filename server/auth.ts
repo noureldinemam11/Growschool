@@ -29,6 +29,11 @@ export async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
+  // Enforce SESSION_SECRET in production
+  if (process.env.NODE_ENV === "production" && !process.env.SESSION_SECRET) {
+    throw new Error("SESSION_SECRET must be set in production");
+  }
+
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "growschool-secret-key",
     resave: false,
@@ -36,6 +41,7 @@ export function setupAuth(app: Express) {
     store: storage.sessionStore,
     cookie: {
       secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? 'lax' : 'lax',
       maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
   };
@@ -48,11 +54,21 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
+        console.log(`Login attempt for username: ${username}`);
         // getUserByUsername now handles case insensitivity internally
         const user = await storage.getUserByUsername(username);
         
+        if (!user) {
+          console.log(`Login failed: User '${username}' not found`);
+          return done(null, false);
+        }
+        
         // Check if user exists and password is correct
-        if (!user || !(await comparePasswords(password, user.password))) {
+        const passwordMatch = await comparePasswords(password, user.password);
+        console.log(`Password match for ${username}: ${passwordMatch}, stored password: ${user.password.substring(0, 20)}...`);
+        
+        if (!passwordMatch) {
+          console.log(`Login failed: Password mismatch for ${username}`);
           return done(null, false);
         }
         
@@ -62,8 +78,10 @@ export function setupAuth(app: Express) {
           return done(null, false);
         }
         
+        console.log(`Login successful for ${username}`);
         return done(null, user);
       } catch (err) {
+        console.error(`Login error: ${err}`);
         return done(err);
       }
     }),
