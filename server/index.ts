@@ -2,11 +2,17 @@
 // (e.g. Render) don't require the `dotenv` package at runtime.
 if (process.env.NODE_ENV !== "production") {
   try {
-    // use require so bundlers don't statically include dotenv for prod
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    require("dotenv").config();
+    // Use an indirect require so bundlers won't statically include
+    // `require("dotenv")` in the production bundle.
+    // This avoids runtime errors on platforms where dotenv isn't installed.
+    // eslint-disable-next-line no-new-func
+    const indirectRequire = Function('return require')();
+    const dotenv = indirectRequire('dotenv');
+    if (dotenv && typeof dotenv.config === 'function') {
+      dotenv.config();
+    }
   } catch (e) {
-    // ignore if dotenv isn't installed in the environment
+    // ignore if dotenv isn't available
   }
 }
 import express, { type Request, Response, NextFunction } from "express";
