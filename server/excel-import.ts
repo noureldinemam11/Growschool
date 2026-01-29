@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import multer from 'multer';
 import { Express, Request, Response } from 'express';
 import { storage as appStorage } from './storage';
@@ -69,24 +69,56 @@ export function setupExcelImport(app: Express) {
       }
 
       try {
-        // Read the Excel/CSV file
-        const workbook = XLSX.read(multerReq.file.buffer, {
-          type: 'buffer',
-          cellDates: true,
-          cellNF: false,
-          cellText: false
-        });
+        // Read the Excel/CSV file using exceljs
+        const workbook = new ExcelJS.Workbook();
+        const fileExtension = multerReq.file.originalname.toLowerCase().split('.').pop();
         
-        if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+        if (fileExtension === 'csv') {
+          // Parse CSV file
+          const csvString = multerReq.file.buffer.toString('utf-8');
+          const lines = csvString.split(/\r?\n/).filter(line => line.trim());
+          const worksheet = workbook.addWorksheet('Sheet1');
+          lines.forEach((line) => {
+            const values = line.split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
+            worksheet.addRow(values);
+          });
+        } else {
+          await workbook.xlsx.load(Buffer.from(multerReq.file.buffer) as Buffer);
+        }
+        
+        if (!workbook.worksheets || workbook.worksheets.length === 0) {
           return res.status(400).json({ error: 'Invalid file format: No worksheets found' });
         }
         
-        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-        if (!worksheet) {
+        const worksheet = workbook.worksheets[0];
+        if (!worksheet || worksheet.rowCount === 0) {
           return res.status(400).json({ error: 'Invalid file format: Worksheet is empty' });
         }
         
-        const data = XLSX.utils.sheet_to_json(worksheet);
+        // Convert worksheet to array of objects (similar to xlsx sheet_to_json)
+        const data: Record<string, any>[] = [];
+        const headers: string[] = [];
+        
+        worksheet.eachRow((row, rowNumber) => {
+          if (rowNumber === 1) {
+            // First row is headers
+            row.eachCell((cell, colNumber) => {
+              headers[colNumber - 1] = String(cell.value || '');
+            });
+          } else {
+            // Data rows
+            const rowData: Record<string, any> = {};
+            row.eachCell((cell, colNumber) => {
+              const header = headers[colNumber - 1];
+              if (header) {
+                rowData[header] = cell.value;
+              }
+            });
+            if (Object.keys(rowData).length > 0) {
+              data.push(rowData);
+            }
+          }
+        });
 
         // Track import results
         const results = {

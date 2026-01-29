@@ -1,10 +1,11 @@
-import XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import fs from 'fs';
 import path from 'path';
 
-// Create a template for student imports
-function createStudentImportTemplate() {
-  // Define headers and example data
+async function createStudentImportTemplate() {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Students');
+  
   const headers = [
     'firstName', 
     'lastName', 
@@ -16,7 +17,6 @@ function createStudentImportTemplate() {
     'houseId'
   ];
   
-  // Example data
   const exampleData = [
     {
       firstName: 'John',
@@ -40,34 +40,26 @@ function createStudentImportTemplate() {
     }
   ];
 
-  // Create worksheet
-  const ws = XLSX.utils.json_to_sheet(exampleData, { header: headers });
-  
-  // Add column widths for better readability
-  const colWidths = [
-    { wch: 15 }, // firstName
-    { wch: 15 }, // lastName
-    { wch: 20 }, // username
-    { wch: 25 }, // email
-    { wch: 15 }, // password
-    { wch: 10 }, // gradeLevel
-    { wch: 10 }, // section
-    { wch: 8 }   // houseId
+  worksheet.columns = [
+    { header: 'firstName', key: 'firstName', width: 15 },
+    { header: 'lastName', key: 'lastName', width: 15 },
+    { header: 'username', key: 'username', width: 20 },
+    { header: 'email', key: 'email', width: 25 },
+    { header: 'password', key: 'password', width: 15 },
+    { header: 'gradeLevel', key: 'gradeLevel', width: 10 },
+    { header: 'section', key: 'section', width: 10 },
+    { header: 'houseId', key: 'houseId', width: 8 }
   ];
   
-  ws['!cols'] = colWidths;
+  exampleData.forEach(data => {
+    worksheet.addRow(data);
+  });
   
-  // Create workbook and add worksheet
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Students');
-  
-  // Save to file
   const templatePath = path.resolve('../client/public/student_import_template.xlsx');
-  XLSX.writeFile(wb, templatePath);
+  await workbook.xlsx.writeFile(templatePath);
   
   console.log(`Template created at: ${templatePath}`);
   
-  // Create a readme file explaining the template
   const readmePath = path.resolve('../client/public/student_import_readme.txt');
   const readmeContent = `
 Student Import Template Instructions
