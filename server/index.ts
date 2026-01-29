@@ -1,4 +1,14 @@
-import "dotenv/config";
+// Load local .env only when not in production so production builds
+// (e.g. Render) don't require the `dotenv` package at runtime.
+if (process.env.NODE_ENV !== "production") {
+  try {
+    // use require so bundlers don't statically include dotenv for prod
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    require("dotenv").config();
+  } catch (e) {
+    // ignore if dotenv isn't installed in the environment
+  }
+}
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
